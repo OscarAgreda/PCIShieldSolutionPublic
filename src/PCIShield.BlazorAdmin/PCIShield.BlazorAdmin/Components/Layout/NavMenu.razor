@@ -1,0 +1,248 @@
+﻿@* NavMenu.razor *@
+@using MudBlazor
+@using MudBlazor.Services
+@using PCIShield.BlazorMauiShared.ServiceIcon
+@using PCIShield.BlazorAdmin.Services
+@using System.Reactive
+@using System.Reactive.Linq
+@inject IBrowserViewportService BrowserViewportService
+@inject NavigationManager NavigationManager
+@implements IAsyncDisposable
+
+<MudDrawer Open="true"
+           Fixed="false"
+           Variant="@DrawerVariant.Persistent"
+           Width="@(isCollapsed ? "80px" : "260px")"
+           ClipMode="DrawerClipMode.Never"
+           Class="pciShield-nav-drawer"
+           Elevation="0">
+
+    <!-- Logo Section -->
+    <div class="pciShield-nav-logo-section">
+        <div class="pciShield-nav-logo-container">
+            @if (!isCollapsed)
+            {
+                <div class="pciShield-nav-logo">
+                    <MudIcon Icon="@Icons.Material.Filled.Shield" Class="pciShield-nav-logo-icon" />
+                    <MudText Class="pciShield-nav-logo-text">PCIShield</MudText>
+                </div>
+                <MudText Class="pciShield-nav-logo-subtitle">Security Suite v2.0</MudText>
+            }
+            else
+            {
+                <MudIcon Icon="@Icons.Material.Filled.Shield" Class="pciShield-nav-logo-icon-collapsed" />
+            }
+        </div>
+    </div>
+
+    <MudDivider Class="pciShield-nav-divider" />
+
+    <AuthorizeView Roles="Administrator">
+        <Authorized>
+            <MudNavGroup Title="@(isCollapsed ? null : "Administration")"
+                         Icon="@Icons.Material.Filled.AdminPanelSettings"
+                         ExpandIcon="@Icons.Material.Filled.ExpandMore"
+                         Class="pciShield-nav-group">
+                <MudNavLink Href="/admin/dashboard" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard" Class="pciShield-nav-subitem" ActiveClass="pciShield-nav-subitem-active">Dashboard</MudNavLink>
+                <MudNavLink Href="/admin/users" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.People" Class="pciShield-nav-subitem" ActiveClass="pciShield-nav-subitem-active">Users</MudNavLink>
+                <MudNavLink Href="/admin/roles" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Security" Class="pciShield-nav-subitem" ActiveClass="pciShield-nav-subitem-active">Roles</MudNavLink>
+                <MudNavLink Href="/admin/permissions" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.PermIdentity" Class="pciShield-nav-subitem" ActiveClass="pciShield-nav-subitem-active">Permissions</MudNavLink>
+            </MudNavGroup>
+        </Authorized>
+    </AuthorizeView>
+    <MudDivider Class="pciShield-nav-divider" />
+
+    <!-- User Profile Section (Top) -->
+    <div class="pciShield-nav-user-section">
+        @if (!isCollapsed)
+        {
+            <MudAvatar Class="pciShield-avatar-primary pciShield-nav-avatar">JD</MudAvatar>
+            <div class="pciShield-nav-user-info">
+                <MudText Class="pciShield-nav-user-name">John Doe</MudText>
+                <MudText Class="pciShield-nav-user-role">Administrator</MudText>
+            </div>
+        }
+        else
+        {
+            <MudAvatar Size="Size.Small" Class="pciShield-avatar-primary">JD</MudAvatar>
+        }
+    </div>
+
+    <MudDivider Class="pciShield-nav-divider" />
+
+    <!-- Navigation Menu -->
+    <MudNavMenu Class="pciShield-nav-menu">
+        @foreach (var item in menuItems)
+        {
+            @if (item.IsGroup)
+            {
+                <div class="pciShield-nav-group-wrapper">
+                    @if (!isCollapsed && !string.IsNullOrEmpty(item.GroupLabel))
+                    {
+                        <MudText Class="pciShield-nav-group-label">@item.GroupLabel</MudText>
+                    }
+                    <MudNavGroup Title="@(isCollapsed ? null : item.Title)"
+                                 Icon="@item.Icon"
+                                 ExpandIcon="@Icons.Material.Filled.ExpandMore"
+                                 Expanded="@(expandedGroupTitle == item.Title)"
+                                 ExpandedChanged="@((isExpanded) => OnGroupExpandedChanged(isExpanded, item))"
+                                 Class="@($"pciShield-nav-group {(isCollapsed ? "pciShield-nav-group-collapsed" : "")}")">
+                        @foreach (var subItem in item.Children)
+                        {
+                            <MudNavLink Href="@subItem.Href"
+                                        Match="NavLinkMatch.Prefix"
+                                        Class="pciShield-nav-subitem"
+                                        ActiveClass="pciShield-nav-subitem-active"
+                                        Icon="@(isCollapsed ? subItem.Icon : Icons.Material.Filled.Circle)">
+                                @if (!isCollapsed)
+                                {
+                                    <span class="pciShield-nav-subitem-text">@subItem.Title</span>
+                                }
+                            </MudNavLink>
+                        }
+                    </MudNavGroup>
+                </div>
+            }
+            else
+            {
+                <MudNavLink Href="@item.Href"
+                            Match="NavLinkMatch.Prefix"
+                            Class="@($"pciShield-nav-item {(isCollapsed ? "pciShield-nav-item-collapsed" : "")}")"
+                            ActiveClass="pciShield-nav-item-active"
+                            Icon="@item.Icon">
+                    @if (!isCollapsed)
+                    {
+                        <span class="pciShield-nav-item-text">@item.Title</span>
+                        @if (item.Badge != null)
+                        {
+                            <MudChip T="string" Size="Size.Small" Color="Color.Error" Class="pciShield-nav-badge">@item.Badge</MudChip>
+                        }
+                    }
+                </MudNavLink>
+            }
+        }
+    </MudNavMenu>
+
+    <!-- Bottom Section -->
+    <div class="pciShield-nav-bottom">
+        <MudDivider Class="pciShield-nav-divider" />
+
+        <!-- Quick Actions -->
+        <div class="pciShield-nav-quick-actions">
+            @if (!isCollapsed)
+            {
+                <MudIconButton Icon="@Icons.Material.Filled.Settings" Class="pciShield-nav-action-btn" Size="Size.Small" />
+                <MudIconButton Icon="@Icons.Material.Filled.Notifications" Class="pciShield-nav-action-btn" Size="Size.Small" />
+                <MudIconButton Icon="@Icons.Material.Filled.Help" Class="pciShield-nav-action-btn" Size="Size.Small" />
+            }
+        </div>
+
+        <!-- Collapse Toggle -->
+        <MudIconButton Class="pciShield-nav-toggle"
+                       Icon="@(isCollapsed ? Icons.Material.Filled.ChevronRight : Icons.Material.Filled.ChevronLeft)"
+                       OnClick="@ToggleMenu"
+                       Color="Color.Inherit" />
+    </div>
+</MudDrawer>
+
+@code {
+    private Guid? _viewportSubscriptionId;
+    private bool isCollapsed = false;
+    private string expandedGroupTitle = string.Empty;
+
+    [Parameter]
+    public EventCallback<bool> OnToggleCollapse { get; set; }
+
+    [Parameter]
+    public bool IsMobileMenuOpen { get; set; }
+
+    private readonly List<NavItem> menuItems = new()
+    {
+        new NavItem("Dashboard", "/", Icons.Material.Filled.Dashboard)
+    {
+        Badge = "New" // ← object initializer, not a ctor arg
+    },
+        new NavItem("Security", "", Icons.Material.Filled.Security, true, new List<NavItem>
+        {
+            new NavItem("Vulnerabilities", "/vulnerabilities", Icons.Material.Filled.Warning),
+            new NavItem("Scan Schedules", "/scans", Icons.Material.Filled.Schedule),
+            new NavItem("Scripts", "/scripts", Icons.Material.Filled.Code),
+        }, "SECURITY"),
+        new NavItem("PCIShield", "", Icons.Material.Filled.Shield, true, new List<NavItem>
+        {
+            new NavItem("Merchants", "/MerchantList", Icons.Material.Filled.Store),
+            new NavItem("BI Dashboard", "/MerchantBidashboardPage", Icons.Material.Filled.Analytics),
+            new NavItem("Assessments", "/AssessmentList", Icons.Material.Filled.Assessment),
+            new NavItem("Payment Pages", "/paymentpages", Icons.Material.Filled.Payment),
+            new NavItem("ROC Packages", "/rocpackages", Icons.Material.Filled.Folder),
+        }, "COMPLIANCE"),
+        new NavItem("Controls", "", Icons.Material.Filled.FactCheck, true, new List<NavItem>
+        {
+            new NavItem("Control Library", "/controls", Icons.Material.Filled.LibraryBooks),
+            new NavItem("Evidence", "/evidence", Icons.Material.Filled.AttachFile),
+            new NavItem("Audit Logs", "/auditlogs", Icons.Material.Filled.History),
+        }, "GOVERNANCE"),
+        new NavItem("Reports", "/reports", Icons.Material.Filled.BarChart),
+        new NavItem("Settings", "/settings", Icons.Material.Filled.Settings),
+    };
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _viewportSubscriptionId = Guid.NewGuid();
+            await BrowserViewportService.SubscribeAsync(_viewportSubscriptionId.Value, OnWindowResized);
+
+            var size = await BrowserViewportService.GetCurrentBrowserWindowSizeAsync();
+            await UpdateDrawerState(size.Width);
+        }
+    }
+
+    private async Task OnWindowResized(BrowserViewportEventArgs args)
+    {
+        await UpdateDrawerState(args.BrowserWindowSize.Width);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task UpdateDrawerState(int windowWidth)
+    {
+        if (windowWidth < 750)
+        {
+            isCollapsed = false;
+            await OnToggleCollapse.InvokeAsync(isCollapsed);
+        }
+    }
+
+    private async Task ToggleMenu()
+    {
+        isCollapsed = !isCollapsed;
+        expandedGroupTitle = string.Empty;
+        await OnToggleCollapse.InvokeAsync(isCollapsed);
+    }
+
+    private async Task OnGroupExpandedChanged(bool isExpanded, NavItem item)
+    {
+        expandedGroupTitle = isExpanded ? item.Title : (expandedGroupTitle == item.Title ? string.Empty : expandedGroupTitle);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_viewportSubscriptionId.HasValue)
+        {
+            await BrowserViewportService.UnsubscribeAsync(_viewportSubscriptionId.Value);
+        }
+    }
+
+    private sealed record NavItem(
+        string Title,
+        string Href,
+        string Icon = null,
+        bool IsGroup = false,
+        List<NavItem> Children = null,
+        string GroupLabel = null,
+        string Badge = null)
+    {
+        public List<NavItem> Children { get; init; } = Children ?? new List<NavItem>();
+    }
+}

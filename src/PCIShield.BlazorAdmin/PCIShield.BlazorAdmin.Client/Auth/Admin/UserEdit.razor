@@ -1,0 +1,347 @@
+﻿@page "/admin/users/edit/{UserId}"
+@using Microsoft.AspNetCore.Authorization
+@using PCIShield.BlazorMauiShared.Auth
+@using System.ComponentModel.DataAnnotations
+@inject IHttpAuthClientService AdminService
+@attribute [Authorize(Roles = "Administrator")]
+
+@inject NavigationManager NavManager
+@inject ISnackbar Snackbar
+
+<PageTitle>Edit User</PageTitle>
+
+<MudBreadcrumbs Items="_breadCrumbs" Separator="|" Class="pciShield-breadcrumb mb-4"></MudBreadcrumbs>
+
+@if (_isLoading)
+{
+    <MudPaper Class="pa-4" Elevation="1">
+        <MudProgressCircular Indeterminate="true" />
+        <MudText Class="mt-2">Loading user details...</MudText>
+    </MudPaper>
+}
+else if (_user == null)
+{
+    <MudAlert Severity="Severity.Error">User not found</MudAlert>
+}
+else
+{
+    <MudPaper Class="pciShield-container pciShield-shadow mb-4" Elevation="0">
+        <MudText Class="pciShield-title-page mb-2">Edit User: @_user.UserName</MudText>
+        <MudText Class="pciShield-text-body">Modify user details, roles, and security settings</MudText>
+    </MudPaper>
+
+    <MudForm Model="@_updateRequest" @ref="_form" @bind-IsValid="_isFormValid">
+        <MudGrid Spacing="3">
+            @* Basic Information *@
+            <MudItem xs="12" md="8">
+                <MudPaper Class="pciShield-container pciShield-shadow pa-4" Elevation="1">
+                    <MudText Typo="Typo.h6" Class="mb-4">Basic Information</MudText>
+                    
+                    <MudGrid Spacing="3">
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="_updateRequest.Email" 
+                                          Label="Email Address" 
+                                          Required="true"
+                                          RequiredError="Email is required"
+                                          Validation="@(new EmailAddressAttribute())"
+                                          Variant="Variant.Outlined" 
+                                          Class="pciShield-input" 
+                                          Dense="true" />
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField Value="@_user.UserName" 
+                                          Label="Username" 
+                                          Disabled="true"
+                                          Variant="Variant.Outlined" 
+                                          Class="pciShield-input" 
+                                          Dense="true" />
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="_updateRequest.FirstName" 
+                                          Label="First Name" 
+                                          Variant="Variant.Outlined" 
+                                          Class="pciShield-input" 
+                                          Dense="true" />
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="_updateRequest.LastName" 
+                                          Label="Last Name" 
+                                          Variant="Variant.Outlined" 
+                                          Class="pciShield-input" 
+                                          Dense="true" />
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="_updateRequest.PhoneNumber" 
+                                          Label="Phone Number" 
+                                          Variant="Variant.Outlined" 
+                                          Class="pciShield-input" 
+                                          Dense="true" />
+                        </MudItem>
+                    </MudGrid>
+
+                    <MudDivider Class="my-4" />
+
+                    <MudText Typo="Typo.h6" Class="mb-3">Security Settings</MudText>
+                    <MudStack Spacing="2">
+                        <MudSwitch @bind-Value="_updateRequest.EmailConfirmed" 
+                                   Color="Color.Success"
+                                   Label="Email Confirmed" />
+                        <MudSwitch @bind-Value="_updateRequest.PhoneNumberConfirmed" 
+                                   Color="Color.Success"
+                                   Label="Phone Number Confirmed" />
+                        <MudSwitch @bind-Value="_updateRequest.TwoFactorEnabled" 
+                                   Color="Color.Info"
+                                   Label="Two-Factor Authentication Enabled" />
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+
+            @* Sidebar with Status and Actions *@
+            <MudItem xs="12" md="4">
+                <MudStack Spacing="3">
+                    @* Status Card *@
+                    <MudPaper Class="pa-4 pciShield-shadow" Elevation="1">
+                        <MudText Typo="Typo.h6" Class="mb-3">Account Status</MudText>
+                        <MudStack Spacing="2">
+                            <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                <MudText Typo="Typo.body2">Account Status:</MudText>
+                                @if (_user.IsLockedOut)
+                                {
+                                    <MudChip T="bool" Color="Color.Error" Size="Size.Small">Locked</MudChip>
+                                }
+                                else
+                                {
+                                    <MudChip T="bool"  Color="Color.Success" Size="Size.Small">Active</MudChip>
+                                }
+                            </MudStack>
+                            <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                <MudText Typo="Typo.body2">Failed Logins:</MudText>
+                                <MudText Typo="Typo.body2">@_user.AccessFailedCount</MudText>
+                            </MudStack>
+                            @if (_user.LastLoginDate.HasValue)
+                            {
+                                <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                    <MudText Typo="Typo.body2">Last Login:</MudText>
+                                    <MudText Typo="Typo.body2">@_user.LastLoginDate.Value.ToString("MMM dd, yyyy")</MudText>
+                                </MudStack>
+                            }
+                            <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                <MudText Typo="Typo.body2">Created:</MudText>
+                                <MudText Typo="Typo.body2">@_user.CreatedDate.ToString("MMM dd, yyyy")</MudText>
+                            </MudStack>
+                        </MudStack>
+                    </MudPaper>
+
+                    @* External Logins *@
+                    @if (_user.ExternalLogins.Any())
+                    {
+                        <MudPaper Class="pa-4 pciShield-shadow" Elevation="1">
+                            <MudText Typo="Typo.h6" Class="mb-3">External Logins</MudText>
+                            <MudList T="UserDetailsDto" Dense="true">
+                                @foreach (var login in _user.ExternalLogins)
+                                {
+                                    <MudListItem>
+                                        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                                            <MudStack Spacing="0">
+                                                <MudText Typo="Typo.body2">@login.LoginProvider</MudText>
+                                                @if (login.LinkedDate.HasValue)
+                                                {
+                                                    <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                                        Linked: @login.LinkedDate.Value.ToString("MMM dd, yyyy")
+                                                    </MudText>
+                                                }
+                                            </MudStack>
+                                            @if (login.LoginProvider == "Google")
+                                            {
+                                                <MudIcon Icon="@Icons.Custom.Brands.Google" Color="Color.Error" />
+                                            }
+                                            else if (login.LoginProvider == "Apple")
+                                            {
+                                                <MudIcon Icon="@Icons.Custom.Brands.Apple" Color="Color.Dark" />
+                                            }
+                                        </MudStack>
+                                    </MudListItem>
+                                }
+                            </MudList>
+                        </MudPaper>
+                    }
+                </MudStack>
+            </MudItem>
+
+            @* Role Assignment *@
+            <MudItem xs="12">
+                <MudPaper Class="pciShield-container pciShield-shadow pa-4" Elevation="1">
+                    <MudText Typo="Typo.h6" Class="mb-4">Role Assignment</MudText>
+                    <MudSelect T="string"
+                               MultiSelection="true"
+                               @bind-SelectedValues="_selectedRoles"
+                               Label="Assigned Roles"
+                               Variant="Variant.Outlined"
+                               Class="pciShield-input"
+                               Dense="true"
+                               HelperText="Select one or more roles for this user">
+                        @foreach (var role in _user.AllAvailableRoles)
+                        {
+                            <MudSelectItem T="string" Value="@role">
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                    <MudIcon Icon="@GetRoleIcon(role)" Size="Size.Small" />
+                                    <MudText>@role</MudText>
+                                </MudStack>
+                            </MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudPaper>
+            </MudItem>
+
+            @* Action Buttons *@
+            <MudItem xs="12">
+                <MudPaper Class="pa-4 pciShield-shadow" Elevation="1">
+                    <MudStack Row="true" Spacing="2" Justify="Justify.SpaceBetween">
+                        <MudStack Row="true" Spacing="2">
+                            <MudButton OnClick="SaveChanges" 
+                                       Disabled="@(!_isFormValid || _isSaving)" 
+                                       Variant="Variant.Filled" 
+                                       Color="Color.Primary" 
+                                       Class="pciShield-btn pciShield-btn-primary">
+                                @if (_isSaving)
+                                {
+                                    <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                                    <MudText Class="ms-2">Saving...</MudText>
+                                }
+                                else
+                                {
+                                    <MudText>Save Changes</MudText>
+                                }
+                            </MudButton>
+                            <MudButton OnClick="@(() => NavManager.NavigateTo("/admin/users"))" 
+                                       Variant="Variant.Outlined" 
+                                       Class="pciShield-btn pciShield-btn-secondary">
+                                Cancel
+                            </MudButton>
+                        </MudStack>
+                        <MudButton OnClick="@(() => NavManager.NavigateTo($"/admin/users/edit/{UserId}"))" 
+                                   StartIcon="@Icons.Material.Filled.Refresh"
+                                   Variant="Variant.Text" 
+                                   Color="Color.Default">
+                            Reload
+                        </MudButton>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    </MudForm>
+}
+
+@code {
+    [Parameter]
+    public string UserId { get; set; } = string.Empty;
+
+    private UserDetailsDto? _user;
+    private UpdateUserRequest _updateRequest = new();
+    private MudForm? _form;
+    private bool _isFormValid;
+    private bool _isLoading = true;
+    private bool _isSaving;
+    private IEnumerable<string> _selectedRoles = new List<string>();
+
+    private List<BreadcrumbItem> _breadCrumbs = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUser();
+    }
+
+    private async Task LoadUser()
+    {
+        _isLoading = true;
+        StateHasChanged();
+
+        var result = await AdminService.GetUserByIdAsync(UserId);
+        
+        result.Match(
+            Right: user =>
+            {
+                _user = user;
+                
+                // Initialize update request
+                _updateRequest = new UpdateUserRequest
+                {
+                    Id = user.Id,
+                    Email = user.Email,
+                    FirstName = user.FirstName,
+                    LastName = user.LastName,
+                    PhoneNumber = user.PhoneNumber,
+                    EmailConfirmed = user.EmailConfirmed,
+                    PhoneNumberConfirmed = user.PhoneNumberConfirmed,
+                    TwoFactorEnabled = user.TwoFactorEnabled,
+                    Roles = user.Roles
+                };
+                
+                _selectedRoles = user.Roles;
+                
+                _breadCrumbs = new()
+                {
+                    new("Home", href: "/"),
+                    new("Administration", href: "/admin/dashboard"),
+                    new("Users", href: "/admin/users"),
+                    new(user.UserName, href: null, disabled: true)
+                };
+                
+                _isLoading = false;
+            },
+            Left: error =>
+            {
+                Snackbar.Add($"Error loading user: {error}", Severity.Error);
+                NavManager.NavigateTo("/admin/users");
+            }
+        );
+
+        StateHasChanged();
+    }
+
+    private async Task SaveChanges()
+    {
+        if (_form != null)
+        {
+            await _form.Validate();
+        }
+
+        if (!_isFormValid)
+        {
+            Snackbar.Add("Please correct validation errors", Severity.Warning);
+            return;
+        }
+
+        _isSaving = true;
+        _updateRequest.Roles = _selectedRoles.ToList();
+
+        var result = await AdminService.UpdateUserAsync(_updateRequest);
+        
+        result.Match(
+            Right: _ =>
+            {
+                Snackbar.Add("User updated successfully!", Severity.Success);
+                NavManager.NavigateTo("/admin/users");
+            },
+            Left: error =>
+            {
+                Snackbar.Add($"Error updating user: {error}", Severity.Error);
+                _isSaving = false;
+            }
+        );
+
+        StateHasChanged();
+    }
+
+    private string GetRoleIcon(string role)
+    {
+        return role switch
+        {
+            "Administrator" => Icons.Material.Filled.AdminPanelSettings,
+            "User" => Icons.Material.Filled.Person,
+            "Customer" => Icons.Material.Filled.ShoppingCart,
+            "Employee" => Icons.Material.Filled.Work,
+            _ => Icons.Material.Filled.Security
+        };
+    }
+}

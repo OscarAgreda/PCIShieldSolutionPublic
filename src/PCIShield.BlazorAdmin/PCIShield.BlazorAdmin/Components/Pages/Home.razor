@@ -1,0 +1,235 @@
+﻿@* Home.razor *@
+@page "/"
+@using PCIShield.Client.Services.DashBoard
+@using System.Reactive.Linq
+@using PCIShield.BlazorAdmin.Services
+@using System.Reactive
+
+<PageTitle>PCIShield Dashboard</PageTitle>
+
+<!-- Hero Section -->
+<div class="pciShield-hero-section">
+    <div class="pciShield-hero-content">
+        <MudText Class="pciShield-hero-title">Welcome back, John!</MudText>
+        <MudText Class="pciShield-hero-subtitle">Here's your security overview for today</MudText>
+        <MudText Class="pciShield-hero-date">@DateTime.Now.ToString("dddd, MMMM dd, yyyy")</MudText>
+    </div>
+    <div class="pciShield-hero-actions">
+        <MudButton Variant="Variant.Filled" 
+                   Class="pciShield-btn pciShield-btn-primary pciShield-shadow"
+                   StartIcon="@Icons.Material.Filled.Add">
+            New Assessment
+        </MudButton>
+        <MudButton Variant="Variant.Outlined" 
+                   Class="pciShield-btn pciShield-btn-secondary"
+                   StartIcon="@Icons.Material.Filled.Refresh">
+            Run Scan
+        </MudButton>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<MudGrid Class="pciShield-mt-lg">
+    <MudItem xs="12" sm="6" md="3">
+        <MudPaper Class="pciShield-stat-card pciShield-stat-primary">
+            <div class="pciShield-stat-icon-wrapper">
+                <MudIcon Icon="@Icons.Material.Filled.Assessment" Class="pciShield-stat-icon" />
+            </div>
+            <div class="pciShield-stat-content">
+                <MudText Class="pciShield-stat-value">247</MudText>
+                <MudText Class="pciShield-stat-label">Active Assessments</MudText>
+                <MudText Class="pciShield-stat-change pciShield-stat-up">
+                    <MudIcon Icon="@Icons.Material.Filled.TrendingUp" Size="Size.Small" />
+                    12% from last month
+                </MudText>
+            </div>
+        </MudPaper>
+    </MudItem>
+    
+    <MudItem xs="12" sm="6" md="3">
+        <MudPaper Class="pciShield-stat-card pciShield-stat-success">
+            <div class="pciShield-stat-icon-wrapper">
+                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Class="pciShield-stat-icon" />
+            </div>
+            <div class="pciShield-stat-content">
+                <MudText Class="pciShield-stat-value">89%</MudText>
+                <MudText Class="pciShield-stat-label">Compliance Score</MudText>
+                <MudText Class="pciShield-stat-change pciShield-stat-up">
+                    <MudIcon Icon="@Icons.Material.Filled.TrendingUp" Size="Size.Small" />
+                    5% improvement
+                </MudText>
+            </div>
+        </MudPaper>
+    </MudItem>
+    
+    <MudItem xs="12" sm="6" md="3">
+        <MudPaper Class="pciShield-stat-card pciShield-stat-warning">
+            <div class="pciShield-stat-icon-wrapper">
+                <MudIcon Icon="@Icons.Material.Filled.Warning" Class="pciShield-stat-icon" />
+            </div>
+            <div class="pciShield-stat-content">
+                <MudText Class="pciShield-stat-value">15</MudText>
+                <MudText Class="pciShield-stat-label">Open Vulnerabilities</MudText>
+                <MudText Class="pciShield-stat-change pciShield-stat-down">
+                    <MudIcon Icon="@Icons.Material.Filled.TrendingDown" Size="Size.Small" />
+                    3 resolved today
+                </MudText>
+            </div>
+        </MudPaper>
+    </MudItem>
+    
+    <MudItem xs="12" sm="6" md="3">
+        <MudPaper Class="pciShield-stat-card pciShield-stat-info">
+            <div class="pciShield-stat-icon-wrapper">
+                <MudIcon Icon="@Icons.Material.Filled.Store" Class="pciShield-stat-icon" />
+            </div>
+            <div class="pciShield-stat-content">
+                <MudText Class="pciShield-stat-value">1,842</MudText>
+                <MudText Class="pciShield-stat-label">Total Merchants</MudText>
+                <MudText Class="pciShield-stat-change pciShield-stat-neutral">
+                    <MudIcon Icon="@Icons.Material.Filled.Remove" Size="Size.Small" />
+                    No change
+                </MudText>
+            </div>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+<!-- Main Content Grid -->
+<MudGrid Class="pciShield-mt-lg">
+    <!-- Recent Activity -->
+    <MudItem xs="12" md="8">
+        <MudPaper Class="pciShield-card pciShield-container pciShield-shadow">
+            <div class="pciShield-card-header-simple">
+                <MudText Class="pciShield-title-section">Recent Activity</MudText>
+                <MudButton Variant="Variant.Text" 
+                           Class="pciShield-text-caption"
+                           EndIcon="@Icons.Material.Filled.ArrowForward">
+                    View All
+                </MudButton>
+            </div>
+            <MudDivider Class="pciShield-mb-md" />
+            
+            <MudTimeline TimelineOrientation="TimelineOrientation.Vertical">
+                <MudTimelineItem Color="Color.Success" Size="Size.Small">
+                    <ItemContent>
+                        <div class="pciShield-timeline-item">
+                            <MudText Class="pciShield-text-body">Assessment completed for Merchant #4521</MudText>
+                            <MudText Class="pciShield-text-caption">2 hours ago</MudText>
+                        </div>
+                    </ItemContent>
+                </MudTimelineItem>
+                <MudTimelineItem Color="Color.Warning" Size="Size.Small">
+                    <ItemContent>
+                        <div class="pciShield-timeline-item">
+                            <MudText Class="pciShield-text-body">New vulnerability detected in Payment Gateway</MudText>
+                            <MudText Class="pciShield-text-caption">5 hours ago</MudText>
+                        </div>
+                    </ItemContent>
+                </MudTimelineItem>
+                <MudTimelineItem Color="Color.Info" Size="Size.Small">
+                    <ItemContent>
+                        <div class="pciShield-timeline-item">
+                            <MudText Class="pciShield-text-body">Scheduled scan started for 15 merchants</MudText>
+                            <MudText Class="pciShield-text-caption">8 hours ago</MudText>
+                        </div>
+                    </ItemContent>
+                </MudTimelineItem>
+                <MudTimelineItem Color="Color.Primary" Size="Size.Small">
+                    <ItemContent>
+                        <div class="pciShield-timeline-item">
+                            <MudText Class="pciShield-text-body">ROC Package submitted for review</MudText>
+                            <MudText Class="pciShield-text-caption">Yesterday</MudText>
+                        </div>
+                    </ItemContent>
+                </MudTimelineItem>
+            </MudTimeline>
+        </MudPaper>
+    </MudItem>
+    
+    <!-- Quick Actions -->
+    <MudItem xs="12" md="4">
+        <MudPaper Class="pciShield-card pciShield-container pciShield-shadow">
+            <MudText Class="pciShield-title-section pciShield-mb-md">Quick Actions</MudText>
+            <MudDivider Class="pciShield-mb-md" />
+            
+            <MudStack Spacing="2">
+                <MudButton Variant="Variant.Filled" 
+                           FullWidth="true"
+                           Class="pciShield-quick-action-btn pciShield-quick-action-primary"
+                           StartIcon="@Icons.Material.Filled.Assessment">
+                    Create Assessment
+                </MudButton>
+                <MudButton Variant="Variant.Filled" 
+                           FullWidth="true"
+                           Class="pciShield-quick-action-btn pciShield-quick-action-secondary"
+                           StartIcon="@Icons.Material.Filled.Store">
+                    Add Merchant
+                </MudButton>
+                <MudButton Variant="Variant.Filled" 
+                           FullWidth="true"
+                           Class="pciShield-quick-action-btn pciShield-quick-action-tertiary"
+                           StartIcon="@Icons.Material.Filled.Schedule">
+                    Schedule Scan
+                </MudButton>
+                <MudButton Variant="Variant.Filled" 
+                           FullWidth="true"
+                           Class="pciShield-quick-action-btn pciShield-quick-action-info"
+                           StartIcon="@Icons.Material.Filled.BarChart">
+                    Generate Report
+                </MudButton>
+            </MudStack>
+        </MudPaper>
+        
+        <!-- Compliance Status -->
+        <MudPaper Class="pciShield-card pciShield-container pciShield-shadow pciShield-mt-lg">
+            <MudText Class="pciShield-title-section pciShield-mb-md">Compliance Status</MudText>
+            <MudDivider Class="pciShield-mb-md" />
+            
+            <div class="pciShield-compliance-chart">
+                <MudProgressCircular Value="89" 
+                                     Size="Size.Large" 
+                                     Color="Color.Success"
+                                     StrokeWidth="8">
+                    <ChildContent>
+                        <MudText Class="pciShield-title-section">89%</MudText>
+                    </ChildContent>
+                </MudProgressCircular>
+                <MudText Class="pciShield-text-body pciShield-text-center pciShield-mt-md">
+                    Overall Compliance Score
+                </MudText>
+            </div>
+            
+            <MudStack Spacing="1" Class="pciShield-mt-md">
+                <div class="pciShield-compliance-item">
+                    <MudText Class="pciShield-text-caption">PCI DSS 4.0</MudText>
+                    <MudProgressLinear Value="92" Color="Color.Success" Size="Size.Small" />
+                </div>
+                <div class="pciShield-compliance-item">
+                    <MudText Class="pciShield-text-caption">Security Controls</MudText>
+                    <MudProgressLinear Value="87" Color="Color.Warning" Size="Size.Small" />
+                </div>
+                <div class="pciShield-compliance-item">
+                    <MudText Class="pciShield-text-caption">Documentation</MudText>
+                    <MudProgressLinear Value="95" Color="Color.Success" Size="Size.Small" />
+                </div>
+            </MudStack>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    // public Home()
+    // {
+    //     Observable
+    //         .StartAsync(async () =>
+    //         {
+    //             await InvokeAsync(StateHasChanged);
+    //         })
+    //         .Timeout(TimeSpan.FromSeconds(1))
+    //         .Catch<Unit, TimeoutException>(ex =>
+    //         {
+    //             return Observable.Return(Unit.Default);
+    //         });
+    // }
+}

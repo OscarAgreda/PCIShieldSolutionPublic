@@ -1,0 +1,60 @@
+@using System.Globalization
+
+@using Microsoft.JSInterop
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+@inject PCIShield.BlazorAdmin.Client.Auth.IClientLocalizationService LocalizationService
+
+<MudMenu Icon="@Icons.Material.Filled.Translate" Color="Color.Inherit" Direction="Direction.Bottom" OffsetY="true">
+    @* <MudMenuItem OnClick="@(() => SwitchLanguage("en-US"))"> *@
+    @*     <div class="d-flex"> *@
+    @*         <MudText Class="mr-2">🇺🇸</MudText> *@
+    @*         <MudText>English</MudText> *@
+    @*         @if (CurrentLanguage == "en-US") *@
+    @*         { *@
+    @*             <MudIcon Icon="@Icons.Material.Filled.Check" Class="ml-auto" /> *@
+    @*         } *@
+    @*     </div> *@
+    @* </MudMenuItem> *@
+    @* <MudMenuItem OnClick="@(() => SwitchLanguage("es-ES"))"> *@
+    @*     <div class="d-flex"> *@
+    @*         <MudText Class="mr-2">🇪🇸</MudText> *@
+    @*         <MudText>Español</MudText> *@
+    @*         @if (CurrentLanguage == "es-ES") *@
+    @*         { *@
+    @*             <MudIcon Icon="@Icons.Material.Filled.Check" Class="ml-auto" /> *@
+    @*         } *@
+    @*     </div> *@
+    @* </MudMenuItem> *@
+</MudMenu>
+
+@code {
+    private string CurrentLanguage = CultureInfo.CurrentUICulture.Name;
+
+    // protected override void OnInitialized()
+    // {
+    //     CurrentLanguage = CultureInfo.CurrentUICulture.Name;
+    // }
+    //
+    // private async Task SwitchLanguage(string culture)
+    // {
+    //     if (culture == CurrentLanguage)
+    //         return;
+    //     
+    //     // 1. First store in localStorage (immediately available after reload)
+    //     await JSRuntime.InvokeVoidAsync("localStorage.setItem", "preferredLanguage", culture);
+    //
+    //     // 2. Update CurrentLanguage
+    //     CurrentLanguage = culture;
+    //
+    //     // 3. Try to update server asynchronously but don't wait for it
+    //     try 
+    //     {
+    //         _ = LocalizationService.SetCultureAsync(culture);
+    //     }
+    //     catch { /* Ignore errors */ }
+    //
+    //     // 4. Reload the page using browser API (more reliable than NavigationManager)
+    //     await JSRuntime.InvokeVoidAsync("window.location.reload");
+    // }
+}

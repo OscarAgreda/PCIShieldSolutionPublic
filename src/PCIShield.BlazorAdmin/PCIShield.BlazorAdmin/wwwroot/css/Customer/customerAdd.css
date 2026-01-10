@@ -1,0 +1,521 @@
+﻿.text-bread-crumb {
+    padding: 0px !important;
+}
+
+.text-bread-crumb .mud-breadcrumb-item {
+    text-decoration: underline;
+    color: #AEAEAE;
+}
+
+.text-bread-crumb .mud-breadcrumb-item a {
+    font-weight: 400;
+    font-size: 12px !important;
+    line-height: 12.19px;
+    color: #AEAEAE;
+}
+
+.title-merchant-add {
+    font-size: 24px !important;
+    width: 224px;
+    height: 27px;
+    font-weight: 700 !important;
+    color: #343030;
+}
+
+.subTitle-merchant-add {
+    font-size: 12px !important;
+    width: 224px;
+    height: 27px;
+    font-weight: 400 !important;
+    line-height: 14.63px !important;
+    color: #343030;
+}
+
+.container-merchant-add {
+    padding: 12px 24px 24px 24px;
+    gap: 24px;
+    border-radius: 7px !important;
+}
+
+
+.container-merchant-content {
+    margin-top: 20px;
+}
+
+
+.mud-radio-color .mud-checked {
+    color: #293E8C !important;
+}
+
+.mud-radio-color .mud-radio-icons .mud-icon-root {
+    width: 20px !important;
+    height: 20px !important;
+}
+
+.size-mud-select .mud-select {
+    width: 119px;
+    height: 31px;
+}
+
+    .size-mud-select .mud-select .mud-input-control-input-container .mud-input {
+        width: 119px;
+        height: 31px;
+    }
+
+    .size-mud-select .mud-select .mud-input-control-input-container .mud-input-slot {
+        font-size: 12px;
+        font-weight: 400;
+        line-height: 14.63px;
+        color: #707070;
+    }
+
+    .size-mud-select .mud-select .mud-input-control-input-container .mud-input .mud-select-input {
+        padding: 2px 0px 0px 10px;
+    }
+
+    .size-mud-select .mud-select .mud-typography-body1 {
+        font-size: 12px;
+        font-weight: 400;
+        line-height: 14.63px;
+        color: #707070;
+    }
+
+.size-mud-select .mud-input-outlined-border {
+    border-radius: 4px;
+    border: 1px solid #DDDDDD;
+}
+
+.size-mud-select-condition .mud-input-label {
+    margin-bottom: 5px !important;
+}
+
+.size-mud-select-condition .mud-select {
+    width: 184px;
+    height: 31px;
+}
+
+.size-mud-select-condition .mud-select .mud-input-control-input-container .mud-input {
+    width: 184px;
+    height: 31px;
+}
+
+    .size-mud-select-condition .mud-select .mud-input-control-input-container .mud-input .mud-select-input {
+        padding: 2px 0px 0px 10px;
+    }
+
+.size-mud-select-condition .mud-select .mud-input-control-input-container .mud-input-slot {
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 14.63px;
+    color: #707070;
+}
+
+
+.size-mud-select-condition .mud-input-outlined-border {
+    border-radius: 4px;
+    border: 1px solid #DDDDDD;
+}
+
+.size-mud-select-contact-type .mud-input-label {
+    margin-bottom: 5px !important;
+}
+
+.size-mud-select-contact-type .mud-select {
+    width: 380px;
+    height: 31px;
+}
+
+    .size-mud-select-contact-type .mud-select .mud-input-control-input-container .mud-input {
+        width: 380px;
+        height: 31px;
+    }
+
+.size-mud-select-contact-type .mud-select .mud-input-control-input-container .mud-input .mud-select-input {
+    padding: 2px 0px 0px 10px;
+}
+
+.size-mud-select-contact-type .mud-select .mud-input-control-input-container .mud-input-slot {
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 14.63px;
+    color: #707070;
+}
+
+.size-mud-select-contact-type .mud-input-outlined-border {
+    border-radius: 4px;
+    border: 1px solid #DDDDDD;
+}
+.status-popover .mud-typography-body2 .mud-typography-body1 {
+    font-size: 12px !important;
+    font-weight: 400;
+    line-height: 14.63px;
+    color: #707070;
+}
+
+.status-popover .mud-typography-body2 {
+    font-size: 12px !important;
+    font-weight: 400;
+    line-height: 14.63px;
+    color: #707070;
+}
+
+.status-popover .mud-typography-body1 {
+    font-size: 12px !important;
+    font-weight: 400;
+    line-height: 14.63px;
+    color: #707070;
+}
+
+.style-check {
+    width: 200px;
+}
+
+.align-vertical-content {
+    display: flex;
+    align-items: center;
+}
+
+.style-check .mud-input-control-input-container {
+    width: 200px;
+}
+
+.style-check .mud-icon-root {
+    color: #DDDDDD;
+    width: 20px;
+}
+
+.style-check .mud-icon-button {
+    padding: 0px 10px 0px 0px !important;
+}
+
+.style-check .mud-checkbox-true .mud-icon-root {
+    color: #293E8C;
+}
+
+.enhanced-mud-select-custom .mud-input-control-input-container {
+    height: 31px;
+}
+
+    .enhanced-mud-select-custom .mud-input-control-input-container .mud-input-outlined-border {
+        height: 31px !important;
+    }
+
+    .enhanced-mud-select-custom .mud-input-control-input-container .mud-input {
+        padding-left: 10px !important;
+    }
+
+/* Estilo del menú desplegable */
+.enhanced-select-popup {
+    /*    z-index: 1000 !important; 
+    position:absolute !important;
+    top:50px !important;*/
+}
+
+    .enhanced-select-popup .mud-list {
+        position: relative !important; /* Evita que empuje otros elementos */
+    }
+
+    .enhanced-select-popup .mud-input-control-input-container {
+        height: 31px;
+    }
+
+        .enhanced-select-popup .mud-input-control-input-container .mud-input {
+            height: 31px;
+        }
+
+            .enhanced-select-popup .mud-input-control-input-container .mud-input .mud-icon-root {
+                width: 16px;
+                color: #707070;
+            }
+
+            .enhanced-select-popup .mud-input-control-input-container .mud-input .mud-input-root {
+                padding: 5px 14px 5px 0px;
+                font-size: 12px;
+                color: #707070;
+                font-weight: 400 !important;
+                line-height: 14.63px !important;
+            }
+
+    .enhanced-select-popup .mud-list .mud-list-item {
+        padding: 8px 14px 8px 10px;
+    }
+
+        .enhanced-select-popup .mud-list .mud-list-item .mud-list-item-text .mud-typography-body1 {
+            font-size: 12px;
+            color: #707070;
+            font-weight: 400 !important;
+            line-height: 14.63px !important;
+        }
+
+.enhanced-mud-select-custom .mud-input-control-input-container .mud-input .mud-input-slot .mud-typography-body1 {
+    padding: 0px;
+    font-weight: 400 !important;
+    font-size: 12px !important;
+    line-height: 14.63px !important;
+    color: #707070 !important;
+}
+
+.enhanced-mud-select-custom .mud-input-control-input-container .mud-input .mud-input-slot {
+    padding: 8px 12px 8px 12px;
+    font-weight: 400 !important;
+    font-size: 12px !important;
+    line-height: 14.63px !important;
+    color: #707070 !important;
+}
+
+.enhanced-mud-select-custom .mud-input-control-input-container .mud-input .mud-button-root {
+    padding: 0px;
+}
+
+.margin-bottom-item {
+    margin-bottom: 5px !important;
+}
+
+.panel-expand .mud-expand-panel-header {
+    padding: 0px !important;
+    margin-top: 25px;
+}
+
+.panel-expand .mud-collapse-container .mud-expand-panel-content {
+    padding: 0px !important;
+}
+
+.title-expand {
+    font-weight: 600 !important;
+    font-size: 16px !important;
+    line-height: 19.5px !important;
+    color: #343030;
+}
+
+.btn-save {
+    width: 99px;
+    height: 31px;
+    border-radius: 30px !important;
+    padding: 8px 24px !important;
+    background: #293E8C;
+    text-transform: none !important;
+}
+
+.mud-button-filled {
+    box-shadow: none !important;
+}
+
+.btn-save .mud-button-label {
+    font-weight: 700;
+    font-size: 12px;
+    line-height: 14.63px;
+    text-align: center;
+    color: #FFFFFF;
+}
+
+.btn-cancel {
+    width: 104px;
+    height: 31px;
+    border-radius: 30px !important;
+    padding: 8px 24px !important;
+    border: 1px solid #293E8C !important;
+    background: #FFFFFF;
+    text-transform: none !important;
+}
+
+    .btn-cancel .mud-button-label {
+        font-weight: 700;
+        font-size: 12px;
+        line-height: 14.63px;
+        text-align: center;
+        color: #293E8C;
+    }
+
+.btn-add-Contact {
+    width: 140px;
+    height: 24px;
+    border: 1px solid transparent !important;
+    background: transparent;
+    gap: 8px;
+    padding: 5px 4px !important;
+    text-transform: none !important;
+}
+
+.btn-delete {
+    min-width: 20px !important;
+    height: 24px;
+    border: 1px solid transparent !important;
+    background: transparent !important;
+    padding: 0px !important;
+    text-transform: none !important;
+}
+
+    .btn-delete .mud-button-label .mud-button-icon-start {
+        margin: 0px;
+    }
+
+.btn-add-Contact .mud-button-label {
+    font-weight: 400;
+    font-size: 12px;
+    line-height: 14.63px;
+    text-align: center;
+    color: #293E8C;
+    justify-content: flex-start;
+}
+
+.title-style {
+    margin: 5px 0px !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    color: #343030 !important;
+}
+
+.style-text-contact {
+    font-weight: 600 !important;
+    font-size: 16px !important;
+    line-height: 19.5px !important;
+    color: #343030 !important;
+    margin: 25px 0px;
+}
+
+    .style-text-contact .mud-typography-body1 {
+        font-weight: 400 !important;
+        font-size: 12px !important;
+        line-height: 14.63px !important;
+        color: #707070 !important;
+    }
+
+.container-head-newContact {
+    display: flex !important;
+    align-items: center;
+    gap: 8px;
+    padding: 0px !important;
+}
+
+.style-switch .mud-switch-span-medium.mud-switch-span{
+    width:50px;
+}
+
+.style-switch .mud-switch-button {
+    width: 15px;
+    height: 20px;
+}
+
+/*Modificacion de estilos genericos en Textos */
+.style-text {
+    font-weight: 400 !important;
+    font-size: 12px !important;
+    line-height: 14.63px !important;
+    MudLink color: #707070 !important;
+}
+
+    .style-text .mud-typography-body1 {
+        font-weight: 400 !important;
+        font-size: 12px !important;
+        line-height: 14.63px !important;
+        color: #707070 !important;
+    }
+
+.style-text-configuration {
+    font-weight: 400 !important;
+    font-size: 10px !important;
+    line-height: 135% !important;
+    color: #707070 !important;
+}
+
+    .style-text-configuration .mud-typography-body1 {
+        font-weight: 400 !important;
+        font-size: 10px !important;
+        line-height: 135% !important;
+        color: #707070 !important;
+    }
+
+.style-text-configuration-link {
+    font-weight: 400 !important;
+    font-size: 10px !important;
+    line-height: 135% !important;
+    color: #293E8C !important;
+    text-decoration: underline !important;
+}
+/*Modificacion de estilos genericos en MudGrid - MudItem*/
+.mud-grid-merchant {
+    margin-top: 5px !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center !important;
+    gap: 10px; /* Espacio entre los MudItem */
+}
+
+.grid-justify-start{
+    align-items:start !important;
+}
+
+.mud-grid-merchant .item-custom {
+    width: auto; /* Se ajusta al contenido */
+    height: auto;
+    white-space: nowrap; /* Evita que el texto se rompa en varias líneas */
+}
+
+.mud-grid-item-merchant {
+    padding: 0px !important;
+}
+
+/*Modificacion de estilos genericos en MudTextField*/
+.style-mud-input {
+    margin-top: 5px !important;
+}
+
+.style-mud-input .mud-input-control-input-container .mud-input {
+    padding: 8px 12px 8px 12px;
+    font-weight: 400 !important;
+    font-size: 12px !important;
+    line-height: 14.63px !important;
+    color: #707070 !important;
+}
+
+.style-mud-input .mud-input-control-input-container .mud-input .mud-input-root {
+    padding: 0px;
+    padding-inline-start:0px;
+}
+
+.style-mud-input .mud-input-control-input-container .mud-input .mud-input-outlined-border {
+    border-radius: 4px;
+    border: 1px solid #DDDDDD !important;
+}
+
+.style-mud-input-readonly {
+    margin-top: 5px !important;
+}
+
+.style-mud-input-readonly .mud-input-control-input-container .mud-input {
+    padding: 0px;
+    font-weight: 400 !important;
+    font-size: 12px !important;
+    line-height: 14.63px !important;
+    color: #707070 !important;
+}
+
+.style-mud-input-readonly .mud-input-control-input-container .mud-input .mud-input-root {
+    padding: 0px;
+}
+
+.style-mud-input-readonly .mud-input-control-input-container .mud-input .mud-input-outlined-border {
+    border-radius: 4px;
+    border: 1px solid #DDDDDD;
+}
+
+.style-text-area  {
+    margin-right:24px !important;
+}
+
+.style-text-area .mud-input.mud-input-outlined .mud-input-outlined-border {
+    border-radius: 4px;
+    border-color: #DDDDDD !important;
+}
+
+.style-text-area .mud-input .mud-input-slot {
+    font-weight: 400 !important;
+    font-size: 12px !important;
+    line-height: 14.63px !important;
+    color: #707070 !important;
+}
+
+.style-text-area .mud-input > textarea.mud-input-root-outlined {
+    padding: 8px 12px 8px 12px;
+    mask-image:none;
+}

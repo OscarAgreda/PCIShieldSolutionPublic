@@ -1,0 +1,256 @@
+@* MerchantEvidenceChildTab.razor *@
+@page "/MerchantEvidenceChildTab"
+@using PCIShield.BlazorMauiShared.Models.Merchant
+@using LanguageExt
+@using LanguageExt.Common
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.SignalR.Client
+@using MudBlazor
+@using Severity = MudBlazor.Severity
+@using FluentValidation
+@using System.Reactive.Threading.Tasks
+@using PCIShield.BlazorAdmin.Client.Services
+@using System.Reactive.Disposables
+@inject ILogger<MerchantEvidenceChildTab> _logger
+@inject IStringLocalizer<MerchantEvidenceChildTab> Localizer
+@inject ISnackbar Snackbar
+@inject IHttpMerchantClientService _merchantHttpService
+@inject IDialogService DialogService
+@namespace PCIShield.BlazorAdmin.Client.Pages.Merchant
+
+
+
+<MudPaper Elevation="1" Class="pa-4">
+    <MudTable Items="@Evidences" Hover="true" Striped="true" Virtualize="true" RowsPerPage="20">
+        <HeaderContent>
+            <MudTh>@Localizer["EvidenceCode"]</MudTh>
+            <MudTh>@Localizer["EvidenceTitle"]</MudTh>
+            <MudTh>@Localizer["EvidenceType"]</MudTh>
+            <MudTh>@Localizer["CollectedDate"]</MudTh>
+            <MudTh>@Localizer["FileHash"]</MudTh>
+            <MudTh>@Localizer["StorageUri"]</MudTh>
+            <MudTh>@Localizer["CreatedAt"]</MudTh>
+            <MudTh>@Localizer["UpdatedAt"]</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>@context.EvidenceCode</MudTd>
+            <MudTd>@context.EvidenceTitle</MudTd>
+            <MudTd>@context.EvidenceType</MudTd>
+            <MudTd>@context.CollectedDate</MudTd>
+            <MudTd>@context.FileHash</MudTd>
+            <MudTd>@context.StorageUri</MudTd>
+            <MudTd>@context.CreatedAt</MudTd>
+            <MudTd>@context.UpdatedAt</MudTd>
+       @*      <MudTd>
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Primary"
+                           OnClick="@(EventUtil.AsNonRenderingEventHandler(() => EditChildItemEvidence(context)))">@Localizer["Edit"]</MudButton>
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Error"
+                           OnClick="@(EventUtil.AsNonRenderingEventHandler(() => DeleteChildItemEvidence(context)))">@Localizer["Delete"]</MudButton>
+            </MudTd> *@
+        </RowTemplate>
+    </MudTable>
+@*     <MudButton Variant="Variant.Outlined" Color="Color.Primary" Class="mt-4"
+               OnClick="@AddChildItemEvidence">@Localizer["Add Evidence"]</MudButton> *@
+</MudPaper>
+
+<MudOverlay Visible="@IsLoading"
+            DarkBackground="true"
+            ZIndex="9999"
+            AutoClose="false">
+    <MudProgressCircular Color="Color.Primary"
+                         Indeterminate="true"
+                         Size="Size.Large" />
+</MudOverlay>
+
+@code {
+
+    [Parameter]
+    public Guid MerchantId { get; set; }
+
+    [Parameter] public string _evidenceEditingUserId { get; set; }
+
+    [Parameter]
+    public List<EvidenceDto> Evidences { get; set; } = new();
+
+
+    [Parameter]
+    public bool IsLoading { get; set; }
+
+    [Parameter]
+    public EventCallback<(Exception ex, ErrorHandlingService.ClientOperationContext context)> OnError { get; set; }
+
+
+
+    [Parameter]
+    public EventCallback<EvidenceDto> OnEvidenceAdded { get; set; }
+
+
+    [Parameter]
+    public EventCallback<EvidenceDto> OnEvidenceUpdated { get; set; }
+
+
+    [Parameter]
+    public EventCallback<EvidenceDto> OnEvidenceDeleted { get; set; }
+
+    private IValidator<EvidenceDto> _updateEvidenceValidator;
+
+    private readonly CompositeDisposable _disposables = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _updateEvidenceValidator = new InlineValidator<EvidenceDto>();
+        await base.OnInitializedAsync();
+    }
+
+
+    protected void RefreshUi()
+    {
+        //InvokeAsync(StateHasChanged);
+    }
+
+
+
+
+    private async Task AddChildItemEvidence()
+    {
+        await TryAsync(async () =>
+        {
+            var newEvidence = new EvidenceDto
+                {
+                    MerchantId = MerchantId,
+                CreatedAt = DateTime.UtcNow,
+                    CreatedBy = Guid.Parse(_evidenceEditingUserId),
+                };
+            var validationResult = await _updateEvidenceValidator.ValidateAsync(newEvidence);
+            if (!validationResult.IsValid)
+            {
+                var errors = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage));
+                var ex = new Exception(errors);
+                await OnError.InvokeAsync((ex, ErrorHandlingService.ClientOperationContext.EvidenceCreate));
+                return;
+            }
+            var response = await _merchantHttpService.CreateEvidenceAsync(newEvidence).ToObservable().ToListObservable().ToTryOption().ToAsync().ToTry();
+            await response.Match(
+                Succ: result =>
+                    result.Match(
+                        Some: async backResult =>
+                        {
+                            Evidences.Add(backResult.Evidence);
+                        },
+                        None: () =>
+                        {
+                            Snackbar.Add(Localizer["Failed to create evidence"], Severity.Error);
+                            return Task.CompletedTask;
+                        }
+                    ),
+                Fail: ex =>
+                {
+                    _logger.LogError(ex, "Error creating evidence");
+                    Snackbar.Add(Localizer["Error creating evidence"], Severity.Error);
+                    return Task.CompletedTask;
+                }
+            );
+        });
+    }
+
+
+    private async Task EditChildItemEvidence(EvidenceDto item)
+    {
+        try
+        {
+            var validationResult = await _updateEvidenceValidator.ValidateAsync(item);
+            if (!validationResult.IsValid)
+            {
+                var errors = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage));
+                var ex = new Exception(errors);
+                await OnError.InvokeAsync((ex, ErrorHandlingService.ClientOperationContext.EvidenceUpdate));
+                return;
+            }
+            EvidenceDto? response = await _merchantHttpService.UpdateEvidenceAsync(item);
+            if (response != null)
+            {
+                var index = Evidences.FindIndex(x => x.EvidenceId == item.EvidenceId);
+                if (index != -1)
+                {
+                    Evidences[index] = response;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await OnError.InvokeAsync((ex, ErrorHandlingService.ClientOperationContext.EvidenceCreate));
+        }
+    }
+
+    private async Task<bool> ShowDeleteConfirmDialog()
+    {
+        bool? result = await DialogService.ShowMessageBox("Confirm Delete", "Are you sure you want to delete this item?", yesText: "Delete", cancelText: "Cancel");
+        if (result == true)
+        {
+            return await Task.FromResult(true);
+        }
+        else
+        {
+            return await Task.FromResult(false);
+        }
+    }
+
+    private async Task DeleteChildItemEvidence(EvidenceDto evidence)
+    {
+        try
+        {
+            var dialogResult = await ShowDeleteConfirmDialog();
+            if (dialogResult)
+            {
+                await TryAsync(async () =>
+                {
+                    var validationResult = await _updateEvidenceValidator.ValidateAsync(evidence);
+                    if (!validationResult.IsValid)
+                    {
+                        var errors = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage));
+                        var ex = new Exception(errors);
+                        await OnError.InvokeAsync((ex, ErrorHandlingService.ClientOperationContext.EvidenceDelete));
+                        return;
+                    }
+                    await _merchantHttpService
+                        .DeleteEvidenceAsync(evidence.EvidenceId)
+                        .ToObservable()
+                        .ToListObservable()
+                        .ToTryOption()
+                        .ToAsync()
+                        .ToTry()
+                        .Match(
+                            Succ: async _ =>
+                            {
+                                Evidences.Remove(evidence);
+                            },
+                            Fail: ex =>
+                            {
+                                _logger.LogError(ex, "Failed to delete evidence");
+                                Snackbar.Add(Localizer["Failed to delete evidence"], Severity.Error);
+                                return Task.CompletedTask;
+                            }
+                        );
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+                        await OnError.InvokeAsync((ex, ErrorHandlingService.ClientOperationContext.EvidenceDelete));
+        }
+    }
+
+
+
+
+    public async ValueTask DisposeAsync()
+    {
+        _disposables.Dispose();
+    }
+
+
+}
+
+

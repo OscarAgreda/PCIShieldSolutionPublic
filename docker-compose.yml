@@ -1,0 +1,8 @@
+version: '3.4'
+
+services:
+  pciShield.api:
+    image: ${DOCKER_REGISTRY-}pciShieldapi
+    build:
+      context: .
+      dockerfile: src/PCIShield.Api/Dockerfile

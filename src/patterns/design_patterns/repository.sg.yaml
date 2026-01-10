@@ -1,0 +1,13 @@
+rule:
+  pattern: |
+    interface I$ENTITY$Repository {
+      $$$
+    }
+  kind: interface_declaration
+  
+# This rule matches Repository pattern interface declarations like:
+# - ICustomerRepository
+# - IInvoiceRepository
+#
+# The $ENTITY placeholder will match the entity name
+# The $$$ placeholder will match the interface body

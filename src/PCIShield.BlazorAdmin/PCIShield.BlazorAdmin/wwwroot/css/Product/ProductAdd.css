@@ -1,0 +1,80 @@
+﻿.size-mud-select-product .mud-input-label {
+    margin-bottom: 5px !important;
+}
+
+.size-mud-select-product .mud-select {
+    width: 380px;
+    height: 31px;
+}
+
+    .size-mud-select-product .mud-select .mud-input-control-input-container .mud-input {
+        width: 380px;
+        height: 31px;
+    }
+
+        .size-mud-select-product .mud-select .mud-input-control-input-container .mud-input .mud-select-input {
+            padding: 2px 0px 0px 10px;
+        }
+
+    .size-mud-select-product .mud-select .mud-input-control-input-container .mud-input-slot {
+        font-size: 12px;
+        font-weight: 400;
+        line-height: 14.63px;
+        color: #707070;
+    }
+
+
+.size-mud-select-product .mud-input-outlined-border {
+    border-radius: 4px;
+    border: 1px solid #DDDDDD;
+}
+
+.Product-padding-0 .mud-button-root {
+    padding: 0px !important;
+    margin-right: 7px;
+}
+
+.Product-padding-0 .mud-radio {
+    margin-right: 14px;
+}
+
+.Service-padding-0 .mud-button-root {
+    padding: 0px !important;
+    margin-right: 7px;
+}
+
+
+.table-taxes .mud-table-sort-label {
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 14.63px;
+    color: #707070;
+    justify-content: space-between !important;
+    width: 100%;
+    display: flex;
+    align-items: center;
+}
+
+.table-taxes .mud-table-body .mud-typography-body1 {
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 14.63px;
+    color: #707070;
+    display: flex;
+    align-items: center;
+}
+
+.table-taxes .mud-table-body .mud-table-cell {
+    border-bottom: none;
+} 
+
+.table-taxes .mud-table-body .mud-table-cell .d-flex {
+    padding:5px !important;
+} 
+.table-taxes .mud-table-sort-label .mud-icon-root{
+    opacity:1;
+}
+
+.table-taxes .mud-table-cell {
+    padding:0px !important; 
+}

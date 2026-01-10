@@ -1,0 +1,14 @@
+@PCIShield.Api_HostAddress = https://localhost:52509
+
+GET {{PCIShield.Api_HostAddress}}/api/accountv2/ListUsers
+
+###
+
+POST {{PCIShield.Api_HostAddress}}/api/consultants/pullCurrentConsultantConversation
+Content-Type: application/json
+
+{
+  //PullCurrentConsultantConversationRequest
+}
+
+###

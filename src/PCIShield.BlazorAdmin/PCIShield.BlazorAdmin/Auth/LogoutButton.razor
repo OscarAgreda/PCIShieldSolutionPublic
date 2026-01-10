@@ -1,0 +1,65 @@
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.JSInterop
+@using MudBlazor
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+@inject ILogger<LogoutButton> Logger
+@inject IJSRuntime JSRuntime
+
+<AuthorizeView>
+    <Authorized>
+        <MudMenu Icon="@Icons.Material.Filled.AccountCircle" Color="Color.Inherit" Direction="Direction.Bottom" OffsetY="true">
+            <MudMenuItem>
+                <div class="d-flex">
+                    <MudIcon Icon="@Icons.Material.Filled.Person" Class="mr-2" />
+                    <span>@context.User.Identity?.Name</span>
+                </div>
+            </MudMenuItem>
+            <MudDivider />
+            <MudMenuItem OnClick="LogoutAsync">
+                <div class="d-flex">
+                    <MudIcon Icon="@Icons.Material.Filled.Logout" Class="mr-2" />
+                    <span>Logout</span>
+                </div>
+            </MudMenuItem>
+        </MudMenu>
+    </Authorized>
+    <NotAuthorized>
+        <MudButton OnClick="NavigateToLogin" Variant="Variant.Text" Color="Color.Inherit">
+            Login
+        </MudButton>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private async Task LogoutAsync()
+    {
+        try
+        {
+            Logger.LogInformation("User initiating logout");
+            
+            // Clear localStorage tokens (for WASM client)
+            Logger.LogInformation("Clearing localStorage tokens");
+            await JSRuntime.InvokeVoidAsync("localStorage.removeItem", "authToken");
+            await JSRuntime.InvokeVoidAsync("localStorage.removeItem", "refreshToken");
+            await JSRuntime.InvokeVoidAsync("localStorage.removeItem", "userId");
+            Logger.LogInformation("localStorage cleared");
+            
+            // Navigate to logout page with force reload
+            Logger.LogInformation("Navigating to logout page");
+            NavigationManager.NavigateTo("/Auth/Logout", forceLoad: true);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error during logout");
+            Snackbar.Add("Logout failed", Severity.Error);
+            // Force navigate even on error
+            NavigationManager.NavigateTo("/Auth/Logout", forceLoad: true);
+        }
+    }
+
+    private void NavigateToLogin()
+    {
+        NavigationManager.NavigateTo("/Auth/Login", true);
+    }
+}

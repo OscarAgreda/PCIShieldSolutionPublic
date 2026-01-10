@@ -1,0 +1,384 @@
+﻿###################################################
+# MERGED .editorconfig with Additional Roslynator
+# and suggestions for advanced pattern usage
+###################################################
+
+root = true
+
+#############################
+# All files
+#############################
+[*]
+indent_style = space
+
+# Conflicting values resolved: we chose "false" from Version 1
+insert_final_newline = false
+# (Version2/3 had "true")
+
+# Chose tab_width=4 from Version 1
+tab_width = 4
+# (Version2 used 2, Version3 was inconsistent)
+
+charset = utf-8-bom
+
+#############################
+# XML files
+#############################
+[*.xml]
+indent_size = 2
+
+#############################
+# Additional project file settings from v2
+#############################
+[*.{csproj,vbproj,vcxproj,vcxproj.filters,proj,projitems,shproj}]
+indent_size = 2
+
+[*.{props,targets,ruleset,config,nuspec,resx,vsixmanifest,vsct}]
+indent_size = 2
+
+#############################
+# C# files
+#############################
+[*.cs]
+
+# Conflict: chosen 4 from Version1 vs. 2 from Version2
+indent_size = 4
+
+# Keep from Version1
+end_of_line = crlf
+
+###################################################
+# .NET Coding Conventions
+###################################################
+
+file_header_template = unset
+
+# Import directives
+dotnet_separate_import_directive_groups = true
+dotnet_sort_system_directives_first = true
+
+# this. and Me. preferences
+dotnet_style_qualification_for_event = false:silent
+dotnet_style_qualification_for_field = false:silent
+dotnet_style_qualification_for_method = false:silent
+dotnet_style_qualification_for_property = false:silent
+
+# Language keywords vs BCL types
+dotnet_style_predefined_type_for_locals_parameters_members = true:silent
+dotnet_style_predefined_type_for_member_access = true:silent
+
+# Parentheses preferences
+dotnet_style_parentheses_in_arithmetic_binary_operators = always_for_clarity:silent
+dotnet_style_parentheses_in_relational_binary_operators = always_for_clarity:silent
+dotnet_style_parentheses_in_other_binary_operators = always_for_clarity:silent
+dotnet_style_parentheses_in_other_operators = never_if_unnecessary:silent
+
+# Accessibility modifiers
+dotnet_style_require_accessibility_modifiers = for_non_interface_members:silent
+
+# Field preferences
+dotnet_style_readonly_field = true:warning
+# (Other versions used :suggestion)
+
+# Expression-level preferences
+dotnet_style_coalesce_expression = true:suggestion
+dotnet_style_collection_initializer = true:suggestion
+dotnet_style_explicit_tuple_names = true:suggestion
+dotnet_style_null_propagation = true:suggestion
+dotnet_style_object_initializer = true:suggestion
+dotnet_style_operator_placement_when_wrapping = beginning_of_line
+dotnet_style_prefer_auto_properties = true:suggestion
+dotnet_style_prefer_compound_assignment = true:suggestion
+dotnet_style_prefer_conditional_expression_over_assignment = true:suggestion
+dotnet_style_prefer_conditional_expression_over_return = true:suggestion
+dotnet_style_prefer_inferred_anonymous_type_member_names = true:suggestion
+dotnet_style_prefer_inferred_tuple_names = true:suggestion
+dotnet_style_prefer_is_null_check_over_reference_equality_method = true:suggestion
+dotnet_style_prefer_simplified_boolean_expressions = true:suggestion
+dotnet_style_prefer_simplified_interpolation = true:suggestion
+
+dotnet_code_quality_unused_parameters = all:suggestion
+dotnet_remove_unnecessary_suppression_exclusions = none
+
+###################################################
+# C# var preferences
+###################################################
+csharp_style_var_elsewhere = false:silent
+csharp_style_var_for_built_in_types = false:silent
+csharp_style_var_when_type_is_apparent = false:silent
+
+###################################################
+# Expression-bodied members
+###################################################
+csharp_style_expression_bodied_accessors = true:silent
+csharp_style_expression_bodied_constructors = false:silent
+csharp_style_expression_bodied_indexers = true:silent
+csharp_style_expression_bodied_lambdas = true:suggestion
+csharp_style_expression_bodied_local_functions = false:silent
+csharp_style_expression_bodied_methods = false:silent
+csharp_style_expression_bodied_operators = false:silent
+csharp_style_expression_bodied_properties = true:silent
+
+###################################################
+# Pattern matching
+###################################################
+csharp_style_pattern_matching_over_as_with_null_check = true:suggestion
+csharp_style_pattern_matching_over_is_with_cast_check = true:suggestion
+csharp_style_prefer_not_pattern = true:suggestion
+csharp_style_prefer_pattern_matching = true:silent
+csharp_style_prefer_switch_expression = true:suggestion
+
+###################################################
+# Null-checking preferences
+###################################################
+csharp_style_conditional_delegate_call = true:suggestion
+
+###################################################
+# Modifier preferences
+###################################################
+csharp_prefer_static_local_function = true:warning
+csharp_preferred_modifier_order = public,private,protected,internal,static,extern,new,virtual,abstract,sealed,override,readonly,unsafe,volatile,async:silent
+
+###################################################
+# Code-block preferences
+###################################################
+csharp_prefer_braces = true:silent
+csharp_prefer_simple_using_statement = true:suggestion
+csharp_prefer_simple_default_expression = true:suggestion
+csharp_style_deconstructed_variable_declaration = true:suggestion
+csharp_style_inlined_variable_declaration = true:suggestion
+csharp_style_pattern_local_over_anonymous_function = true:suggestion
+csharp_style_prefer_index_operator = true:suggestion
+csharp_style_prefer_range_operator = true:suggestion
+csharp_style_throw_expression = true:suggestion
+csharp_style_unused_value_assignment_preference = discard_variable:suggestion
+csharp_style_unused_value_expression_statement_preference = discard_variable:silent
+csharp_using_directive_placement = outside_namespace:silent
+
+###################################################
+# C# Formatting Rules
+###################################################
+csharp_new_line_before_catch = true
+csharp_new_line_before_else = true
+csharp_new_line_before_finally = true
+csharp_new_line_before_members_in_anonymous_types = true
+csharp_new_line_before_members_in_object_initializers = true
+csharp_new_line_before_open_brace = all
+csharp_new_line_between_query_expression_clauses = true
+
+csharp_indent_block_contents = true
+csharp_indent_braces = false
+csharp_indent_case_contents = true
+csharp_indent_case_contents_when_block = true
+csharp_indent_labels = one_less_than_current
+csharp_indent_switch_labels = true
+
+###################################################
+# Spacing preferences
+###################################################
+csharp_space_after_cast = false
+csharp_space_after_colon_in_inheritance_clause = true
+csharp_space_after_comma = true
+csharp_space_after_dot = false
+csharp_space_after_keywords_in_control_flow_statements = true
+csharp_space_after_semicolon_in_for_statement = true
+csharp_space_around_binary_operators = before_and_after
+csharp_space_around_declaration_statements = false
+csharp_space_before_colon_in_inheritance_clause = true
+csharp_space_before_comma = false
+csharp_space_before_dot = false
+csharp_space_before_open_square_brackets = false
+csharp_space_before_semicolon_in_for_statement = false
+csharp_space_between_empty_square_brackets = false
+csharp_space_between_method_call_empty_parameter_list_parentheses = false
+csharp_space_between_method_call_name_and_opening_parenthesis = false
+csharp_space_between_method_call_parameter_list_parentheses = false
+csharp_space_between_method_declaration_empty_parameter_list_parentheses = false
+csharp_space_between_method_declaration_name_and_open_parenthesis = false
+csharp_space_between_method_declaration_parameter_list_parentheses = false
+csharp_space_between_parentheses = false
+csharp_space_between_square_brackets = false
+
+csharp_preserve_single_line_blocks = true
+csharp_preserve_single_line_statements = true
+
+###################################################
+# Additional naming styles from previous merges
+###################################################
+[*.{cs,vb}]
+dotnet_naming_rule.types_and_namespaces_should_be_pascalcase.severity = suggestion
+dotnet_naming_rule.types_and_namespaces_should_be_pascalcase.symbols = types_and_namespaces
+dotnet_naming_rule.types_and_namespaces_should_be_pascalcase.style = pascalcase
+
+# ... (Keep all your other dotnet_naming_rule.* and dotnet_naming_symbols.* from the merged file.)
+# e.g.:
+dotnet_naming_rule.interface_should_be_ipascalcase.severity = suggestion
+dotnet_naming_rule.interface_should_be_ipascalcase.symbols = interfaces
+dotnet_naming_rule.interface_should_be_ipascalcase.style = ipascalcase
+
+# ... etc. ...
+dotnet_naming_style.pascalcase.capitalization = pascal_case
+dotnet_naming_style.ipascalcase.capitalization = pascal_case
+
+###################################################
+# StyleCop / Roslyn / ReSharper / Sonar / etc.
+###################################################
+# Example merges from previous versions
+dotnet_diagnostic.SA1600.severity = none
+dotnet_diagnostic.SA1602.severity = none
+dotnet_diagnostic.SA1633.severity = none
+dotnet_diagnostic.SA1101.severity = none
+dotnet_diagnostic.SA1309.severity = none
+dotnet_diagnostic.SA1010.severity = none
+dotnet_diagnostic.SA1502.severity = none
+dotnet_diagnostic.SA1201.severity = none
+dotnet_diagnostic.SA1516.severity = none
+dotnet_diagnostic.SA0001.severity = none
+dotnet_diagnostic.SA1204.severity = none
+dotnet_diagnostic.SA1401.severity = none
+dotnet_diagnostic.SA1313.severity = none
+dotnet_diagnostic.SA1518.severity = none
+dotnet_diagnostic.SA1402.severity = none
+dotnet_diagnostic.SA1601.severity = none
+dotnet_diagnostic.IDE1006.severity = none
+dotnet_diagnostic.SA1615.severity = none
+dotnet_diagnostic.IDE0003.severity = none
+dotnet_diagnostic.RCS1170.severity = none
+dotnet_diagnostic.IDE0066.severity = none
+dotnet_diagnostic.IDE0011.severity = none
+dotnet_diagnostic.IDE0066.CS8602 = none
+
+
+# Add any additional StyleCop, CAxxxx, Sxxxx, or R# rules similarly.
+
+resharper_arrange_this_qualifier_highlighting = none
+resharper_enforce_if_statement_braces_highlighting = none
+
+[*.vb]
+visual_basic_preferred_modifier_order = Partial,Default,Private,Protected,Public,Friend,NotOverridable,Overridable,MustOverride,Overloads,Overrides,MustInherit,NotInheritable,Static,Shared,Shadows,ReadOnly,WriteOnly,Dim,Const,WithEvents,Widening,Narrowing,Custom,Async:suggestion
+
+[**/Migrations/*]
+generated_code = true
+
+###################################################
+# Roslynator-Specific Settings (EXAMPLES)
+###################################################
+# If you have Roslynator.Analyzers installed, you can set severities here:
+# Replace 'RCSXXXX' with real IDs from Roslynator docs that matter to you.
+
+# e.g., RCS1098: Use auto-implemented property
+dotnet_diagnostic.RCS1098.severity = suggestion
+
+# e.g., RCS1152: Use CoalesceExpression instead of if
+dotnet_diagnostic.RCS1152.severity = suggestion
+
+# e.g., RCS1188: Use pattern matching
+dotnet_diagnostic.RCS1188.severity = suggestion
+
+# e.g., RCS1197: Sync namespace with folder structure
+dotnet_diagnostic.RCS1197.severity = suggestion
+
+# If you want to treat some advanced refactorings as warnings:
+dotnet_diagnostic.RCSXXXX.severity = warning
+
+# (If there's a duplication rule in Roslynator you'd set it similarly.)
+# Note: ReSharper duplication detection isn't controlled by dotnet_diagnostic keys,
+# but by ReSharper settings or SSR patterns.
+
+###################################################
+# Custom Analyzers (EXAMPLE)
+###################################################
+# If you create a custom analyzer (e.g., 'MY001' detects repeated domain event handling),
+# you can raise it as a warning:
+
+dotnet_diagnostic.MY001.severity = warning
+# => "Detected repetitive domain event code. Suggest using Option<T> or generics."
+
+###################################################
+# 🔍 High-Signal Rules to Promote Quality
+###################################################
+
+# Enforce async methods to use await (avoid misleading "async void")
+dotnet_diagnostic.CS1998.severity = warning     # Async method lacks 'await'
+
+# Avoid returning Task without await — increases correctness
+dotnet_diagnostic.CA2007.severity = warning     # Do not directly await a Task without ConfigureAwait
+dotnet_diagnostic.CA2008.severity = warning     # Do not create tasks without passing a TaskScheduler
+
+# Guard clauses on public API inputs (great for DDD aggregates + application layer)
+dotnet_diagnostic.CA1062.severity = warning     # Validate arguments of public methods
+
+# Exception handling hygiene
+dotnet_diagnostic.CA1031.severity = warning     # Avoid catching general exception types
+
+# Leaky abstraction patterns (e.g., disposing injected services)
+dotnet_diagnostic.IDISP001.severity = warning   # Don't dispose injected services (from IDisposable analyzers)
+
+# Naming correctness (important for domain naming discipline)
+dotnet_diagnostic.S101.severity = warning       # Classes and methods should be PascalCase
+
+# Treat null-forgiving operator usage with caution
+dotnet_diagnostic.CS8602.severity = none     # Dereference of a possibly null reference
+dotnet_diagnostic.CS8618.severity = none     # Non-nullable field is uninitialized
+
+# Task-returning async method missing async keyword
+dotnet_diagnostic.ASYNC0001.severity = warning  # You likely want to await the returned Task (requires AsyncFixer)
+
+# (Optional) If you use AsyncFixer from NuGet:
+dotnet_diagnostic.AsyncFixer01.severity = warning  # Unnecessary async/await
+dotnet_diagnostic.AsyncFixer02.severity = warning  # Long-running blocking calls
+
+###################################################
+# 🚫 Disable Known Low-Value Warnings (Noise)
+###################################################
+
+# Remove redundant warnings from ReSharper or analyzers you already cover with test suites
+dotnet_diagnostic.IDE0051.severity = none   # Remove unused private members
+dotnet_diagnostic.IDE0052.severity = none   # Private fields that are assigned but never used
+dotnet_diagnostic.IDE0060.severity = none   # Remove unused parameter
+
+# Example suppression for "use var" noise
+dotnet_diagnostic.IDE0007.severity = none   # Use implicit type (var)
+
+###################################################
+# 🧠 Optional: DDD-Aware Suggestions (Your Domain Layer)
+###################################################
+
+# Encourage immutability in domain aggregates
+dotnet_diagnostic.RCS1170.severity = none   # Use read-only fields when possible
+
+# Discourage public setters in Value Objects
+dotnet_diagnostic.S2339.severity = suggestion     # Make fields readonly (Sonar)
+
+# Discourage empty catch blocks — reveal intent
+dotnet_diagnostic.S108.severity = warning         # Avoid empty catch blocks
+
+# Encourage meaningful equals overrides in VOs
+dotnet_diagnostic.CA1046.severity = warning       # Equals should be overridden
+
+# (Optional) Suggest simplifying null-checks for Option<T> friendly code
+dotnet_diagnostic.RCS1096.severity = suggestion   # Use null-coalescing or conditional access
+
+###################################################
+# 🔕 Oscar: Suppress Specific Roslyn Warnings
+# Reason: Design decisions acknowledged, warnings not actionable
+###################################################
+
+# Duplicate using directive (e.g., 'using System' appears more than once)
+dotnet_diagnostic.CS0105.severity = none
+
+# Possible null reference assignment
+dotnet_diagnostic.CS8601.severity = none
+dotnet_diagnostic.CS8604.severity = none
+
+# Dereference of a possibly null reference
+dotnet_diagnostic.CS8602.severity = none
+
+# Cannot convert null literal to non-nullable reference type
+dotnet_diagnostic.CS8625.severity = none
+
+# Non-nullable property must contain a value (e.g., constructor doesn't initialize it)
+dotnet_diagnostic.CS8618.severity = none
+
+# Possible null reference return
+dotnet_diagnostic.CS8603.severity = none

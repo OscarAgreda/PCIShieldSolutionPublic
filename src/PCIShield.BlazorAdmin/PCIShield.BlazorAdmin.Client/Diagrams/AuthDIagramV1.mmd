@@ -1,0 +1,174 @@
+flowchart TD
+    %% Current State Diagram - Based exclusively on the shared codebase
+    %% Main flow entry points
+    UserLogin[User Login Request] --> LoginCustomer
+    EmailConfirmReq[Email Confirmation Request] --> ConfirmEmail
+    
+    %% Authentication Controller Operations
+    subgraph AccountAuthV2Controller
+        LoginCustomer[login_customer Endpoint] --> CheckCredentials{Valid Credentials?}
+        CheckCredentials -->|No| ReturnUnauthorized[Return 401 Unauthorized]
+        CheckCredentials -->|Yes| Check2FA{Requires 2FA?}
+        
+        Check2FA -->|No| InternalLoginCustomer[Process Authentication]
+        Check2FA -->|Yes| Check2FACode{2FA Code Provided?}
+        Check2FACode -->|No| ReturnUnauthorized
+        Check2FACode -->|Yes| Validate2FA{Valid 2FA?}
+        Validate2FA -->|No| ReturnUnauthorized
+        Validate2FA -->|Yes| InternalLoginCustomer
+        
+        InternalLoginCustomer --> GenerateOneTimeCode[Generate One-Time Code]
+        GenerateOneTimeCode --> GetUserRoles[Get User Roles]
+        GetUserRoles --> FindCustomer[Find Customer By UserId]
+        
+        FindCustomer --> CustomerExists{Customer Found?}
+        CustomerExists -->|Yes| ExtractCustomerData[Extract Customer & Tenant IDs]
+        CustomerExists -->|No| HandleAuthFailure[Log Error and Return 401]
+        
+        ExtractCustomerData --> GeneratePCIShieldAppPowerUserId[Generate Power User ID]
+        GeneratePCIShieldAppPowerUserId --> PreLoadCustomerCache[Pre-Load Customer Cache]
+        PreLoadCustomerCache --> GenerateCustomClaims[Generate Claims From User/Roles]
+        
+        GenerateCustomClaims --> AddCustomClaims[Add Custom Claims]
+        AddCustomClaims --> GenerateJWT[Generate JWT Token]
+        GenerateJWT --> GenerateRefreshToken[Generate Refresh Token]
+        GenerateRefreshToken --> StoreRefreshToken[Store Refresh Token]
+        StoreRefreshToken --> UpdateUserStatus[Update User Status]
+        UpdateUserStatus --> ReturnTokenResponse[Return Authentication Response]
+        
+        %% Email Confirmation Flow
+        ConfirmEmail[ConfirmEmail Endpoint] --> FindUserByEmail[Find User By Email]
+        FindUserByEmail --> UserFound{User Found?}
+        UserFound -->|No| ReturnNotFound[Return 404 Not Found]
+        UserFound -->|Yes| ValidateToken[Validate Confirmation Token]
+        ValidateToken --> TokenValid{Token Valid?}
+        TokenValid -->|No| ReturnBadRequest[Return 400 Bad Request]
+        TokenValid -->|Yes| UpdateApplicationUser[Update Application User]
+        UpdateApplicationUser --> UpdateCustomerOrEmployee[Update Customer/Employee Status]
+        UpdateCustomerOrEmployee --> ReturnConfirmationSuccess[Return Confirmation Success]
+        
+        %% Logout Flow
+        LogoutCustomer[logout_customer Endpoint] --> FindUserById[Find User By ID]
+        FindUserById --> UserIdFound{User Found?}
+        UserIdFound -->|No| ReturnUnauthorizedLogout[Return 401 for Logout]
+        UserIdFound -->|Yes| ValidateLogoutRequest[Validate Logout Request]
+        ValidateLogoutRequest --> RequestValid{Request Valid?}
+        RequestValid -->|No| ReturnUnauthorizedLogout
+        RequestValid -->|Yes| InvalidateRefreshToken[Invalidate Refresh Token]
+        InvalidateRefreshToken --> UpdateUserLogoutStatus[Update User Logout Status]
+        UpdateUserLogoutStatus --> ReturnLogoutSuccess[Return Logout Success]
+    end
+    
+    %% Claims Generation Logic
+    subgraph ClaimsGeneration
+        GenerateClaimsForUser[GenerateClaimsForUser] --> CleanupExistingClaims[Remove Existing Special Claims]
+        CleanupExistingClaims --> CreateStandardClaims[Create Standard Claims]
+        CreateStandardClaims --> CheckConsultantRole{Is Employee?}
+        CheckConsultantRole -->|Yes| AddConsultantClaims[Add Employee Special Claims]
+        CheckConsultantRole -->|No| CheckCustomerRole{Is Customer?}
+        CheckCustomerRole -->|Yes| AddCustomerClaims[Add Customer Special Claims]
+        CheckCustomerRole -->|No| AddRoleClaims[Add Role Claims]
+        AddConsultantClaims --> AddRoleClaims
+        AddCustomerClaims --> AddRoleClaims
+    end
+    
+    %% JWT Token Generation
+    subgraph TokenGeneration
+        CreateJwtToken[Create JWT Security Token] --> ConfigureTokenOptions[Configure Token Options]
+        ConfigureTokenOptions --> SignToken[Sign with HMAC-SHA256]
+        SignToken --> SerializeToken[Serialize Token]
+    end
+    
+    %% Token Validation
+    subgraph TokenValidation
+        ValidateCustomerToken[validate_customer_token Endpoint] --> CheckTokenProvided{Token Provided?}
+        CheckTokenProvided -->|No| ReturnBadRequestToken[Return 400 Bad Request]
+        CheckTokenProvided -->|Yes| ConfigureValidationParams[Configure Validation Parameters]
+        ConfigureValidationParams --> AttemptTokenValidation[Attempt Token Validation]
+        AttemptTokenValidation --> ValidationResult{Result?}
+        ValidationResult -->|Success| ExtractTokenClaims[Extract Claims from Token]
+        ValidationResult -->|Expired| ReturnTokenExpired[Return Token Expired]
+        ValidationResult -->|Invalid| ReturnTokenInvalid[Return Token Invalid]
+        ExtractTokenClaims --> ValidateUserExists[Validate User Still Exists]
+        ValidateUserExists --> ReturnTokenStatus[Return Token Status]
+    end
+    
+    %% Authorization Policies 
+    subgraph AuthorizationPolicies
+        ConfigureAuthorization[Configure Authorization Policies] --> DefineCustomerOrConsultant[Define CustomerOrConsultant Policy]
+        DefineCustomerOrConsultant --> DefineCustomerReadPolicy[Define PCIShieldAppCustomerPolicyRead Policy]
+        DefineCustomerReadPolicy --> DefineCustomerWritePolicy[Define PCIShieldAppCustomerPolicyWrite Policy]
+        DefineCustomerWritePolicy --> DefineConsultantReadPolicy[Define PCIShieldAppConsultantPolicyRead Policy]
+        DefineConsultantReadPolicy --> DefineConsultantWritePolicy[Define PCIShieldAppConsultantPolicyWrite Policy]
+    end
+    
+    %% Role Management
+    subgraph RoleManagement
+        AddToRole[AddToRole Endpoint] --> CheckAdminRole{Has Admin Role?}
+        CheckAdminRole -->|No| ReturnForbidden[Return 403 Forbidden]
+        CheckAdminRole -->|Yes| AssignRole[Assign Role to User]
+        AssignRole --> ReturnRoleResult[Return Role Assignment Result]
+        
+        GetRoles[GetRoles Endpoint] --> CheckAdminRoleForRead{Has Admin Role?}
+        CheckAdminRoleForRead -->|No| ReturnForbidden
+        CheckAdminRoleForRead -->|Yes| RetrieveUserRoles[Retrieve User Roles]
+        RetrieveUserRoles --> ReturnRolesList[Return Roles List]
+        
+        RemoveFromRole[RemoveFromRole Endpoint] --> CheckAdminRoleForRemove{Has Admin Role?}
+        CheckAdminRoleForRemove -->|No| ReturnForbidden
+        CheckAdminRoleForRemove -->|Yes| RemoveRoleFromUser[Remove Role from User]
+        RemoveRoleFromUser --> ReturnRemoveResult[Return Role Removal Result]
+    end
+    
+    %% Startup Configuration
+    subgraph StartupConfiguration
+        ConfigureServices[Configure Services] --> AddJwtAuthentication[Add JWT Authentication]
+        AddJwtAuthentication --> ConfigurePolicies[Configure Authorization Policies]
+        ConfigurePolicies --> ConfigureIdentityOptions[Configure Identity Options]
+        ConfigureIdentityOptions --> RegisterDbContexts[Register Database Contexts]
+        RegisterDbContexts --> AddDistributedServices[Add Supporting Services]
+    end
+    
+    %% Service Dependencies
+    InternalLoginCustomer --> GenerateClaimsForUser
+    GenerateJWT --> CreateJwtToken
+    ValidateCustomerToken --> ConfigureValidationParams
+    ConfigurePolicies --> AuthorizationPolicies
+    
+    %% Registration Flow
+    RegisterCustomer[register_customer Endpoint] --> ValidateRegistrationModel{Model Valid?}
+    ValidateRegistrationModel -->|No| ReturnBadRequestRegistration[Return 400 Bad Request]
+    ValidateRegistrationModel -->|Yes| CreateIdentityUser[Create Identity User]
+    CreateIdentityUser --> UserCreationResult{Creation Succeeded?}
+    UserCreationResult -->|No| ReturnRegistrationErrors[Return Registration Errors]
+    UserCreationResult -->|Yes| EnsureCustomerRoleExists[Ensure Customer Role Exists]
+    EnsureCustomerRoleExists --> AssignCustomerRole[Assign Customer Role]
+    AssignCustomerRole --> RoleAssignmentResult{Role Assignment Succeeded?}
+    RoleAssignmentResult -->|No| ReturnRoleAssignmentErrors[Return Role Assignment Errors]
+    RoleAssignmentResult -->|Yes| GenerateRegClaims[Generate Claims for Registration]
+    GenerateRegClaims --> AddRegClaims[Add Claims to User]
+    AddRegClaims --> GenerateEmailToken[Generate Email Confirmation Token]
+    GenerateEmailToken --> CreateConfirmationLink[Create Confirmation Link]
+    CreateConfirmationLink --> SendConfirmationEmail[Send Confirmation Email]
+    SendConfirmationEmail --> CreateApplicationUser[Create Application User]
+    CreateApplicationUser --> CreateCustomerEntity[Create Customer Entity]
+    CreateCustomerEntity --> ReturnRegistrationSuccess[Return Registration Success]
+    
+    %% Connect to Startup
+    ConfigureAuthorization --> StartupConfiguration
+    
+    %% Edge Cases
+    class HandleAuthFailure,ReturnUnauthorized,ReturnBadRequest,ReturnNotFound,ReturnTokenExpired,ReturnTokenInvalid,ReturnForbidden,ReturnUnauthorizedLogout highlight
+    
+    classDef highlight fill:#f96,stroke:#333,stroke-width:2px
+
+    %% Class Definitions for Layering
+    classDef controller fill:#d4f1f9,stroke:#05a,stroke-width:1px
+    classDef domain fill:#e1f7d5,stroke:#060,stroke-width:1px
+    classDef infrastructure fill:#fff2cc,stroke:#db0,stroke-width:1px
+    classDef authentication fill:#ffcccc,stroke:#c00,stroke-width:1px
+    
+    class LoginCustomer,ConfirmEmail,LogoutCustomer,ValidateCustomerToken,AddToRole,GetRoles,RemoveFromRole,RegisterCustomer controller
+    class GenerateClaimsForUser,CleanupExistingClaims,CreateStandardClaims,AddConsultantClaims,AddCustomerClaims,AddRoleClaims domain
+    class CreateJwtToken,ConfigureTokenOptions,SignToken,SerializeToken,ConfigureValidationParams,AttemptTokenValidation infrastructure
+    class CheckCredentials,Check2FA,Validate2FA,ValidateToken,TokenValid authentication

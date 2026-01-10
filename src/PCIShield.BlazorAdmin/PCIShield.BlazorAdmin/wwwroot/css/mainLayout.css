@@ -1,0 +1,49 @@
+﻿/* Navbar: Altura fija y posición superior */
+.app-bar {
+    height: 76.45px !important;
+    z-index: 1200 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    background: #FBFBFB !important;
+    elevation: lower !important;
+}
+
+/* Eliminamos el padding en el App Bar*/
+.mud-appbar .mud-toolbar-appbar {
+    padding: 0px;
+}
+
+/* Contenido: Margen izquierdo = ancho del sidebar */
+.mainContent {
+    margin-left: 0px !important;
+    margin-bottom: 0px !important;
+    margin-top: 8px !important;
+    width: 100%;
+    padding:0px !important;
+}
+
+/* Indicamos el tamaño del contenedor principal donde se mostrara el contenido*/
+.mainContainer {
+    margin-left: 210px !important;
+    margin-bottom: 20px !important;
+    margin-right: 14px !important;
+    transition: all 0.8s ease !important;
+}
+
+.mainContainer-collapsed {
+    margin-left: 79px !important;
+    margin-bottom: 20px !important;
+    margin-right: 14px !important;
+    transition: all 0.5s ease !important;
+}
+
+
+@media (max-width: 820px) {
+    .mainContainer {
+        margin-left: 14px !important;
+    }
+
+    .mainContent {
+        margin-top: 15px !important;
+    }
+}

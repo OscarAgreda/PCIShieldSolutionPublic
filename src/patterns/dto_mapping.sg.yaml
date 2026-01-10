@@ -1,0 +1,10 @@
+rule:
+  pattern: "new $DTO { $$$ }"
+  kind: object_creation_expression
+  
+# This rule matches DTO creation expressions like:
+# - new CustomerDto { FirstName = "John", LastName = "Doe" }
+# - new InvoiceDto { Id = 123, Total = 456.78 }
+#
+# The $DTO placeholder will match the DTO class name
+# The $$$ placeholder will match any properties inside the braces

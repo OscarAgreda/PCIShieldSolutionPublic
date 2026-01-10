@@ -1,0 +1,82 @@
+﻿flowchart TD
+    classDef userActions fill:#e1f5fe,stroke:#01579b,stroke-width:2px,color:#01579b,font-weight:bold
+    classDef systemProcess fill:#f3e5f5,stroke:#6a1b9a,stroke-width:2px,color:#6a1b9a
+    classDef databaseOps fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:#2e7d32
+    classDef authToken fill:#fff8e1,stroke:#ff6f00,stroke-width:2px,color:#ff6f00
+    classDef success fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:#2e7d32,font-weight:bold
+    classDef failure fill:#ffebee,stroke:#c62828,stroke-width:2px,color:#c62828
+
+    %% User Registration Flow
+    Start([User Access]) -->|"Starts Process"| RegChoice{"Registration Type"}
+    RegChoice -->|"Customer"| RegCustomer["Register Customer"]
+    RegChoice -->|"Employee"| RegEmployee["Register Employee"]
+    
+    RegCustomer --> CreateIdentityUser["Create Identity User<br/>(Password Hashing)"]
+    RegEmployee --> CreateIdentityUser
+    
+    CreateIdentityUser --> AssignRole["Assign Role<br/>(Customer/Employee)"]
+    AssignRole --> AssignClaims["Generate Claims<br/>(Permissions)"]
+    AssignClaims --> CreateDomainEntities["Create Domain Entities<br/>(ApplicationUser, Customer/Employee)"]
+    CreateDomainEntities --> GenerateToken["Generate Email<br/>Verification Token"]
+    GenerateToken --> SendEmail["Send Confirmation Email"]
+    SendEmail --> WaitVerification([Awaiting User Verification])
+    
+    %% Email Verification Flow
+    WaitVerification --> |"User Clicks Link"| VerifyEmail["Verify Email Token"]
+    VerifyEmail --> ValidToken{"Token Valid?"}
+    ValidToken -->|"Yes"| UpdateUserStatus["Update User Status<br/>(Email Verified)"]
+    ValidToken -->|"No"| VerificationFailed["Verification Failed"]
+    UpdateUserStatus --> VerificationSuccess["Verification Success"]
+    
+    %% Login Flow
+    Start -->|"Existing User"| LoginChoice{"Login Type"}
+    LoginChoice -->|"Customer"| LoginCustomer["Login Customer"]
+    LoginChoice -->|"Employee"| LoginEmployee["Login Employee"]
+    LoginChoice -->|"Google"| LoginGoogle["Login with Google"]
+    
+    LoginCustomer --> ValidateCredentials["Validate Credentials<br/>(Username/Password)"]
+    LoginEmployee --> ValidateCredentials
+    LoginGoogle --> ValidateGoogleToken["Validate Google Token"]
+    ValidateGoogleToken --> FetchUserByEmail["Find User By Email"]
+    
+    ValidateCredentials --> TwoFactorCheck{"2FA Enabled?"}
+    TwoFactorCheck -->|"Yes"| ValidateTwoFactor["Validate 2FA Code"]
+    TwoFactorCheck -->|"No"| CredentialsValid{"Credentials Valid?"}
+    ValidateTwoFactor --> CredentialsValid
+    
+    CredentialsValid -->|"No"| LoginFailed["Authentication Failed"]
+    CredentialsValid -->|"Yes"| FetchRoles["Fetch User Roles"]
+    FetchUserByEmail --> FetchRoles
+    
+    FetchRoles --> GenerateSessionId["Generate Session ID<br/>(PowerUserId)"]
+    GenerateSessionId --> GenerateClaims["Build Claims<br/>(ID, Roles, Permissions)"]
+    GenerateClaims --> CreateJWT["Create JWT Token"]
+    CreateJWT --> GenerateRefreshToken["Generate Refresh Token"]
+    GenerateRefreshToken --> UpdateUserEntity["Update User Entity<br/>(Last Login, Online Status)"]
+    UpdateUserEntity --> PreloadCache["Preload User Data<br/>into Cache"]
+    PreloadCache --> ReturnTokens["Return Auth Tokens<br/>to Client"]
+    
+    %% Token Validation
+    ReturnTokens --> ClientUsesToken["Client Uses Token<br/>for API Access"]
+    ClientUsesToken --> ValidateToken["Validate Token<br/>(Server Side)"]
+    ValidateToken --> TokenValid{"Token Valid?"}
+    TokenValid -->|"Yes"| AccessGranted["Access Granted"]
+    TokenValid -->|"No"| TokenExpired{"Token Expired?"}
+    TokenExpired -->|"Yes"| UseRefreshToken["Use Refresh Token"]
+    TokenExpired -->|"No"| AccessDenied["Access Denied"]
+    UseRefreshToken --> CreateNewToken["Create New JWT Token"]
+    CreateNewToken --> ReturnTokens
+    
+    %% Logout Flow
+    Start -->|"Logged In User"| LogoutUser["Logout User"]
+    LogoutUser --> InvalidateTokens["Invalidate Tokens"]
+    InvalidateTokens --> UpdateUserStatus2["Update User Status<br/>(Offline)"]
+    UpdateUserStatus2 --> LogoutSuccess["Logout Success"]
+
+    %% Apply styles
+    class Start,WaitVerification,ClientUsesToken userActions
+    class CreateIdentityUser,AssignRole,AssignClaims,GenerateToken,SendEmail,VerifyEmail,ValidateCredentials,ValidateTwoFactor,FetchRoles,GenerateSessionId,GenerateClaims,CreateJWT,GenerateRefreshToken,ValidateToken,CreateNewToken,InvalidateTokens systemProcess
+    class CreateDomainEntities,UpdateUserEntity,UpdateUserStatus,UpdateUserStatus2,PreloadCache databaseOps
+    class ReturnTokens,AccessGranted authToken
+    class VerificationSuccess,LogoutSuccess success
+    class VerificationFailed,LoginFailed,AccessDenied failure

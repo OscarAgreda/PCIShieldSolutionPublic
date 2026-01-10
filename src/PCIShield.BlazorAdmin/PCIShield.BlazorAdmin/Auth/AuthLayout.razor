@@ -1,0 +1,23 @@
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@inherits LayoutComponentBase
+
+<AuthorizeView>
+    <Authorized>
+        @Body
+    </Authorized>
+    <NotAuthorized>
+        <RedirectToLogin />
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    public class RedirectToLogin : ComponentBase
+    {
+        [Inject] private NavigationManager NavigationManager { get; set; }
+        
+        protected override void OnInitialized()
+        {
+            NavigationManager.NavigateTo("/Auth/Login", forceLoad: true);
+        }
+    }
+}

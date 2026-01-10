@@ -1,0 +1,146 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+
+
+    <WarningLevel>0</WarningLevel>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+
+
+
+
+    <NoWarn>
+      $(NoWarn);
+      CS1591;  <!-- missing XML comments, example -->
+      CS0618;   <!-- obsolete member, example -->
+      NU1903;
+      NU1902;
+    </NoWarn>
+    
+    <NoDefaultLaunchSettingsFile>true</NoDefaultLaunchSettingsFile>
+    <StaticWebAssetProjectMode>Default</StaticWebAssetProjectMode>
+      <UseSharedCompilation>true</UseSharedCompilation>
+      <BuildInParallel>true</BuildInParallel>
+      <!--<RunAOTCompilation>true</RunAOTCompilation>
+      <WasmBuildNative>false</WasmBuildNative>-->
+
+    <RunAOTCompilation>true</RunAOTCompilation>
+    <WasmBuildNative>true</WasmBuildNative>
+    
+    <BlazorWebAssemblyLoadAllGlobalizationData>true</BlazorWebAssemblyLoadAllGlobalizationData>
+    <Features>use-roslyn-tokenizer;$(Features)</Features>
+    <WasmBuildNativePython>C:\Users\Oscar\AppData\Local\Programs\Python\Python312\python.exe</WasmBuildNativePython>
+  </PropertyGroup>
+
+
+
+  <ItemGroup>
+    <Content Remove="wwwroot\css\CustomerList.css" />
+  </ItemGroup>
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+        <MudIllegalParameters>V7IgnoreCase</MudIllegalParameters>
+    </PropertyGroup>
+ 
+  <ItemGroup>
+
+    <!--1-->
+    <!--https://www.nuget.org/packages/Plotly.NET/-->
+    <!--https://github.com/plotly/Plotly.NET-->
+    <!--https://plotly.net/-->
+
+    <!--2-->
+    <!--https://scottplot.net/quickstart/blazor/
+    https://scottplot.net/
+    https://github.com/scottplot/scottplot
+    -->
+
+    <!--3-->
+    <!--https://www.nuget.org/packages/Blazor-ApexCharts/-->
+    <!--https://apexcharts.github.io/Blazor-ApexCharts/-->
+    <PackageReference Include="Blazor-ApexCharts" Version="6.0.2" />
+  
+    <PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
+  
+    <PackageReference Include="ClosedXML" Version="0.104.2" />
+  
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
+
+    <PackageReference Include="Bogus" Version="35.6.3" />
+  
+    <PackageReference Include="LanguageExt.Core" Version="4.4.9" />
+
+    <PackageReference Include="Magic.IndexedDb" Version="1.0.4" />
+  
+    <PackageReference Include="MediatR" Version="12.5.0" />
+  
+    <PackageReference Include="Microsoft.AspNetCore.Components" Version="9.0.10" />
+  
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.10" />
+  
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.ViewFeatures" Version="2.3.0" />
+  
+    <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="9.0.10" />
+
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" Version="9.0.10" />
+
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.10" />
+    <PackageReference Include="ReactiveUI.Blazor" Version="20.2.45" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Common" Version="9.0.10" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.Json" Version="9.0.10" />
+    <PackageReference Include="Microsoft.Extensions.Localization" Version="9.0.10" />
+    <PackageReference Include="MudBlazor" Version="8.5.1" />
+    <PackageReference Include="MudBlazor.ThemeManager" Version="3.0.0" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.9.0" />
+    <PackageReference Include="System.Reactive" Version="6.0.1" />
+  
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\PCIShield.BlazorMauiShared\PCIShield.BlazorMauiShared.csproj" />
+    <ProjectReference Include="..\..\PCIShield.Client.Services\PCIShield.Client.Services.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Pages\PaymentChannel\" />
+    <Folder Include="TestData\" />
+    <Folder Include="wwwroot\css\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Resources\Pages\Invoice\InvoiceList.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>InvoiceList.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Resources\Pages\SharedResource.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>SharedResource.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <Content Update="Shared\Components\CustomToggleSwitch.razor">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </Content>
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <EmbeddedResource Update="Resources\Pages\Invoice\InvoiceList.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>InvoiceList.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Resources\Pages\SharedResource.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>SharedResource.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
+</Project>

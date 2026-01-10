@@ -1,0 +1,303 @@
+﻿/* PciShield Liquid Glass for MudBlazor
+   Scope: enable by wrapping a page/section in .pci-lg-scope, or add .pci-lg on specific elements.
+   Philosophy (per Apple): translucent, refractive “glass” on top-level nav & key surfaces; keep text fields crisp. 
+   Source inspirations: Apple press + HIG/overview + WWDC25 session. 
+*/
+
+/* ===================== Tokens ===================== */
+:root {
+    --pci-lg-bg: rgba(255,255,255,0.08); /* base glass fill */
+    --pci-lg-border: rgba(255,255,255,0.35); /* rim */
+    --pci-lg-highlight: rgba(255,255,255,0.35); /* inner top highlight */
+    --pci-lg-shadow: rgba(0,0,0,0.25); /* drop shadow */
+
+    --pci-lg-blur: 20px;
+    --pci-lg-sat: 1.2;
+    --pci-lg-radius: 16px;
+    --pci-lg-shadow-drop: 0 8px 24px -12px var(--pci-lg-shadow);
+    /* Intensities for component “families” */
+    --pci-lg-surface-bg: var(--pci-lg-bg);
+    --pci-lg-surface-blur: var(--pci-lg-blur);
+    --pci-lg-chrome-bg: rgba(255,255,255,0.10); /* AppBar/Drawer a touch stronger */
+    --pci-lg-chrome-blur: 22px;
+    --pci-lg-flyout-bg: rgba(255,255,255,0.12); /* menus/popovers/dialogs */
+    --pci-lg-flyout-blur: 24px;
+    --pci-lg-field-bg: rgba(255,255,255,0.06); /* inputs keep clarity */
+    /* Desktop (PC monitor) tuning */
+    --pci-lg-desktop-blur-plus: 4px;
+}
+
+/* Dark scheme tuning */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --pci-lg-bg: rgba(20,20,20,0.55);
+        --pci-lg-border: rgba(255,255,255,0.25);
+        --pci-lg-highlight: rgba(255,255,255,0.22);
+        --pci-lg-shadow: rgba(0,0,0,0.6);
+    }
+}
+
+/* Reduce motion: soften heavy blur */
+@media (prefers-reduced-motion: reduce) {
+    :root {
+        --pci-lg-blur: 16px;
+        --pci-lg-chrome-blur: 18px;
+        --pci-lg-flyout-blur: 18px;
+    }
+}
+
+/* Desktop emphasis */
+@media (min-width: 1200px) {
+    :root {
+        --pci-lg-blur: calc(20px + var(--pci-lg-desktop-blur-plus));
+        --pci-lg-chrome-blur: calc(22px + var(--pci-lg-desktop-blur-plus));
+        --pci-lg-flyout-blur: calc(24px + var(--pci-lg-desktop-blur-plus));
+        --pci-lg-radius: 18px;
+        --pci-lg-shadow-drop: 0 10px 32px -12px var(--pci-lg-shadow);
+    }
+}
+
+/* ===================== Utilities ===================== */
+.pci-lg { /* explicit opt-in on a single element */
+    position: relative;
+    background: var(--pci-lg-surface-bg);
+    border: 1px solid var(--pci-lg-border);
+    border-radius: var(--pci-lg-radius);
+    box-shadow: 0 1px 0 0 var(--pci-lg-highlight) inset, var(--pci-lg-shadow-drop);
+    backdrop-filter: blur(var(--pci-lg-surface-blur)) saturate(var(--pci-lg-sat));
+    -webkit-backdrop-filter: blur(var(--pci-lg-surface-blur)) saturate(var(--pci-lg-sat));
+    overflow: hidden;
+}
+
+.pci-warp {
+    filter: url(#pci-liquid-refraction);
+}
+/* subtle refraction */
+.pci-tinted {
+    background: rgba(20,20,20,0.6) !important;
+    border-color: rgba(255,255,255,0.25) !important;
+}
+
+.pci-none {
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    filter: none !important;
+    box-shadow: none !important;
+    border-color: transparent !important;
+}
+
+/* Edge sheen / depth */
+.pci-lg::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    mix-blend-mode: screen;
+    background: radial-gradient(120% 60% at 50% 0%, rgba(255,255,255,0.18), transparent 60%), linear-gradient(to bottom, rgba(255,255,255,0.08), transparent 30%), linear-gradient(to top, rgba(0,0,0,0.1), transparent 40%);
+}
+
+/* ===================== Scope Auto-Map ===================== */
+/* Wrap any region (e.g., entire layout) in .pci-lg-scope to restyle Mud components automatically */
+.pci-lg-scope .mud-surface,
+.pci-lg-scope .mud-paper,
+.pci-lg-scope .mud-card,
+.pci-lg-scope .mud-dialog,
+.pci-lg-scope .mud-drawer,
+.pci-lg-scope .mud-appbar {
+    position: relative;
+    background: var(--pci-lg-surface-bg) !important;
+    border: 1px solid var(--pci-lg-border);
+    border-radius: var(--pci-lg-radius);
+    box-shadow: 0 1px 0 0 var(--pci-lg-highlight) inset, var(--pci-lg-shadow-drop);
+    backdrop-filter: blur(var(--pci-lg-surface-blur)) saturate(var(--pci-lg-sat));
+    -webkit-backdrop-filter: blur(var(--pci-lg-surface-blur)) saturate(var(--pci-lg-sat));
+    overflow: hidden;
+}
+
+/* App chrome (AppBar, Drawer) slightly stronger per Apple guidance to keep nav prominent */
+.pci-lg-scope .mud-appbar,
+.pci-lg-scope .mud-drawer {
+    background: var(--pci-lg-chrome-bg) !important;
+    border: 0;
+    border-radius: 18px;
+    backdrop-filter: blur(var(--pci-lg-chrome-blur)) saturate(var(--pci-lg-sat));
+    -webkit-backdrop-filter: blur(var(--pci-lg-chrome-blur)) saturate(var(--pci-lg-sat));
+    box-shadow: 0 1px 0 0 rgba(255,255,255,0.24) inset, var(--pci-lg-shadow-drop);
+}
+
+/* Dialog & flyouts (menus, popovers, tooltips) */
+.pci-lg-scope .mud-dialog,
+.pci-lg-scope .mud-popover,
+.pci-lg-scope .mud-menu,
+.pci-lg-scope .mud-tooltip {
+    background: var(--pci-lg-flyout-bg) !important;
+    backdrop-filter: blur(var(--pci-lg-flyout-blur)) saturate(var(--pci-lg-sat));
+    -webkit-backdrop-filter: blur(var(--pci-lg-flyout-blur)) saturate(var(--pci-lg-sat));
+    border-radius: calc(var(--pci-lg-radius) + 2px);
+}
+
+/* Optional refraction for hero dialogs/cards only (toggle per element with .pci-warp) */
+
+/* Overlay: soft focus when dialogs appear */
+.pci-lg-scope .mud-overlay {
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+
+/* ===================== Buttons ===================== */
+.pci-lg-scope .mud-button-root {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 12px;
+    box-shadow: 0 1px 0 0 rgba(255,255,255,0.25) inset, 0 6px 16px -10px rgba(0,0,0,0.4);
+    -webkit-backdrop-filter: blur(10px) saturate(1.08);
+    backdrop-filter: blur(10px) saturate(1.08);
+}
+
+    .pci-lg-scope .mud-button-root:hover {
+        background: rgba(255,255,255,0.10);
+    }
+
+.pci-lg-scope .mud-icon-button {
+    background: rgba(255,255,255,0.05);
+    border-radius: 50%;
+}
+
+/* ===================== Tabs & Chips ===================== */
+.pci-lg-scope .mud-tabs,
+.pci-lg-scope .mud-chip {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 12px;
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+}
+
+.pci-lg-scope .mud-tab-slider {
+    opacity: 0.9;
+}
+
+/* ===================== Tables / Data grids ===================== */
+.pci-lg-scope .mud-table {
+    background: rgba(255,255,255,0.03);
+    border-radius: var(--pci-lg-radius);
+}
+
+.pci-lg-scope .mud-table-head {
+    background: rgba(255,255,255,0.06);
+    -webkit-backdrop-filter: blur(12px) saturate(1.05);
+    backdrop-filter: blur(12px) saturate(1.05);
+}
+
+.pci-lg-scope .mud-table-row:hover {
+    background: rgba(255,255,255,0.05);
+}
+
+/* ===================== Inputs (keep text crisp) ===================== */
+.pci-lg-scope .mud-input-control,
+.pci-lg-scope .mud-select,
+.pci-lg-scope .mud-autocomplete,
+.pci-lg-scope .mud-field {
+    background: var(--pci-lg-field-bg);
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 12px;
+    -webkit-backdrop-filter: blur(10px) saturate(1.02);
+    backdrop-filter: blur(10px) saturate(1.02);
+}
+
+.pci-lg-scope .mud-input-root,
+.pci-lg-scope .mud-input-slot,
+.pci-lg-scope .mud-select-input {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+/* ===================== Menus / Popovers / Tooltips ===================== */
+.pci-lg-scope .mud-popover,
+.pci-lg-scope .mud-menu {
+    border: 1px solid rgba(255,255,255,0.25);
+    box-shadow: 0 10px 32px -12px rgba(0,0,0,0.45);
+}
+
+.pci-lg-scope .mud-tooltip {
+    border: 1px solid rgba(255,255,255,0.22);
+}
+
+/* ===================== Steppers / Expansion panels ===================== */
+.pci-lg-scope .mud-stepper,
+.pci-lg-scope .mud-expansion-panels {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 14px;
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+}
+
+/* ===================== Progress / Slider / Switch / Checks ===================== */
+.pci-lg-scope .mud-progress-linear,
+.pci-lg-scope .mud-progress-circular {
+    background: rgba(255,255,255,0.08);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    border-radius: 999px;
+}
+
+.pci-lg-scope .mud-slider .mud-slider-track {
+    background: linear-gradient(to right, rgba(255,255,255,0.4), rgba(255,255,255,0.1));
+}
+
+.pci-lg-scope .mud-slider .mud-slider-thumb {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.35);
+}
+
+.pci-lg-scope .mud-switch-base,
+.pci-lg-scope .mud-checkbox,
+.pci-lg-scope .mud-radio {
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+}
+
+/* ===================== Snackbar / Toasts ===================== */
+.pci-lg-scope .mud-snackbar {
+    background: rgba(20,20,20,0.6);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.24);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    border-radius: 12px;
+}
+
+/* ===================== Navigation widgets ===================== */
+.pci-lg-scope .mud-breadcrumbs,
+.pci-lg-scope .mud-pagination {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.22);
+    border-radius: 12px;
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+}
+
+/* ===================== Hero variant ===================== */
+.pci-hero { /* for big hero cards/dialogs: stronger presence */
+    background: rgba(255,255,255,0.12) !important;
+    backdrop-filter: blur(calc(var(--pci-lg-surface-blur) + 6px)) saturate(1.25) !important;
+    -webkit-backdrop-filter: blur(calc(var(--pci-lg-surface-blur) + 6px)) saturate(1.25) !important;
+    border-radius: calc(var(--pci-lg-radius) + 6px) !important;
+}
+
+/* ===================== Fallbacks ===================== */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .pci-lg-scope .mud-surface,
+    .pci-lg-scope .mud-paper,
+    .pci-lg-scope .mud-card,
+    .pci-lg-scope .mud-dialog,
+    .pci-lg-scope .mud-drawer,
+    .pci-lg-scope .mud-appbar,
+    .pci-lg,
+    .pci-hero {
+        background: rgba(255,255,255,0.12) !important;
+        filter: none !important;
+        box-shadow: var(--pci-lg-shadow-drop);
+    }
+}

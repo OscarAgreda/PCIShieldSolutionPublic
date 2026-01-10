@@ -1,0 +1,264 @@
+﻿flowchart TD
+    %% Enhanced State Diagram - Incorporating the improvements
+    %% Main flow entry points
+    UserLogin[User Login Request] --> LoginCustomer
+    EmailConfirmReq[Email Confirmation Request] --> ConfirmEmail
+    TokenRefresh[Token Refresh Request] --> RefreshToken
+    
+    %% Authentication Controller Operations
+    subgraph AccountAuthV2Controller
+        LoginCustomer[login_customer Endpoint] --> CheckCredentials{Valid Credentials?}
+        CheckCredentials -->|No| ReturnUnauthorized[Return 401 Unauthorized]
+        CheckCredentials -->|Yes| Check2FA{Requires 2FA?}
+        
+        Check2FA -->|No| ProcessAuthentication[Process Authentication]
+        Check2FA -->|Yes| Check2FACode{2FA Code Provided?}
+        Check2FACode -->|No| ReturnUnauthorized
+        Check2FACode -->|Yes| Validate2FA{Valid 2FA?}
+        Validate2FA -->|No| ReturnUnauthorized
+        Validate2FA -->|Yes| ProcessAuthentication
+        
+        ProcessAuthentication --> GetUserRoles[Get User Roles]
+        GetUserRoles --> GenerateTokens[Generate Access & Refresh Tokens]
+        GenerateTokens --> FindCustomer[Find Customer By UserId]
+        
+        FindCustomer --> CustomerExists{Customer Found?}
+        CustomerExists -->|Yes| UpdateCustomerState[Update Customer State]
+        CustomerExists -->|No| HandleAuthFailure[Log Error and Return 401]
+        
+        UpdateCustomerState --> PreLoadCustomerCache[Pre-Load Customer Cache]
+        PreLoadCustomerCache --> ReturnTokenResponse[Return Authentication Response]
+        
+        %% Email Confirmation Flow
+        ConfirmEmail[ConfirmEmail Endpoint] --> FindUserByEmail[Find User By Email]
+        FindUserByEmail --> UserFound{User Found?}
+        UserFound -->|No| ReturnNotFound[Return 404 Not Found]
+        UserFound -->|Yes| ValidateToken[Validate Confirmation Token]
+        ValidateToken --> TokenValid{Token Valid?}
+        TokenValid -->|No| ReturnBadRequest[Return 400 Bad Request]
+        TokenValid -->|Yes| UpdateApplicationUser[Update Application User]
+        UpdateApplicationUser --> UpdateCustomerOrEmployee[Update Customer/Employee Status]
+        UpdateCustomerOrEmployee --> ReturnConfirmationSuccess[Return Confirmation Success]
+        
+        %% Logout Flow
+        LogoutCustomer[logout_customer Endpoint] --> FindUserById[Find User By ID]
+        FindUserById --> UserIdFound{User Found?}
+        UserIdFound -->|No| ReturnUnauthorizedLogout[Return 401 for Logout]
+        UserIdFound -->|Yes| ValidateLogoutRequest[Validate Logout Request]
+        ValidateLogoutRequest --> RequestValid{Request Valid?}
+        RequestValid -->|No| ReturnUnauthorizedLogout
+        RequestValid -->|Yes| RevokeRefreshToken[Revoke Refresh Token]
+        RevokeRefreshToken --> BlacklistCurrentJwt[Blacklist Current JWT]
+        BlacklistCurrentJwt --> UpdateUserLogoutStatus[Update User Logout Status]
+        UpdateUserLogoutStatus --> ReturnLogoutSuccess[Return Logout Success]
+        
+        %% Token Refresh Flow (New)
+        RefreshToken[refresh_token Endpoint] --> ValidateTokens{Tokens Provided?}
+        ValidateTokens -->|No| ReturnBadRequestRefresh[Return 400 Bad Request]
+        ValidateTokens -->|Yes| ValidateAccessToken[Validate Access Token]
+        ValidateAccessToken --> GetPrincipalFromToken[Extract Principal from Token]
+        GetPrincipalFromToken --> ValidatePrincipal{Principal Valid?}
+        ValidatePrincipal -->|No| ReturnUnauthorizedRefresh[Return 401 Unauthorized]
+        ValidatePrincipal -->|Yes| ValidateRefreshToken[Validate Refresh Token]
+        ValidateRefreshToken --> RefreshTokenValid{Token Valid?}
+        RefreshTokenValid -->|No| ReturnUnauthorizedRefresh
+        RefreshTokenValid -->|Yes| CheckTokenReuse{Token Reused?}
+        CheckTokenReuse -->|Yes| RevokeDescendantTokens[Revoke Descendant Tokens]
+        CheckTokenReuse -->|Yes| ReturnUnauthorizedRefresh
+        CheckTokenReuse -->|No| RevokeCurrentRefreshToken[Revoke Current Refresh Token]
+        RevokeCurrentRefreshToken --> GenerateNewTokenPair[Generate New Token Pair]
+        GenerateNewTokenPair --> ReturnNewTokens[Return New Tokens]
+    end
+    
+    %% Token Service
+    subgraph TokenService
+        GenerateTokensAsync[Generate Tokens Async] --> GetPermissionVersion[Get/Create Permission Version]
+        GetPermissionVersion --> GenerateUserClaims[Generate User Claims]
+        GenerateUserClaims --> CreateAccessToken[Create Access Token]
+        CreateAccessToken --> GenerateSecureRefreshToken[Generate Secure Refresh Token]
+        GenerateSecureRefreshToken --> HashRefreshToken[Hash Refresh Token]
+        HashRefreshToken --> StoreRefreshTokenEntity[Store Refresh Token]
+        StoreRefreshTokenEntity --> ReturnTokenPair[Return Token Pair]
+        
+        RefreshTokenAsync[Refresh Token Async] --> ValidateExpiredToken[Validate Expired Token]
+        ValidateExpiredToken --> ExtractUserIdFromToken[Extract User ID from Token]
+        ExtractUserIdFromToken --> ValidateStoredRefreshToken[Validate Stored Refresh Token]
+        ValidateStoredRefreshToken --> CheckRevocationStatus{Token Revoked?}
+        CheckRevocationStatus -->|Yes| DetectTokenReuse[Detect Token Reuse]
+        CheckRevocationStatus -->|No| RevokeToken[Revoke Current Token]
+        RevokeToken --> LinkToNewToken[Link to New Token]
+        LinkToNewToken --> CreateNewUserClaims[Create New User Claims]
+        CreateNewUserClaims --> CreateNewTokenPair[Create New Token Pair]
+        
+        RevokeTokenAsync[Revoke Token Async] --> HashToken[Hash Token]
+        HashToken --> FindTokenInStore[Find Token in Store]
+        FindTokenInStore --> TokenFound{Token Found?}
+        TokenFound -->|No| ThrowTokenNotFound[Throw Token Not Found]
+        TokenFound -->|Yes| TokenIsActive{Token Active?}
+        TokenIsActive -->|No| ThrowTokenInactive[Throw Token Not Active]
+        TokenIsActive -->|Yes| MarkTokenRevoked[Mark Token as Revoked]
+        MarkTokenRevoked --> UpdateTokenRepository[Update Token Repository]
+    end
+    
+    %% Tenant Provider
+    subgraph TenantProvider
+        GetTenantId[Get Tenant ID] --> CheckExplicitlySet{Explicitly Set?}
+        CheckExplicitlySet -->|Yes| ReturnCurrentTenant[Return Current Tenant]
+        CheckExplicitlySet -->|No| CheckHttpContext{HTTP Context Available?}
+        CheckHttpContext -->|No| ReturnDefaultTenant[Return Default Tenant]
+        CheckHttpContext -->|Yes| CheckAuthenticated{User Authenticated?}
+        CheckAuthenticated -->|No| ReturnDefaultTenant
+        CheckAuthenticated -->|Yes| ExtractTenantIdFromClaims[Extract TenantId from Claims]
+        ExtractTenantIdFromClaims --> TenantIdFound{TenantId Found?}
+        TenantIdFound -->|Yes| ReturnExtractedTenantId[Return Extracted TenantId]
+        TenantIdFound -->|No| ReturnDefaultTenant
+        
+        IsPlatformAdmin[Is Platform Admin] --> CheckSuperAdminRole[Check SuperAdmin Role]
+        
+        SetTenantId[Set Tenant Id] --> StoreInAsyncLocal[Store in AsyncLocal]
+    end
+    
+    %% Multi-Tenant DbContext
+    subgraph MultiTenantDbContext
+        OnModelCreating[On Model Creating] --> ApplyBaseConfiguration[Apply Base Configuration]
+        ApplyBaseConfiguration --> IdentifyTenantEntities[Identify Tenant Entities]
+        IdentifyTenantEntities --> BuildTenantFilter[Build Tenant Filter Expression]
+        BuildTenantFilter --> CheckIsPlatformAdmin{Is Platform Admin?}
+        CheckIsPlatformAdmin -->|Yes| SkipTenantFilter[Skip Tenant Filter]
+        CheckIsPlatformAdmin -->|No| ApplyTenantFilter[Apply Tenant Filter]
+        
+        SaveChanges[Save Changes] --> ValidateAndSetTenantId[Validate and Set TenantId]
+        ValidateAndSetTenantId --> ProcessAddedEntities[Process Added Entities]
+        ProcessAddedEntities --> SetTenantIdForNew[Set TenantId for New Entities]
+        SetTenantIdForNew --> ValidateEntityTenantId[Validate Entity TenantId]
+        ValidateEntityTenantId --> ProcessModifiedEntities[Process Modified Entities]
+        ProcessModifiedEntities --> PreventTenantIdChange[Prevent TenantId Change]
+        PreventTenantIdChange --> ValidateModifiedEntityTenant[Validate Modified Entity Tenant]
+        ValidateModifiedEntityTenant --> InvokeBaseSaveChanges[Invoke Base SaveChanges]
+    end
+    
+    %% Enhanced Claims Generation Logic
+    subgraph EnhancedClaimsGeneration
+        GenerateClaimsForUserAsync[Generate Claims For User Async] --> GetUserPermissions[Get User Permissions from Roles]
+        GetUserPermissions --> GetSecurityStamp[Get Security Stamp]
+        GetSecurityStamp --> CreateStandardClaims[Create Standard Claims]
+        CreateStandardClaims --> AddSecurityClaims[Add Security Claims]
+        AddSecurityClaims --> AddPermissionClaims[Add Permission Claims]
+        AddPermissionClaims --> AddRoleSpecificClaims[Add Role-Specific Claims]
+        AddRoleSpecificClaims --> DetermineTenantId[Determine Tenant ID]
+        DetermineTenantId --> AddTenantClaim[Add Tenant Claim]
+    end
+    
+    %% Dynamic Permission-Based Authorization
+    subgraph DynamicAuthorization
+        PermissionRequirement[Permission Requirement] 
+        
+        HandleRequirementAsync[Handle Requirement Async] --> CheckPermissionClaim[Check for Permission Claim]
+        CheckPermissionClaim --> HasPermission{Has Permission?}
+        HasPermission -->|Yes| SucceedRequirement[Succeed Requirement]
+        HasPermission -->|No| NoAction[No Action - Fail by Default]
+        
+        GetPolicyAsync[Get Policy Async] --> CheckPermissionPrefix{Has Permission Prefix?}
+        CheckPermissionPrefix -->|Yes| ExtractPermission[Extract Permission]
+        CheckPermissionPrefix -->|No| UseFallbackProvider[Use Fallback Provider]
+        ExtractPermission --> BuildPolicyWithRequirement[Build Policy with Requirement]
+    end
+    
+    %% JWT Token Validation
+    subgraph EnhancedTokenValidation
+        OnTokenValidated[On Token Validated] --> CheckSecurityStamp[Check Security Stamp]
+        CheckSecurityStamp --> SecurityStampValid{Stamp Valid?}
+        SecurityStampValid -->|No| FailTokenValidation[Fail Token Validation]
+        SecurityStampValid -->|Yes| CheckPermissionVersion[Check Permission Version]
+        CheckPermissionVersion --> PermissionVersionValid{Version Valid?}
+        PermissionVersionValid -->|No| FailTokenValidation
+        PermissionVersionValid -->|Yes| CheckTokenRevocation[Check Token Revocation]
+        CheckTokenRevocation --> TokenRevoked{Token Revoked?}
+        TokenRevoked -->|Yes| FailTokenValidation
+        TokenRevoked -->|No| CompleteValidation[Complete Validation]
+    end
+    
+    %% Tenant Job Filter for Background Jobs
+    subgraph TenantJobFilter
+        OnCreating[On Creating] --> GetCurrentTenant[Get Current Tenant]
+        GetCurrentTenant --> StoreTenantInJobParams[Store Tenant in Job Parameters]
+        
+        OnPerforming[On Performing] --> ExtractTenantFromParams[Extract Tenant from Parameters]
+        ExtractTenantFromParams --> SetTenantForJobExecution[Set Tenant for Job Execution]
+    end
+    
+    %% Startup Configuration
+    subgraph EnhancedStartupConfiguration
+        ConfigureServices[Configure Services] --> AddTenantServices[Add Tenant Services]
+        AddTenantServices --> AddTokenServices[Add Token Services]
+        AddTokenServices --> AddDynamicAuthorization[Add Dynamic Authorization]
+        AddDynamicAuthorization --> AddJwtAuthentication[Add JWT Authentication]
+        AddJwtAuthentication --> ConfigureIdentityOptions[Configure Identity Options]
+        ConfigureIdentityOptions --> RegisterTenantAwareDbContexts[Register Tenant-Aware DB Contexts]
+        RegisterTenantAwareDbContexts --> AddDistributedServices[Add Supporting Services]
+    end
+    
+    %% API Route Protection
+    subgraph RouteProtection
+        ProtectedEndpoint[Protected API Endpoint] --> CheckAuthentication{Authenticated?}
+        CheckAuthentication -->|No| Return401[Return 401 Unauthorized]
+        CheckAuthentication -->|Yes| AuthorizationPolicies{Meets Policies?}
+        AuthorizationPolicies -->|No| Return403[Return 403 Forbidden]
+        AuthorizationPolicies -->|Yes| CheckPermission{Has Required Permission?}
+        CheckPermission -->|No| Return403
+        CheckPermission -->|Yes| ExecuteEndpoint[Execute Endpoint Logic]
+        
+        ExecuteEndpoint --> RepositoryOperation[Repository Operation]
+        RepositoryOperation --> TenantFilterApplied[Tenant Filter Applied]
+        TenantFilterApplied --> ReturnResult[Return Result]
+    end
+    
+    %% Service Dependencies
+    ProcessAuthentication --> GenerateTokensAsync
+    RevokeRefreshToken --> RevokeTokenAsync
+    GenerateNewTokenPair --> GenerateTokensAsync
+    ValidateRefreshToken --> ValidateStoredRefreshToken
+    GetPermissionVersion --> DynamicAuthorization
+    ProcessAuthentication --> EnhancedClaimsGeneration
+    TenantFilterApplied --> MultiTenantDbContext
+    
+    %% Enhanced Registration Flow
+    RegisterCustomer[register_customer Endpoint] --> ValidateRegistrationModel{Model Valid?}
+    ValidateRegistrationModel -->|No| ReturnBadRequestRegistration[Return 400 Bad Request]
+    ValidateRegistrationModel -->|Yes| CreateIdentityUser[Create Identity User]
+    CreateIdentityUser --> UserCreationResult{Creation Succeeded?}
+    UserCreationResult -->|No| ReturnRegistrationErrors[Return Registration Errors]
+    UserCreationResult -->|Yes| EnsureCustomerRoleExists[Ensure Customer Role Exists]
+    EnsureCustomerRoleExists --> AssignCustomerRole[Assign Customer Role]
+    AssignCustomerRole --> RoleAssignmentResult{Role Assignment Succeeded?}
+    RoleAssignmentResult -->|No| ReturnRoleAssignmentErrors[Return Role Assignment Errors]
+    RoleAssignmentResult -->|Yes| AssignDefaultPermissions[Assign Default Permissions]
+    AssignDefaultPermissions --> GenerateEmailToken[Generate Email Confirmation Token]
+    GenerateEmailToken --> CreateConfirmationLink[Create Confirmation Link]
+    CreateConfirmationLink --> SendConfirmationEmail[Send Confirmation Email]
+    SendConfirmationEmail --> CreateApplicationUser[Create Application User]
+    CreateApplicationUser --> CreateCustomerEntity[Create Customer Entity]
+    CreateCustomerEntity --> InitializePermissionVersion[Initialize Permission Version]
+    InitializePermissionVersion --> ReturnRegistrationSuccess[Return Registration Success]
+    
+    %% Connections between components
+    EnhancedStartupConfiguration --> EnhancedTokenValidation
+    EnhancedTokenValidation --> TokenService
+    EnhancedStartupConfiguration --> TenantProvider
+    RouteProtection --> DynamicAuthorization
+    
+    %% Edge Cases
+    class HandleAuthFailure,ReturnUnauthorized,ReturnBadRequest,ReturnNotFound,FailTokenValidation,Return401,Return403,ReturnUnauthorizedLogout,ReturnUnauthorizedRefresh highlight
+    
+    classDef highlight fill:#f96,stroke:#333,stroke-width:2px
+
+    %% Class Definitions for Layering
+    classDef controller fill:#d4f1f9,stroke:#05a,stroke-width:1px
+    classDef domain fill:#e1f7d5,stroke:#060,stroke-width:1px
+    classDef infrastructure fill:#fff2cc,stroke:#db0,stroke-width:1px
+    classDef authentication fill:#ffcccc,stroke:#c00,stroke-width:1px
+    
+    class LoginCustomer,ConfirmEmail,LogoutCustomer,RefreshToken,RegisterCustomer controller
+    class GenerateClaimsForUserAsync,CreateStandardClaims,AddPermissionClaims,PermissionRequirement domain
+    class CreateAccessToken,HashRefreshToken,OnTokenValidated,ApplyTenantFilter infrastructure
+    class CheckCredentials,Check2FA,Validate2FA,ValidateToken,TokenValid,ValidateRefreshToken authentication

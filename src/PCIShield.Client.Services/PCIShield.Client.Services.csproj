@@ -1,0 +1,59 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <WarningLevel>0</WarningLevel>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+
+
+
+
+    <NoWarn>
+      $(NoWarn);
+      CS1591;  <!-- missing XML comments, example -->
+      CS0618;   <!-- obsolete member, example -->
+      NU1903;
+      NU1902;
+    </NoWarn>
+      <UseSharedCompilation>true</UseSharedCompilation>
+      <BuildInParallel>true</BuildInParallel>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="ApplicationUser\**" />
+    <EmbeddedResource Remove="ApplicationUser\**" />
+    <None Remove="ApplicationUser\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
+    <PackageReference Include="Magic.IndexedDb" Version="1.0.4" />
+      <PackageReference Include="ReactiveUI.Blazor" Version="20.2.45" />
+      <!--<PackageReference Include="AsyncAwaitBestPractices" Version="8.0.0" />-->
+    <PackageReference Include="Flurl.Http" Version="4.0.2" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="9.0.10" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client.Core" Version="9.0.10" />
+    <PackageReference Include="Microsoft.Maui.Essentials" Version="9.0.60" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.10" />
+    <PackageReference Include="ReactiveUI" Version="20.2.45" />
+  
+    <PackageReference Include="Serilog" Version="4.2.0" />
+    <!--<PackageReference Include="Serilog.Extensions.Logging" Version="9.0.1" />-->
+    <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
+    <PackageReference Include="System.Reactive" Version="6.0.1" />
+    <PackageReference Include="System.Reactive.Core" Version="6.0.1" />
+    <PackageReference Include="System.Reactive.Linq" Version="6.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+
+    <ProjectReference Include="..\PCIShield.BlazorMauiShared\PCIShield.BlazorMauiShared.csproj" />
+ 
+ 
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,264 @@
+﻿.container-info-invoice{
+    width:650px;
+    height:auto;
+}
+
+.container-info-company {
+    width: 345px;
+    height: auto;
+}
+
+
+.container-dialog-invoice-readonly {
+    margin: 0px !important;
+    padding: 0px !important;
+    font-weight: 400 !important;
+    font-size: 12px !important;
+    line-height: 100% !important;
+    height: auto;
+    width: 1082px !important;
+}
+
+
+.container-dialog-invoice-readonly .mud-focus-trap .content-dialog-invoice {
+    overflow: hidden !important;
+    height:1016px;
+}
+
+.container-dialog-invoice-readonly .mud-input-control-input-container {
+    display: block !important;
+}
+
+
+.container-dialog-invoice-readonly .mud-icon-button {
+    padding: 0px;
+}
+
+.container-code-qr{
+    background-color:black;
+    width:115px;
+    height:115px;
+    margin:0px 5px 5px 0px;
+}
+
+.container-img-company{
+    width:75px;
+    height:75px;
+    background-color: black;
+    margin-bottom:5px;
+}
+
+.container-code{
+    gap:0 !important;
+    margin-bottom:5px;
+}
+
+.txt-generation-code {
+    font-weight: 600 !important;
+    font-size: 16px !important;
+    line-height: 100% !important;
+    color: #707070 !important;
+}
+
+.value-generation-code {
+    font-weight: 700 !important;
+    font-size: 24px !important;
+    line-height: 100% !important;
+    color: #343030 !important;
+}
+
+.style-lbl-invoice {
+    font-weight: 700 !important;
+    font-size: 12px !important;
+    line-height: 100% !important;
+    color: #707070 !important;
+}
+
+.style-value-invoice {
+    font-weight: 400 !important;
+    font-size: 12px !important;
+    line-height: 100% !important;
+    color: #343030 !important;
+}
+
+.m-lbl{
+    margin-bottom:5px !important;
+}
+
+.m-value {
+    margin-bottom: 10px !important;
+}
+
+.lbl-company {
+    font-weight: 600 !important;
+    font-size: 16px !important;
+    line-height: 100% !important;
+    color: #343030 !important;
+}
+
+.text-lbl-date {
+    font-weight: 400 !important;
+    font-size: 12px !important;
+    line-height: 100% !important;
+    color: #FFFFFF !important;
+}
+
+.value-date {
+    font-weight: 400 !important;
+    font-size: 12px !important;
+    line-height: 100% !important;
+    color: #343030 !important;
+}
+
+.grid-date > .mud-grid-item {
+    padding-top: 0px !important;
+    padding-left: 0px !important;
+}
+
+.grid-date{
+    width:296px !important;
+    margin-top:5px !important;
+}
+
+.head-date {
+    height: 25px;
+    background-color: #707070;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.body-date {
+    height: 30px;
+    background-color: #F6F6F6;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.border-date {
+    border-right: 1px solid #707070;
+}
+
+.container-info-merchant{
+    margin-top:18px;
+    background-color: #F6F6F6 !important;
+    width:auto;
+    height:auto;
+    border-radius:5px !important;
+    padding:20px;
+}
+
+.container-content{
+    height:100%;
+    overflow-y:auto;
+}
+
+.mud-grid-custom {
+    margin-top: 5px !important;
+    width:auto !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center !important;
+    gap: 10px; /* Espacio entre los MudItem */
+}
+
+.mud-grid-custom .item-custom {
+    width: auto; /* Se ajusta al contenido */
+    height: auto;
+    white-space: nowrap; /* Evita que el texto se rompa en varias líneas */
+}
+
+.txt-title-merchant {
+    font-weight: 600 !important;
+    font-size: 16px !important;
+    line-height: 100% !important;
+    color: #343030 !important;
+}
+
+.style-table-invoice-readonly {
+    margin-top: 15px;
+}
+
+.style-table-invoice-readonly .mud-table-container {
+    overflow-y: hidden;
+}
+
+.style-table-invoice-readonly .mud-table-head {
+    background-color: #707070;
+    height: 43px;
+    border-radius: 50px !important;
+}
+
+    .style-table-invoice-readonly .mud-table-head .mud-table-cell {
+        font-size: 12px !important;
+        font-weight: 700 !important;
+        line-height: 100% !important;
+        color: #FFFFFF !important;
+        text-align: center;
+        border-bottom: none;
+    }
+
+.style-table-invoice-readonly * .mud-table-row .mud-table-cell {
+    padding: 7px 24px 7px 16px !important;
+    padding-inline-start: 0px !important;
+    padding-inline-end: 0px !important;
+}
+
+.style-table-invoice-readonly .mud-table-body .mud-table-cell {
+    border-right: none !important;
+    border-bottom: 1px solid #DDDDDD !important;
+    height: 30px;
+}
+
+.style-table-invoice-readonly .mud-table-container {
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+}
+
+.style-table-invoice-readonly {
+    border-color: transparent !important;
+}
+
+.container-pay-product-readonly .mud-paper {
+    width: 150px !important;
+    margin-top: 50px !important;
+    margin-bottom: 40px !important;
+}
+
+.container-total-readonly {
+    width: 146px;
+    height: 36px;
+    background-color: #707070;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding:8px 12px;
+    border-radius:6px;
+}
+
+.style-lbl-invoice-total {
+    font-weight: 600 !important;
+    font-size: 16px !important;
+    line-height: 100% !important;
+    color: #FFFFFF !important;
+}
+
+.style-lbl-invoice-concept {
+    font-weight: 400 !important;
+    font-size: 12px !important;
+    line-height: 100% !important;
+    color: #707070 !important;
+}
+
+.style-lbl-invoice-concept-value {
+    font-weight: 400 !important;
+    font-size: 12px !important;
+    line-height: 100% !important;
+    color: #AEAEAE !important;
+}
+
+.container-concept{
+    padding-left:20px !important;
+    margin-bottom:10px;
+}

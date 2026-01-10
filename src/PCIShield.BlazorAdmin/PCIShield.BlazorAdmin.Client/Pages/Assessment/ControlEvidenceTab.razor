@@ -1,0 +1,917 @@
+@* ControlEvidenceTab.razor *@
+@page "/ControlEvidenceTab"
+@using MudBlazor
+@using global::BlazorMauiShared.Models.ControlEvidence
+@using PCIShield.Domain.ModelsDto
+@using LanguageExt
+@using LanguageExt.Common
+@using static LanguageExt.Prelude
+@using Microsoft.AspNetCore.Components.Web
+@using Severity = MudBlazor.Severity
+@using FluentValidation
+@using System.Reactive.Disposables
+@using System.Reactive.Threading.Tasks
+@using PCIShield.BlazorAdmin.Client.Services
+@using PCIShield.BlazorAdmin.Client.Shared.Components
+@inject ILogger<ControlEvidenceTab> _logger
+@inject IStringLocalizer<ControlEvidenceTab> Localizer
+
+@inject IHttpAssessmentClientService _assessmentHttpService
+
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@namespace PCIShield.BlazorAdmin.Client.Pages.Assessment
+
+<!-- EvidencesTab.razor - Complete PCIShield Theme Implementation -->
+<MudPaper Class="pciShield-container pciShield-shadow mb-4" Elevation="0">
+    <MudGrid AlignItems="AlignItems.Center">
+        <MudItem xs="12" sm="8">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
+                <MudIcon Icon="@Icons.Material.Filled.Description"
+                         Color="Color.Primary"
+                         Size="Size.Large" />
+                <div>
+                    <MudText Class="pciShield-title-section">@Localizer["Manage Evidences"]</MudText>
+                    <MudText Class="pciShield-text-body mt-1">@Localizer["Upload and manage compliance evidence documents"]</MudText>
+                </div>
+                <MudBadge Content="@(Evidences?.Count ?? 0)"
+                          Color="Color.Primary"
+                          Overlap="true"
+                          Class="ml-2" />
+            </MudStack>
+        </MudItem>
+        <MudItem xs="12" sm="4" Class="d-flex justify-end">
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       OnClick="@AddJoinItemEvidence"
+                       StartIcon="@Icons.Material.Filled.Upload"
+                       Disabled="@(Evidences?.Count >= 10)"
+                       Class="pciShield-btn pciShield-btn-primary">
+                @Localizer["Add Evidence"]
+            </MudButton>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+
+<div class="pciShield-style-join-tab">
+<!-- EvidencesTab.razor - Complete PCIShield Theme Implementation -->
+<MudContainer MaxWidth="MaxWidth.False" Class="mt-4 pa-0">
+    <!-- Statistics Summary -->
+    <MudGrid Spacing="3" Class="mb-4">
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="pciShield-container pciShield-shadow" Elevation="1">
+                <MudStack AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.Folder" Color="Color.Primary" />
+                    <MudText Class="pciShield-text-caption">@Localizer["Total Evidences"]</MudText>
+                    <MudText Typo="Typo.h5" Class="font-weight-bold">@(Evidences?.Count ?? 0)</MudText>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="pciShield-container pciShield-shadow" Elevation="1">
+                <MudStack AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.Star" Color="Color.Warning" />
+                    <MudText Class="pciShield-text-caption">@Localizer["Primary Evidence"]</MudText>
+                    @{
+                        var primaryEvidence = Evidences?.FirstOrDefault(s => s.IsPrimary)?.Evidence;
+                    }
+                    @if (primaryEvidence != null)
+                    {
+                        <MudTooltip Text="@primaryEvidence.EvidenceCode">
+                            <MudChip T="bool" Size="Size.Small" Color="Color.Primary" Class="pciShield-chip">
+                                @(primaryEvidence.EvidenceCode ?? "N/A")
+                            </MudChip>
+                        </MudTooltip>
+                    }
+                    else
+                    {
+                        <MudChip T="bool" Size="Size.Small" Color="Color.Warning" Class="pciShield-chip">
+                            @Localizer["Not Set"]
+                        </MudChip>
+                    }
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="pciShield-container pciShield-shadow" Elevation="1">
+                <MudStack AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.CloudUpload" Color="Color.Success" />
+                    <MudText Class="pciShield-text-caption">@Localizer["Recent Uploads"]</MudText>
+                    <MudText Typo="Typo.h5" Class="font-weight-bold">
+                        @(Evidences?.Count(e => e.Evidence.CreatedAt >= DateTime.Now.AddDays(-7)) ?? 0)
+                    </MudText>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="pciShield-container pciShield-shadow" Elevation="1">
+                <MudStack AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.VerifiedUser" Color="Color.Info" />
+                    <MudText Class="pciShield-text-caption">@Localizer["Verified"]</MudText>
+                    <MudText Typo="Typo.h5" Class="font-weight-bold">
+                        @(Evidences?.Count(e => !string.IsNullOrEmpty(e.Evidence.FileHash)) ?? 0)
+                    </MudText>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <!-- Evidences List/Grid -->
+    <MudItem xs="12">
+        @if (Evidences == null || !Evidences.Any())
+        {
+            <MudPaper Class="pciShield-container pciShield-shadow d-flex align-center justify-center py-8" Elevation="0">
+                <MudStack AlignItems="AlignItems.Center" Spacing="4">
+                    <MudIcon Icon="@Icons.Material.Filled.FolderOff"
+                             Color="Color.Default"
+                             Style="font-size: 64px;" />
+                    <MudText Typo="Typo.h6" Class="pciShield-title-section">@Localizer["No Evidences uploaded"]</MudText>
+                    <MudText Class="pciShield-text-body">@Localizer["Start by uploading your first evidence document"]</MudText>
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               OnClick="@AddJoinItemEvidence"
+                               StartIcon="@Icons.Material.Filled.Upload"
+                               Class="pciShield-btn pciShield-btn-primary">
+                        @Localizer["Upload First Evidence"]
+                    </MudButton>
+                </MudStack>
+            </MudPaper>
+        }
+        else
+        {
+            <MudGrid Spacing="3">
+                @foreach (var evidence in Evidences)
+                {
+                    <MudItem xs="12" sm="6" md="4">
+                        <MudCard Elevation="2"
+                                 Class="@GetControlEvidencesCardClass(evidence)"
+                                 Style="position: relative; height: 100%;">
+
+                            <!-- Primary Badge -->
+                            @if (evidence.IsPrimary)
+                            {
+                                <div style="position: absolute; top: -10px; right: 10px; z-index: 10;">
+                                    <MudChip T="bool" Color="Color.Warning"
+                                             Size="Size.Small"
+                                             Icon="@Icons.Material.Filled.Star"
+                                             Style="background: linear-gradient(135deg, #F59E0B 0%, #F97316 100%);">
+                                        PRIMARY
+                                    </MudChip>
+                                </div>
+                            }
+
+                            <!-- Card Header -->
+                            <MudCardHeader Style="background: linear-gradient(135deg, #293E8C 0%, #1B2C6A 100%); color: white;">
+                                <CardHeaderAvatar>
+                                    <MudAvatar Size="Size.Medium"
+                                               Style="@(evidence.IsPrimary ? "background: #F59E0B; color: white;" : "background: white; color: #293E8C;")">
+                                        @if (!string.IsNullOrEmpty(evidence.Evidence.EvidenceCode) && evidence.Evidence.EvidenceCode.Length > 0)
+                                        {
+                                            @evidence.Evidence.EvidenceCode.Substring(0, Math.Min(2, evidence.Evidence.EvidenceCode.Length)).ToUpper()
+                                        }
+                                        else
+                                        {
+                                            <MudIcon Icon="@Icons.Material.Filled.Description" />
+                                        }
+                                    </MudAvatar>
+                                </CardHeaderAvatar>
+                                <CardHeaderContent>
+                                    <MudText Typo="Typo.body1" Class="font-weight-bold">
+                                        @(evidence.Evidence.EvidenceCode ?? "N/A")
+                                    </MudText>
+                                    <MudText Typo="Typo.body2" Style="opacity: 0.9;">
+                                        @((evidence?.Evidence?.EvidenceCode ?? "") + " " +
+                                                                    (evidence?.Evidence?.EvidenceTitle ?? ""))
+                                    </MudText>
+                                </CardHeaderContent>
+                                <CardHeaderActions>
+                                    <MudMenu Icon="@Icons.Material.Filled.MoreVert"
+                                             Dense="true"
+                                             IconColor="Color.Inherit">
+                                        <MudMenuItem OnClick="@(() => StartEditEvidence(evidence))"
+                                                     Icon="@Icons.Material.Filled.Edit">
+                                            @Localizer["Edit"]
+                                        </MudMenuItem>
+                                        @if (!evidence.IsPrimary)
+                                        {
+                                            <MudMenuItem OnClick="@(() => SetAsPrimaryEvidence(evidence))"
+                                                         Icon="@Icons.Material.Filled.Star"
+                                                         IconColor="Color.Warning">
+                                                @Localizer["Set as Primary"]
+                                            </MudMenuItem>
+                                        }
+                                        <MudDivider />
+                                        <MudMenuItem OnClick="@(() => DeleteJoinItemEvidence(evidence))"
+                                                     Icon="@Icons.Material.Filled.Delete"
+                                                     IconColor="Color.Error"
+                                                     Disabled="@(evidence.IsPrimary && Evidences.Count > 1)">
+                                            @Localizer["Remove"]
+                                        </MudMenuItem>
+                                    </MudMenu>
+                                </CardHeaderActions>
+                            </MudCardHeader>
+
+                            <MudCardContent>
+                                @if (_editMode && _editingEvidenceItem?.EvidenceId == evidence.EvidenceId)
+                                {
+                                    <!-- Edit Mode -->
+                                    <MudForm Model="@_editingEvidenceItem" @ref="@_editForm">
+                                        <MudGrid Spacing="2">
+                                            <MudItem xs="12">
+                                                <MudTextField @bind-Value="@_editingEvidenceItem.Evidence.EvidenceCode"
+                                                              Label="@Localizer["Evidence Code"]"
+                                                              Variant="Variant.Outlined"
+                                                              Dense="true"
+                                                              Class="pciShield-input"
+                                                              Required="true" />
+                                            </MudItem>
+                                            <MudItem xs="12">
+                                                <MudTextField @bind-Value="@_editingEvidenceItem.Evidence.EvidenceTitle"
+                                                              Label="@Localizer["Evidence Title"]"
+                                                              Variant="Variant.Outlined"
+                                                              Dense="true"
+                                                              Class="pciShield-input"
+                                                              Required="true" />
+                                            </MudItem>
+                                            <MudItem xs="12">
+                                                <MudTextField @bind-Value="@_editingEvidenceItem.Evidence.EvidenceType"
+                                                              Label="@Localizer["Evidence Type"]"
+                                                              Variant="Variant.Outlined"
+                                                              Dense="true"
+                                                              Class="pciShield-input"
+                                                              Required="true" />
+                                            </MudItem>
+                                            <MudItem xs="12">
+                                                <MudTextField @bind-Value="@_editingEvidenceItem.Evidence.CollectedDate"
+                                                              Label="@Localizer["Collected Date"]"
+                                                              Variant="Variant.Outlined"
+                                                              Dense="true"
+                                                              Class="pciShield-input"
+                                                              Required="true" />
+                                            </MudItem>
+                                            <MudItem xs="12">
+                                                <MudTextField @bind-Value="@_editingEvidenceItem.Evidence.FileHash"
+                                                              Label="@Localizer["File Hash"]"
+                                                              Variant="Variant.Outlined"
+                                                              Dense="true"
+                                                              Class="pciShield-input"
+                                                              />
+                                            </MudItem>
+                                            <MudItem xs="12">
+                                                <MudTextField @bind-Value="@_editingEvidenceItem.Evidence.StorageUri"
+                                                              Label="@Localizer["Storage Uri"]"
+                                                              Variant="Variant.Outlined"
+                                                              Dense="true"
+                                                              Class="pciShield-input"
+                                                              />
+                                            </MudItem>
+                                            <MudItem xs="6">
+                                                <MudSwitch T="bool" @bind-Checked="@_editingEvidenceItem.IsPrimary"
+                                                           Label="@Localizer["Set as Primary"]"
+                                                           Color="Color.Primary"
+                                                           Disabled="@(evidence.IsPrimary && Evidences.Count > 1)" />
+                                            </MudItem>
+                                        </MudGrid>
+                                    </MudForm>
+                                }
+                                else
+                                {
+                                    <!-- View Mode -->
+                                    <MudStack Spacing="2">
+                                        <!-- Title -->
+                                        <MudText Typo="Typo.subtitle1" Class="font-weight-bold">
+                                            @(evidence.Evidence.EvidenceCode + " " + evidence.Evidence.EvidenceTitle ?? "Untitled")
+                                        </MudText>
+
+                                        <!-- Type Badge -->
+                                        <div>
+                                            <MudChip T="bool" Size="Size.Small"
+                                                     Icon="@GetEvidenceTypeIcon(evidence.Evidence.EvidenceType)"
+                                                     Color="@GetEvidenceTypeColor(evidence.Evidence.EvidenceType)"
+                                                     Class="pciShield-chip">
+                                                @Localizer["Evidence Type"]: @(evidence.Evidence.EvidenceType)
+                                            </MudChip>
+                                        </div>
+
+                                        <MudDivider />
+
+                                        <!-- Key Information -->
+                                        <MudGrid Spacing="1">
+                                            <MudItem xs="12">
+                                                <MudText Typo="Typo.caption" Class="pciShield-text-caption">Collected Date</MudText>
+                                                <MudText Typo="Typo.body2">
+                                                    <MudIcon Icon="@Icons.Material.Filled.CalendarToday" Size="Size.Small" Style="vertical-align: middle; margin-right: 4px;" />
+                                                    @evidence.Evidence.CollectedDate.ToString("dd/MM/yyyy")
+                                                </MudText>
+                                            </MudItem>
+                                        </MudGrid>
+
+                                        <!-- File Hash Section -->
+                                        @if (!string.IsNullOrEmpty(evidence.Evidence.FileHash))
+                                        {
+                                            <MudPaper Class="pa-2" Style="background-color: #E8F1FF;" Elevation="0">
+                                                <MudStack Spacing="1">
+                                                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                                                        <MudIcon Icon="@Icons.Material.Filled.VerifiedUser" Size="Size.Small" Color="Color.Success" />
+                                                        <MudText Typo="Typo.caption" Class="font-weight-bold">Verified</MudText>
+                                                    </MudStack>
+                                                    <MudText Typo="Typo.caption" Style="word-break: break-all; font-family: monospace;">
+                                                        @evidence.Evidence.FileHash.Substring(0, Math.Min(16, evidence.Evidence.FileHash.Length))...
+                                                    </MudText>
+                                                </MudStack>
+                                            </MudPaper>
+                                        }
+                                        else
+                                        {
+                                            <MudPaper Class="pa-2" Style="background-color: #FFF4E5;" Elevation="0">
+                                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                                                    <MudIcon Icon="@Icons.Material.Filled.Warning" Size="Size.Small" Color="Color.Warning" />
+                                                    <MudText Typo="Typo.caption">Not Verified</MudText>
+                                                </MudStack>
+                                            </MudPaper>
+                                        }
+
+                                        <!-- Storage Location -->
+                                        @if (!string.IsNullOrEmpty(evidence.Evidence.StorageUri))
+                                        {
+                                            <MudStack Spacing="1">
+                                                <MudText Typo="Typo.caption" Class="pciShield-text-caption">Storage</MudText>
+                                                <MudButton Variant="Variant.Text"
+                                                           StartIcon="@Icons.Material.Filled.CloudDownload"
+                                                           Size="Size.Small"
+                                                           Color="Color.Primary"
+                                                           Style="text-transform: none; padding: 4px 8px;">
+                                                    Download Evidence
+                                                </MudButton>
+                                            </MudStack>
+                                        }
+
+                                        <!-- Metadata -->
+                                        <MudDivider />
+                                    </MudStack>
+                                }
+                            </MudCardContent>
+
+                            @if (_editMode && _editingEvidenceItem?.EvidenceId == evidence.EvidenceId)
+                            {
+                                <MudCardActions Class="d-flex justify-end px-4 pb-4">
+                                    <MudButton OnClick="@CancelEditEvidence"
+                                               Variant="Variant.Text"
+                                               Color="Color.Default">
+                                        @Localizer["Cancel"]
+                                    </MudButton>
+                                    <MudButton Color="Color.Primary"
+                                               Variant="Variant.Filled"
+                                               OnClick="@(() => SaveEvidenceChanges(_editingEvidenceItem))"
+                                               Class="pciShield-btn pciShield-btn-primary">
+                                        @Localizer["Save"]
+                                    </MudButton>
+                                </MudCardActions>
+                            }
+
+                        </MudCard>
+                    </MudItem>
+                }
+            </MudGrid>
+        }
+    </MudItem>
+</MudContainer>
+
+<!-- Loading Overlay -->
+<MudOverlay Visible="@IsLoading"
+            DarkBackground="true"
+            ZIndex="9999"
+            AutoClose="false"
+            Class="pciShield-overlay">
+    <MudProgressCircular Color="Color.Primary"
+                         Indeterminate="true"
+                         Size="Size.Large" />
+</MudOverlay>
+
+
+
+</div>
+
+@code {
+
+
+    private string GetEvidenceTypeIcon(int type)
+    {
+        return type switch
+        {
+            0 => Icons.Material.Filled.Description,
+            1 => Icons.Material.Filled.Screenshot,
+            2 => Icons.Material.Filled.Assessment,
+            3 => Icons.Material.Filled.CardMembership,
+            _ => Icons.Material.Filled.AttachFile
+        };
+    }
+
+    private Color GetEvidenceTypeColor(int type)
+    {
+        return type switch
+        {
+            0 => Color.Primary,
+            1 => Color.Info,
+            2 => Color.Success,
+            3 => Color.Warning,
+            _ => Color.Default
+        };
+    }
+
+    [Parameter]
+    public Guid AssessmentId
+    {
+        get; set;
+    }
+
+    [Parameter]
+    public string _evidenceEditingUserId
+    {
+        get; set;
+    }
+
+    [Parameter] public List<ControlEvidenceDto> Evidences { get; set; } = new();
+    private readonly CompositeDisposable _dirtyStateDisposables = new();
+    private readonly CompositeDisposable _disposables = new();
+
+    [Parameter]
+    public EventCallback<ControlEvidenceDto> OnEvidenceAdded
+    {
+        get; set;
+    }
+
+    [Parameter]
+    public EventCallback<ControlEvidenceDto> OnEvidenceUpdated
+    {
+        get; set;
+    }
+
+    [Parameter]
+    public EventCallback<ControlEvidenceDto> OnEvidenceDeleted
+    {
+        get; set;
+    }
+
+    [Parameter]
+    public EventCallback<(Exception ex, ErrorHandlingService.ClientOperationContext context)> OnError
+    {
+        get; set;
+    }
+    private bool _editMode;
+    private ControlEvidenceDto? _editingEvidenceItem;
+    private MudForm _editForm;
+    private Timer _editTimeoutTimer;
+
+    [Parameter]
+    public bool IsLoading
+    {
+        get; set;
+    }
+    private IValidator<ControlEvidenceDto> _updateControlEvidenceValidator;
+
+    private async Task StartEditEvidence(ControlEvidenceDto item)
+    {
+        _editMode = true;
+        _editingEvidenceItem = item.Clone();
+        await BroadcastEvidenceEvent(SignalROperations.BeingEdited, item);
+        StartEditTimeout();
+        RefreshUi();
+    }
+
+    private async Task StopEditingEvidence()
+    {
+        if (_editingEvidenceItem != null)
+        {
+            await BroadcastEvidenceEvent(SignalROperations.EditingFinished, _editingEvidenceItem);
+        }
+        _editMode = false;
+        _editingEvidenceItem = null;
+    }
+
+    private async Task CancelEditEvidence()
+    {
+        _editMode = false;
+        _editingEvidenceItem = null;
+        RefreshUi();
+    }
+
+    private async Task UpdateEvidenceState(Func<List<ControlEvidenceDto>, List<ControlEvidenceDto>> updateFn)
+    {
+    }
+
+    protected void RefreshUi()
+    {
+        Observable
+            .StartAsync(async () =>
+            {
+                await InvokeAsync(StateHasChanged);
+            })
+            .Subscribe(onNext: _ => { });
+    }
+
+    private async Task AddJoinItemEvidence()
+    {
+        try
+        {
+            var response = await _assessmentHttpService.GetPagedControlEvidencesListAsync(1, 20);
+            var availableEvidences = response?.ControlEvidences?.Where(s => Evidences.All(cs => cs.EvidenceId != s.EvidenceId)).ToList() ?? new List<ControlEvidenceDto>();
+            var parameters = new DialogParameters
+            {
+                ["AvailableEvidences"] = availableEvidences,
+                ["AssessmentId"] = AssessmentId,
+            };
+            var dialog = await DialogService.ShowAsync<AddEvidenceDialog>(
+                Localizer["Add Evidence"],
+                parameters,
+                new DialogOptions
+                {
+                    CloseOnEscapeKey = true,
+                    MaxWidth = MaxWidth.ExtraSmall,
+                    FullWidth = true,
+                }
+            );
+            var result = await dialog.Result;
+            if (result != null && !result.Canceled && result.Data is CreateControlEvidenceJoinRequest joinRequest)
+            {
+                if (!Evidences.Any())
+                {
+                    joinRequest.ControlEvidence.IsPrimary = true;
+                }
+                var validationResult = await _updateControlEvidenceValidator.ValidateAsync(joinRequest.ControlEvidence);
+                if (!validationResult.IsValid)
+                {
+                    var errors = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage));
+                    throw new Exception(errors);
+                }
+                joinRequest.ControlEvidence.CreatedBy = Guid.Parse("2CD63ACA-28F4-52A5-D27D-0B2557B8ADF0");
+                joinRequest.ControlEvidence.UpdatedBy = Guid.Parse("06B247E1-EEA4-EF62-1111-A7838E4E0DBF");
+                var createdResponse = await _assessmentHttpService.CreateControlEvidenceAsync(joinRequest);
+                if (createdResponse?.ControlEvidence != null)
+                {
+                    joinRequest.ControlEvidence.AssessmentId = AssessmentId;
+                    if (createdResponse.ControlEvidence.Evidence != null)
+                        joinRequest.ControlEvidence.Evidence = createdResponse.ControlEvidence.Evidence;
+                    joinRequest.ControlEvidence.EvidenceId = createdResponse.ControlEvidence.EvidenceId;
+                    if (joinRequest.ControlEvidence.IsPrimary)
+                    {
+                        await HandlePrimaryEvidenceChange(createdResponse.ControlEvidence);
+                    }
+                    await BroadcastEvidenceEvent(SignalROperations.Create, createdResponse.ControlEvidence);
+                    var successMessage = string.IsNullOrEmpty(joinRequest.Evidence?.EvidenceCode)
+                        ? "New Evidence added successfully"
+                        : "Existing Evidence linked successfully";
+
+                    Snackbar.Add(Localizer[successMessage], Severity.Success);
+
+                    await OnEvidenceAdded.InvokeAsync(joinRequest.ControlEvidence);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await OnError.InvokeAsync((ex, ErrorHandlingService.ClientOperationContext.EvidenceCreate));
+        }
+    }
+
+    private async Task DeleteJoinItemEvidence(ControlEvidenceDto joinItem)
+    {
+        if (joinItem.IsPrimary && Evidences.Count > 1)
+        {
+            await DialogService.ShowMessageBox("Warning",
+                "Cannot delete primary evidence while other evidences exist. Please assign a new primary first.", yesText: "Ok");
+            return;
+        }
+        var parameters = new DialogParameters
+        {
+            { "ContentText", "Are you sure you want to Remove this evidence from the assessment?" },
+            { "ButtonText", "Delete" },
+            { "Color", Color.Error },
+            { "Icon", Icons.Material.Filled.Delete },
+            { "Title", "Remove Evidence" },
+        };
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            BackdropClick = true,
+            Position = DialogPosition.Center,
+            MaxWidth = MaxWidth.ExtraSmall,
+            FullWidth = true,
+        };
+        var dialog = await DialogService.ShowAsync<ConfirmDialog>("Confirm Delete", parameters, options);
+        var result = await dialog.Result;
+        if (result != null && !result.Canceled)
+        {
+            Observable
+                .FromAsync(async () =>
+                {
+                    var validationResult = await _updateControlEvidenceValidator.ValidateAsync(joinItem);
+                    if (!validationResult.IsValid)
+                    {
+                        var errors = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage));
+                        var ex = new Exception(errors);
+                        await OnError.InvokeAsync((ex, ErrorHandlingService.ClientOperationContext.EvidenceDelete));
+                        return;
+                    }
+                    await _assessmentHttpService.DeleteControlEvidenceAsync(
+                    joinItem.ControlId,
+                    joinItem.EvidenceId,
+                    joinItem.AssessmentId
+                    );
+                    Evidences.Remove(joinItem);
+                    await OnEvidenceDeleted.InvokeAsync(joinItem);
+                    await BroadcastEvidenceEvent(SignalROperations.Delete, joinItem);
+                })
+                .Catch<Unit, Exception>(ex =>
+                {
+                    var error = ex + "Error removing assessment-evidence relationship";
+                    _logger.LogError(error);
+                    Snackbar.Add("Error removing relationship", Severity.Error);
+                    return Observable.Empty<Unit>();
+                })
+                .Subscribe(_ =>
+                {
+                    Snackbar.Add("Evidence removed successfully", Severity.Success);
+                    RefreshUi();
+                });
+        }
+    }
+
+    private void HandleGenericEvidenceEvent(GenericSignalREvent evt)
+    {
+        switch (evt.Operation)
+        {
+            // case SignalROperations.Create:
+            //     OnEvidenceCreated(evt);
+            //     break;
+            // case SignalROperations.Update:
+            //     OnEvidenceUpdatedHandler(evt);
+            //     break;
+            case SignalROperations.Delete:
+                OnEvidenceDeletedHandler(evt);
+                break;
+            case SignalROperations.BeingEdited:
+                OnEvidenceBeingEdited(evt);
+                break;
+            case SignalROperations.EditingFinished:
+                OnEvidenceEditingFinished(evt);
+                break;
+            default:
+                _logger.LogInformation("Unhandled Evidence operation: {Op}", evt.Operation);
+                break;
+        }
+    }
+
+    // private async void OnEvidenceCreated(GenericSignalREvent evt)
+    // {
+    //     if (evt.Parameters.TryGetValue("EvidenceId", out var rightIdObj) && Guid.TryParse(rightIdObj.ToString(), out var rightId))
+    //     {
+    //         var evidence = await _assessmentHttpService.GetOneFullControlEvidenceByIdAsync(rightId, AssessmentId);
+    //         if (evidence?.ControlEvidence != null)
+    //         {
+    //             Evidences.Add(evidence.ControlEvidence);
+    //             await OnEvidenceAdded.InvokeAsync(evidence.ControlEvidence);
+    //             Snackbar.Add("Evidence created by another user", Severity.Info);
+    //             await InvokeAsync(StateHasChanged);
+    //         }
+    //     }
+    // }
+
+    // private async void OnEvidenceUpdatedHandler(GenericSignalREvent evt)
+    // {
+    //     if (evt.Parameters.TryGetValue("EvidenceId", out var rightIdObj) && Guid.TryParse(rightIdObj.ToString(), out var rightId))
+    //     {
+    //         var evidence = await _assessmentHttpService.GetOneFullControlEvidenceByIdAsync(rightId, AssessmentId);
+    //         if (evidence?.ControlEvidence != null)
+    //         {
+    //             var index = Evidences.FindIndex(x => x.EvidenceId == rightId);
+    //             if (index >= 0)
+    //             {
+    //                 Evidences[index] = evidence.ControlEvidence;
+    //                 await OnEvidenceUpdated.InvokeAsync(evidence.ControlEvidence);
+    //                 Snackbar.Add("Evidence updated by another user", Severity.Info);
+    //                 await InvokeAsync(StateHasChanged);
+    //             }
+    //         }
+    //     }
+    // }
+
+    private async void OnEvidenceDeletedHandler(GenericSignalREvent evt)
+    {
+        if (evt.Parameters.TryGetValue("EvidenceId", out var addrIdObj) && Guid.TryParse(addrIdObj.ToString(), out var addrId))
+        {
+            var removed = Evidences.FirstOrDefault(x => x.EvidenceId == addrId);
+            if (removed != null)
+            {
+                Evidences.Remove(removed);
+                await OnEvidenceDeleted.InvokeAsync(removed);
+                Snackbar.Add("Evidence removed by another user", Severity.Info);
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+    }
+
+    private void OnEvidenceBeingEdited(GenericSignalREvent evt)
+    {
+        if (evt.Parameters.TryGetValue("EvidenceId", out var addrIdObj) && Guid.TryParse(addrIdObj.ToString(), out var addrId))
+        {
+            var item = Evidences.FirstOrDefault(x => x.EvidenceId == addrId);
+            if (item != null)
+            {
+                Snackbar.Add($"Evidence {addrId} is being edited by another user", Severity.Info);
+            }
+        }
+    }
+
+    private void OnEvidenceEditingFinished(GenericSignalREvent evt)
+    {
+        if (evt.Parameters.TryGetValue("EvidenceId", out var addrIdObj) && Guid.TryParse(addrIdObj.ToString(), out var addrId))
+        {
+            Snackbar.Add($"Another user finished editing Evidence {addrId}", Severity.Info);
+        }
+    }
+
+    private async Task BroadcastEvidenceEvent(string operation, ControlEvidenceDto evidence)
+    {
+        var evt = new GenericSignalREvent(aggregateName: "ControlEvidence", entityId: evidence.EvidenceId, operation: operation, userId: _evidenceEditingUserId);
+        evt.Parameters["AssessmentId"] = AssessmentId;
+        evt.Parameters["EvidenceId"] = evidence.EvidenceId;
+        evt.Parameters["IsPrimary"] = evidence.IsPrimary;
+        await SignalRStrategy.SendNotificationAsync(evt);
+    }
+
+    private async Task HandlePrimaryEvidenceChange(ControlEvidenceDto newPrimary)
+    {
+        try
+        {
+            newPrimary.IsPrimary = true;
+            var itemsToUpdate = Evidences.Where(x => x.EvidenceId != newPrimary.EvidenceId && x.IsPrimary).ToList();
+            foreach (var item in itemsToUpdate)
+            {
+                item.IsPrimary = false;
+                var updatedItem = await _assessmentHttpService.UpdateControlEvidenceAsync(item);
+                if (updatedItem == null)
+                {
+                    throw new Exception($"Failed to update evidence {item.EvidenceId} on server");
+                }
+                await BroadcastEvidenceEvent(SignalROperations.Update, item);
+                await OnEvidenceUpdated.InvokeAsync(item);
+            }
+            var primaryResult = await _assessmentHttpService.UpdateControlEvidenceAsync(newPrimary);
+            if (primaryResult == null)
+            {
+                throw new Exception($"Failed to update new primary evidence {newPrimary.EvidenceId} on server");
+            }
+            await BroadcastEvidenceEvent(SignalROperations.Update, newPrimary);
+            await OnEvidenceUpdated.InvokeAsync(newPrimary);
+            Snackbar.Add(Localizer["Primary Evidence updated successfully"], Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating primary evidence flags");
+            await OnError.InvokeAsync((ex, ErrorHandlingService.ClientOperationContext.EvidenceUpdate));
+            Snackbar.Add(Localizer["Error updating primary Evidence"], Severity.Error);
+            throw;
+        }
+    }
+
+    private void UpdatePrimaryEvidenceFlags(Guid primaryEvidenceId)
+    {
+        foreach (var evidence in Evidences)
+        {
+            evidence.IsPrimary = evidence.EvidenceId == primaryEvidenceId;
+        }
+    }
+
+    private async Task SetAsPrimaryEvidence(ControlEvidenceDto item)
+    {
+        try
+        {
+            var itemToUpdate = item.Clone();
+            itemToUpdate.IsPrimary = true;
+            await HandlePrimaryEvidenceChange(itemToUpdate);
+            item.IsPrimary = true;
+            RefreshUi();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error setting evidence as primary");
+            await OnError.InvokeAsync((ex, ErrorHandlingService.ClientOperationContext.EvidenceUpdate));
+            Snackbar.Add(Localizer["Error updating primary Evidence"], Severity.Error);
+        }
+    }
+
+    private string GetControlEvidencesCardClass(ControlEvidenceDto evidence)
+    {
+        var classes = new List<string> { "transition-all", "position-relative" };
+        if (evidence.IsPrimary)
+            classes.Add("border-primary border-2");
+        return string.Join(" ", classes);
+    }
+
+    private async Task SaveEvidenceChanges(ControlEvidenceDto item)
+    {
+        await TryAsync(async () =>
+            {
+                if (item == null)
+                    return Unit.Default;
+                var updatedEvidence = await _assessmentHttpService.UpdateControlEvidenceAsync(item);
+                if (updatedEvidence == null)
+                {
+                    throw new Exception($"Failed to update evidence {item.EvidenceId} on server");
+                }
+                if (item.IsPrimary && Evidences.Any(x => x.EvidenceId != item.EvidenceId && x.IsPrimary))
+                {
+                    await HandlePrimaryEvidenceChange(item);
+                }
+                var existingEvidenceIndex = Evidences.FindIndex(c => c.EvidenceId == item.EvidenceId);
+                if (existingEvidenceIndex >= 0)
+                {
+                    Evidences[existingEvidenceIndex] = item;
+                }
+                await OnEvidenceUpdated.InvokeAsync(item);
+                await BroadcastEvidenceEvent(SignalROperations.Update, item);
+                _editMode = false;
+                _editingEvidenceItem = null;
+                await InvokeAsync(StateHasChanged);
+                return Unit.Default;
+            })
+            .Match(
+                Succ: _ => Snackbar.Add(Localizer["Changes saved successfully"], Severity.Success),
+                Fail: ex =>
+                {
+                    _logger.LogError(ex, "Error saving evidence changes");
+                    Snackbar.Add(Localizer["Error saving changes"], Severity.Error);
+                }
+            );
+    }
+
+    private void StartEditTimeout()
+    {
+        _editTimeoutTimer?.Dispose();
+        _editTimeoutTimer = new Timer(
+            async _ =>
+            {
+                await InvokeAsync(async () =>
+                {
+                    if (_editMode)
+                    {
+                        await CancelEditEvidence();
+                        Snackbar.Add("Edit session timed out", Severity.Warning);
+                        RefreshUi();
+                    }
+                });
+            },
+            null,
+            TimeSpan.FromSeconds(70),
+            Timeout.InfiniteTimeSpan
+        );
+    }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await base.OnInitializedAsync();
+            await SignalRStrategy.EnsureConnectedAsync();
+            SignalRStrategy
+                .GetEventStream()
+                .Where(evt => evt.AggregateName == "ControlEvidence")
+                .Where(evt => evt.UserId != _evidenceEditingUserId)
+                .Buffer(TimeSpan.FromMilliseconds(100))
+                .Where(events => events.Any())
+                .Subscribe(async events =>
+                {
+                    foreach (var evt in events)
+                    {
+                        if (evt.Parameters.TryGetValue("AssessmentId", out var assessmentIdObj) && Guid.TryParse(assessmentIdObj.ToString(), out var assessmentId) && assessmentId == AssessmentId)
+                        {
+                            HandleGenericEvidenceEvent(evt);
+                        }
+                    }
+                    await InvokeAsync(StateHasChanged);
+                });
+            _updateControlEvidenceValidator = new InlineValidator<ControlEvidenceDto>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in OnInitializedAsync");
+            Snackbar.Add("Error initializing page", Severity.Error);
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _dirtyStateDisposables.Dispose();
+        _disposables.Dispose();
+    }
+
+}
+
+

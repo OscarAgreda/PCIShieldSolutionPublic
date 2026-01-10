@@ -1,0 +1,96 @@
+﻿@inject ILogger<Routes> Logger
+
+<ErrorBoundary @ref="errorBoundary">
+    <ChildContent>
+        <Router AppAssembly="typeof(Program).Assembly" AdditionalAssemblies="new[] { typeof(Client._Imports).Assembly }">
+            <Found Context="routeData">
+                <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
+                    <NotAuthorized>
+                        @if (context.User.Identity?.IsAuthenticated != true)
+                        {
+                            <RedirectToLogin />
+                        }
+                        else
+                        {
+                            <p role="alert">You are not authorized to access this resource.</p>
+                        }
+                    </NotAuthorized>
+                    <Authorizing>
+                        <MudContainer Class="d-flex justify-center align-center" Style="height: 100vh;">
+                            <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+                        </MudContainer>
+                    </Authorizing>
+                </AuthorizeRouteView>
+                <FocusOnNavigate RouteData="routeData" Selector="h1" />
+            </Found>
+        </Router>
+    </ChildContent>
+    <ErrorContent Context="exception">
+        <div class="error-boundary-content">
+            <MudContainer MaxWidth="MaxWidth.Medium" Class="mt-5">
+                <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="mb-4">
+                    <MudText Typo="Typo.h6">An error has occurred</MudText>
+                    <MudText Typo="Typo.body2" Class="mt-2">@exception.Message</MudText>
+                    @if (exception.InnerException != null)
+                    {
+                        <MudText Typo="Typo.caption" Class="mt-2">Inner Exception: @exception.InnerException.Message</MudText>
+                    }
+                </MudAlert>
+                
+                <MudPaper Class="pa-4 mb-4" Elevation="0" Outlined="true">
+                    <MudText Typo="Typo.subtitle2" Class="mb-2">Error Details:</MudText>
+                    <pre style="overflow-x: auto; font-size: 0.75rem;">@exception.ToString()</pre>
+                </MudPaper>
+                
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Recover">
+                    Try Again
+                </MudButton>
+                <MudButton Variant="Variant.Text" Color="Color.Secondary" OnClick="NavigateHome">
+                    Go to Home
+                </MudButton>
+            </MudContainer>
+        </div>
+    </ErrorContent>
+</ErrorBoundary>
+
+@code {
+    private ErrorBoundary? errorBoundary;
+    
+    [CascadingParameter]
+    private Task<AuthenticationState>? authenticationState { get; set; }
+
+    [Inject]
+    private NavigationManager Navigation { get; set; } = default!;
+
+    private void Recover()
+    {
+        Logger.LogInformation("Error boundary recovery initiated");
+        errorBoundary?.Recover();
+    }
+
+    private void NavigateHome()
+    {
+        Logger.LogInformation("Navigating to home after error");
+        Navigation.NavigateTo("/", forceLoad: true);
+    }
+
+    protected override void OnInitialized()
+    {
+        Logger.LogInformation("Routes component initialized");
+    }
+
+    public partial class RedirectToLogin : ComponentBase
+    {
+        [Inject]
+        NavigationManager Navigation { get; set; } = default!;
+
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            if (firstRender)
+            {
+                // Use InvokeAsync to ensure we're on the correct synchronization context
+                await InvokeAsync(() => Navigation.NavigateTo("/Auth/Login", forceLoad: false));
+            }
+        }
+    }
+}

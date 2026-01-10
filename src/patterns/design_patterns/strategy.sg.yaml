@@ -1,0 +1,13 @@
+rule:
+  pattern: |
+    interface I$NAME$Strategy {
+      $$$
+    }
+  kind: interface_declaration
+  
+# This rule matches Strategy pattern interface declarations like:
+# - ICustomerStrategy
+# - IInvoiceStrategy
+#
+# The $NAME placeholder will match the strategy name
+# The $$$ placeholder will match the interface body

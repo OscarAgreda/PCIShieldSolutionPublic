@@ -1,0 +1,50 @@
+flowchart TD
+    %% ───────────────────────────────────────────
+    %%  ACTORS & ENTRY POINT
+    %% ───────────────────────────────────────────
+    U([Browser / Mobile App]) -->|POST /api/accountv2/login_customer| A{AccountAuthV2Controller}
+
+    %% ───────────────────────────────────────────
+    %%  AUTHENTICATION
+    %% ───────────────────────────────────────────
+    A -->|PasswordSignInAsync| S[(SignInManager)]
+    S -->|valid?| C1{Credentials OK?}
+
+    C1 -- No --> E1[[401 Unauthorized]]
+    C1 -- Yes --> L1[Check EmailConfirmed, LockoutCount]
+
+    L1 -->|Requires 2FA?| C2{2 FA?}
+    C2 -- Yes --> TFA[Two-factor flow] --> C3{Success?}
+    C3 -- No --> E1
+    C3 -- Yes --> G1[Generate One-Time Code] --> C4[Continue]
+    C2 -- No --> C4[Continue]
+
+    %% ───────────────────────────────────────────
+    %%  DOMAIN READS & STATE UPDATES
+    %% ───────────────────────────────────────────
+    C4 --> R1[Repo: Load Customer/Employee by ApplicationUserId]
+    R1 -->|found Customer| CU[Customer aggregate update<br/>• online flags<br/>• TenantId<br/>• LastLogin]
+    R1 -->|found Employee| EM[Employee aggregate update]
+
+    %% ───────────────────────────────────────────
+    %%  CLAIMS & TOKEN CREATION
+    %% ───────────────────────────────────────────
+    CU & EM --> G2[GenerateClaimsForUser<br/>• Role list<br/>• TenantId claim<br/>• CustomerId/EmployeeId<br/>• scope]
+    G2 --> JWT[Issue JWT (24 h, HS256)]
+    G2 --> RT[Generate 32-byte RefreshToken<br/>(stored plain on CustomPCIShieldUser)]
+
+    %% ───────────────────────────────────────────
+    %%  RESPONSE
+    %% ───────────────────────────────────────────
+    JWT & RT --> RESP[200 OK { token, refreshToken, TenantId … }]
+
+    %% ───────────────────────────────────────────
+    %%  POST-LOGIN REQUESTS
+    %% ───────────────────────────────────────────
+    U -->|Authorization: Bearer| API[Protected Endpoint]
+    API --> V[(JwtBearer Middleware)] -->|signature & exp| P1{Valid Token?}
+    P1 -- No --> E2[[401 Invalid / Expired Token]]
+    P1 -- Yes --> POL[Authorization Policy Pipeline<br/>(Startup.cs)]
+    POL -->|Has Claim/Scope?| P2{Policy Satisfied?}
+    P2 -- No --> E3[[403 Forbidden]]
+    P2 -- Yes --> SVR[Controller / ApplicationLayer<br/>executes use-case]

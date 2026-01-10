@@ -1,0 +1,90 @@
+﻿.container-dialog-auto-code {
+    width: 382px;
+    height: auto;
+    padding: 24px;
+    gap: 12px;
+    overflow-y: unset !important;
+    border-radius: 6px;
+}
+
+    .container-dialog-auto-code .mud-dialog-title {
+        padding: 0px !important;
+    }
+
+
+.btn-cancel-auto-code {
+    width: 92px;
+    height: 31px;
+    border-radius: 30px !important;
+    padding: 8px 24px !important;
+    border: 1px solid #293E8C !important;
+    background-color: #FFFFFF;
+    text-transform: none !important;
+}
+
+    .btn-cancel-auto-code .mud-button-label {
+        font-weight: 700;
+        font-size: 12px;
+        line-height: 14.63px;
+        text-align: center;
+        color: #293E8C;
+    }
+
+.btn-save-auto-code {
+    width: 113px;
+    height: 31px;
+    border-radius: 30px !important;
+    padding: 8px 24px !important;
+    background-color: #293E8C !important;
+    text-transform: none !important;
+}
+
+    .btn-save-auto-code .mud-button-label {
+        font-weight: 700 !important;
+        font-size: 12px !important;
+        line-height: 100% !important;
+        color: #ffffff;
+    }
+
+.title-dialog-auto-code {
+    font-weight: 700 !important;
+    font-size: 16px !important;
+    line-height: 19.5px !important;
+    color: #293E8C;
+}
+
+.content-dialog-auto-code {
+    overflow: unset !important;
+    margin: 0px !important;
+    padding: 0px !important;
+    font-weight: 400 !important;
+    font-size: 12px !important;
+    line-height: 100% !important;
+    color: #707070;
+}
+
+    .content-dialog-auto-code .mud-typography-body1 {
+        overflow: unset !important;
+        margin: 0px !important;
+        padding: 0px !important;
+        font-weight: 400 !important;
+        font-size: 12px !important;
+        line-height: 100% !important;
+        color: #707070 !important;
+    }
+
+.container-dialog-auto-code .content-dialog {
+    text-align: left;
+}
+
+.container-dialog-option-radio .mud-input-control-input-container {
+    display: block !important;
+}
+
+.content-dialog-auto-code {
+    height: 15px;
+}
+
+    .content-dialog-auto-code .mud-icon-button {
+        padding: 0px;
+    }

@@ -1,0 +1,169 @@
+﻿@* \Shared\Components\SearchAnalyticsPanel.razor *@
+@typeparam T
+
+<MudExpansionPanel Class="@Class" Elevation="0">
+    <TitleContent>
+        <div class="d-flex align-center gap-2 px-2">
+            <MudIcon Icon="@Icons.Material.Filled.Analytics" Color="Color.Primary" />
+            <MudText Typo="Typo.h6">@Title</MudText>
+        </div>
+    </TitleContent>
+    <ChildContent>
+        <MudPaper Class="pa-6" Elevation="0">
+
+
+            <MudGrid Spacing="4">
+                <!-- Key Metrics Cards -->
+
+                <MudItem xs="12" sm="6" md="3">
+                    <MudPaper Elevation="0" Class="pa-4">
+                        <MudStack>
+                            <MudText Typo="Typo.subtitle2" Color="Color.Primary">
+                                Last Server Call (ms)
+                            </MudText>
+                            <MudText Typo="Typo.h4">
+                                @Metrics.LastServerCallTime.TotalMilliseconds.ToString("F1")
+                            </MudText>
+                        </MudStack>
+                    </MudPaper>
+                </MudItem>
+
+                <MudItem xs="12" sm="6" md="3">
+                    <MudPaper Elevation="0" Class="pa-4">
+                        <MudStack>
+                            <MudText Typo="Typo.subtitle2" Color="Color.Secondary">
+                                Avg Server Call (ms)
+                            </MudText>
+                            <MudText Typo="Typo.h4">
+                                @Metrics.AverageServerCallTime.TotalMilliseconds.ToString("F1")
+                            </MudText>
+                        </MudStack>
+                    </MudPaper>
+                </MudItem>
+
+
+
+                <MudItem xs="12" sm="6" md="3">
+                    <MudPaper Elevation="0" Class="pa-4">
+                        <MudStack>
+                            <MudText Typo="Typo.subtitle2" Color="Color.Primary">Total Searches</MudText>
+                            <MudText Typo="Typo.h4">@Metrics.TotalSearches</MudText>
+                        </MudStack>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="12" sm="6" md="3">
+                    <MudPaper Elevation="0" Class="pa-4">
+                        <MudStack>
+                            <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Cache Hit Rate</MudText>
+                            <MudText Typo="Typo.h4">
+                                @(Metrics.TotalSearches > 0
+                                    ? (Metrics.CacheHits * 100.0 / Metrics.TotalSearches).ToString("F1")
+                                    : "0")%
+                            </MudText>
+                        </MudStack>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="12" sm="6" md="3">
+                    <MudPaper Elevation="0" Class="pa-4">
+                        <MudStack>
+                            <MudText Typo="Typo.subtitle2" Color="Color.Tertiary">Avg Search Time</MudText>
+                            <MudText Typo="Typo.h4">
+                                @Metrics.AverageSearchTime.TotalMilliseconds.ToString("F0") ms
+                            </MudText>
+                        </MudStack>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="12" sm="6" md="3">
+                    <MudPaper Elevation="0" Class="pa-4">
+                        <MudStack>
+                            <MudText Typo="Typo.subtitle2" Color="Color.Info">Cache Size</MudText>
+                            <MudText Typo="Typo.h4">@Metrics.CurrentCacheSize items</MudText>
+                        </MudStack>
+                    </MudPaper>
+                </MudItem>
+
+                @if (ShowSearchTerms)
+                {
+                    <MudItem xs="12" md="6">
+                        <MudPaper Elevation="0" Class="pa-4">
+                            <MudText Typo="Typo.h6" Class="mb-4">Popular Search Terms</MudText>
+                            <MudTable Items="@Metrics.GetTopSearchTerms()" Dense="true" Hover="true">
+                                <HeaderContent>
+                                    <MudTh>Term</MudTh>
+                                    <MudTh>Count</MudTh>
+                                    <MudTh>Percentage</MudTh>
+                                </HeaderContent>
+                                <RowTemplate>
+                                    <MudTd>@context.Term</MudTd>
+                                    <MudTd>@context.Count</MudTd>
+                                    <MudTd>
+                                        <div class="d-flex flex-column align-center">
+                                            <MudText Typo="Typo.body2" Class="mb-1">@($"{context.Percentage:F1}%")</MudText>
+                                            <MudProgressLinear Color="Color.Primary"
+                                                               Value="@context.Percentage"
+                                                               Class="rounded-sm" />
+                                        </div>
+                                    </MudTd>
+                                </RowTemplate>
+                            </MudTable>
+                        </MudPaper>
+                    </MudItem>
+                }
+                @if (ShowPerformanceChart)
+                {
+                    <MudItem xs="12" md="6">
+                        <MudPaper Elevation="0" Class="pa-4">
+                            <MudText Typo="Typo.h6" Class="mb-4">Cache Performance</MudText>
+                            <div style="width: 220px; height: 260px; margin: auto;">
+                                <MudChart ChartType="ChartType.Pie"
+                                          Width="220px"
+                                          Height="220px"
+                                          InputData="@Metrics.GetCachePerformanceData()"
+                                          InputLabels="@(new[] { "Cache Hits", "Cache Misses" })"
+                                          ChartOptions="@(new ChartOptions {
+                                                            ShowLegend = true,
+                                                            ChartPalette = new[] { Colors.Blue.Accent3, Colors.Gray.Lighten1 }
+                                                        })" />
+                            </div>
+                        </MudPaper>
+                    </MudItem>
+                }
+
+                @ExtraContent
+
+                @if (ShowPartialSearches)
+                {
+                    <MudItem xs="12">
+                        <MudPaper Elevation="0" Class="pa-4">
+                            <MudText Typo="Typo.h6" Class="mb-4">Search Pattern Analysis</MudText>
+                            <MudTable Items="@Metrics.PartialSearches.OrderByDescending(x => x.Timestamp).Take(10)"
+                                      Dense="true" Hover="true">
+                                <HeaderContent>
+                                    <MudTh>Term</MudTh>
+                                    <MudTh>Time</MudTh>
+                                    <MudTh>Duration</MudTh>
+                                </HeaderContent>
+                                <RowTemplate>
+                                    <MudTd>@context.Term</MudTd>
+                                    <MudTd>@context.Timestamp.ToString("HH:mm:ss")</MudTd>
+                                    <MudTd>@context.Duration.TotalMilliseconds.ToString("F0") ms</MudTd>
+                                </RowTemplate>
+                            </MudTable>
+                        </MudPaper>
+                    </MudItem>
+                }
+
+            </MudGrid>
+        </MudPaper>
+    </ChildContent>
+</MudExpansionPanel>
+
+@code {
+    [Parameter] public bool ShowPartialSearches { get; set; } = true;
+    [Parameter] public SearchMetrics<T> Metrics { get; set; }
+    [Parameter] public string Title { get; set; } = "Search Analytics";
+    [Parameter] public string Class { get; set; } = "mt-4";
+    [Parameter] public bool ShowSearchTerms { get; set; } = true;
+    [Parameter] public bool ShowPerformanceChart { get; set; } = true;
+    [Parameter] public RenderFragment ExtraContent { get; set; }
+}

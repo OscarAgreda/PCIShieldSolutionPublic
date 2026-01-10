@@ -1,0 +1,165 @@
+﻿@page "/Auth/Login"
+@inject NavigationManager NavigationManager
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.AspNetCore.Antiforgery
+<AntiforgeryToken />
+@using Microsoft.AspNetCore.Components.Forms
+@using MudBlazor
+@using System.ComponentModel.DataAnnotations
+
+@* This page is rendered by the Host. It submits a standard HTML form POST. *@
+@* No specific rendermode needed here as it's a traditional form post/redirect flow. *@
+@* If parts of it WERE interactive (like custom validation before submit), then you'd add a rendermode. *@
+
+<MudGrid Justify="Justify.Center" AlignItems="AlignItems.Center" Style="height: 100vh; width:100vw; margin:0;">
+    <MudItem xs="11" sm="8" md="6" lg="4" xl="3">
+        <MudPaper Elevation="3" Class="pa-6">
+            <div class="d-flex justify-center mb-4">
+                @* <img src="/images/logo.png" alt="PCIShield ERP Logo" style="max-height: 70px;" /> *@
+                <MudText Typo="Typo.h4">PCIShield ERP</MudText>
+            </div>
+            <MudText Typo="Typo.h6" Align="Align.Center" GutterBottom="true">Sign In</MudText>
+
+            @if (!string.IsNullOrEmpty(ErrorMessageFromQuery))
+            {
+                <MudAlert Severity="Severity.Error" Class="mb-3" Dense="true" Square="true">@ErrorMessageFromQuery</MudAlert>
+            }
+
+            <form method="post" action="/auth/perform-host-login">
+                <AntiforgeryToken />
+                <input type="hidden" name="ReturnUrl" value="@ReturnUrl" />
+
+                <MudTextField Name="Username" @bind-Value="_loginInput.Username" T="string" Label="Username or Email" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mt-3" Required="true" For="@(() => _loginInput.Username)" />
+                <MudTextField Name="Password" @bind-Value="_loginInput.Password" T="string" Label="Password" InputType="_passwordInputType" Adornment="Adornment.End" AdornmentIcon="_passwordInputIcon" OnAdornmentClick="TogglePasswordVisibility" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mt-3" Required="true" For="@(() => _loginInput.Password)" />
+
+                @* --- Checkbox handling --- *@
+                <input type="hidden" name="RememberMe" value="false" /> @* Default to false if checkbox is not checked *@
+                <MudCheckBox Name="RememberMe" @bind-Checked="_loginInput.RememberMe"
+                             T="bool"
+                             Label="Remember me" Dense="true" Class="mt-2"
+                             Value="true" /> @* Explicitly set the value sent when checked *@
+                @* ------------------------- *@
+
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" FullWidth="true" Class="mt-5 mb-3">
+                    Sign In
+                </MudButton>
+            </form>
+
+            @* Social Login Divider *@
+            <div class="d-flex align-center my-4">
+                <MudDivider Class="flex-grow-1" />
+                <MudText Typo="Typo.body2" Class="mx-3" Style="color: #999;">OR</MudText>
+                <MudDivider Class="flex-grow-1" />
+            </div>
+
+            @* Google Sign-In Button *@
+            <MudButton Href="/auth/google-challenge?returnUrl=/"
+                       Variant="Variant.Outlined"
+                       Color="Color.Default"
+                       Size="Size.Large"
+                       FullWidth="true"
+                       Class="mb-3"
+                       Style="text-transform: none; border: 1px solid #dadce0;"
+                       StartIcon="@Icons.Custom.Brands.Google">
+                <span style="font-weight: 500; color: #3c4043;">Continue with Google</span>
+            </MudButton>
+
+            @* Apple Sign-In Button (Uncomment when configured) *@
+            @* 
+            <MudButton 
+                Href="/auth/apple-challenge?returnUrl=/"
+                Variant="Variant.Filled" 
+                Color="Color.Dark"
+                Size="Size.Large" 
+                FullWidth="true" 
+                Class="mb-3"
+                Style="text-transform: none;"
+                StartIcon="@Icons.Custom.Brands.Apple">
+                <span style="font-weight: 500;">Continue with Apple</span>
+            </MudButton>
+            *@
+
+            @* Registration Link *@
+            <MudText Align="Align.Center" Class="mt-4">
+                Don't have an account? <MudLink Href="/Auth/Register">Sign up</MudLink>
+            </MudText>
+            <MudText Align="Align.Center" Class="mt-1">
+                <MudLink Href="/Auth/ForgotPassword">Forgot Password?</MudLink>
+            </MudText>
+
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    // This ViewModel is specifically for this form's data binding.
+    // The minimal API endpoint will bind to a similar class from the form post.
+    private LoginInputModel _loginInput = new();
+
+    private string? ErrorMessageFromQuery
+    {
+        get; set;
+    }
+    private string? ReturnUrl
+    {
+        get; set;
+    } // To store the ReturnUrl from query string
+
+    private bool _passwordVisible = false;
+    private InputType _passwordInputType = InputType.Password;
+    private string _passwordInputIcon = Icons.Material.Filled.VisibilityOff;
+
+    protected override void OnInitialized()
+    {
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        if (Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query).TryGetValue("error", out var error))
+        {
+            ErrorMessageFromQuery = error.FirstOrDefault();
+        }
+        if (Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query).TryGetValue("ReturnUrl", out var returnUrlQuery))
+        {
+            ReturnUrl = returnUrlQuery.FirstOrDefault();
+        }
+        else
+        {
+            ReturnUrl = "/"; // Default if no ReturnUrl is provided
+        }
+        _loginInput.ReturnUrl = ReturnUrl; // Set it on the model if your form post includes it directly from the model
+    }
+
+    private void TogglePasswordVisibility()
+    {
+        _passwordVisible = !_passwordVisible;
+        _passwordInputType = _passwordVisible ? InputType.Text : InputType.Password;
+        _passwordInputIcon = _passwordVisible ? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff;
+    }
+
+    // ViewModel for this page's form binding
+    public class LoginInputModel
+    {
+        [Required(ErrorMessage = "Username is required")]
+        public string Username { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Password is required")]
+        public string Password { get; set; } = string.Empty;
+
+        public bool RememberMe
+        {
+            get; set;
+        }
+
+        public string? ReturnUrl
+        {
+            get; set;
+        } // This will be populated and sent as a hidden field
+    }
+    public class LoginRequestViewmodel
+    {
+        [Required]
+        public string Username { get; set; }
+        [Required]
+        public string Password { get; set; }
+        public bool RememberMe { get; set; }
+        public string? ReturnUrl { get; set; }
+    }
+}

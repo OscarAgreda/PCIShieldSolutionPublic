@@ -1,0 +1,75 @@
+﻿flowchart TD
+    %% Style definitions
+    classDef userActions fill:#e1f5fe,stroke:#01579b,stroke-width:2px,color:#01579b,font-weight:bold
+    classDef systemProcess fill:#f3e5f5,stroke:#6a1b9a,stroke-width:2px,color:#6a1b9a
+    classDef databaseOps fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:#2e7d32
+    classDef authToken fill:#fff8e1,stroke:#ff6f00,stroke-width:2px,color:#ff6f00
+    classDef success fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:#2e7d32,font-weight:bold
+    classDef failure fill:#ffebee,stroke:#c62828,stroke-width:2px,color:#c62828
+
+    %% Main user entry points
+    User([User]) -->|"New User"| Registration["Registration"]
+    User -->|"Returning User"| Login["Login"]
+    User -->|"Authenticated User"| Protected["Access Protected Resources"]
+    User -->|"End Session"| Logout["Logout"]
+
+    %% Registration flow
+    subgraph "Registration Process"
+        Registration -->|"Choose Type"| RegType{"Customer or Employee?"}
+        RegType -->|"Customer"| RegCustomer["Register as Customer"]
+        RegType -->|"Employee"| RegEmployee["Register as Employee"]
+        
+        RegCustomer & RegEmployee --> StoreUser["Create User Account<br/>(Secure Password Storage)"]
+        StoreUser --> AssignRoles["Assign Role & Permissions"]
+        AssignRoles --> SendVerification["Send Email Verification"]
+        SendVerification --> AwaitVerify([Awaiting Verification])
+        AwaitVerify -->|"User Clicks Link"| VerifyEmail["Verify Email"]
+        VerifyEmail --> EmailVerified["Account Activated"]
+    end
+
+    %% Login flow
+    subgraph "Authentication Process"
+        Login --> LoginMethod{"Login Method"}
+        LoginMethod -->|"Username/Password"| StandardLogin["Standard Login"]
+        LoginMethod -->|"Google"| SocialLogin["Social Login"]
+        
+        StandardLogin --> CheckMFA{"2FA Enabled?"}
+        CheckMFA -->|"Yes"| ValidateMFA["Validate 2FA Code"]
+        CheckMFA -->|"No"| ValidateCreds["Validate Credentials"]
+        ValidateMFA --> ValidateCreds
+        
+        SocialLogin --> ValidateExternal["Validate External Token"]
+        ValidateExternal --> FindUser["Find User By Email"]
+        
+        ValidateCreds & FindUser --> BuildSession["Create User Session"]
+        BuildSession --> GenerateClaims["Build User Claims<br/>(ID, Roles, Permissions)"]
+        GenerateClaims --> CreateTokens["Generate JWT Tokens"]
+        CreateTokens --> ReturnTokens["Return Auth Tokens to Client"]
+    end
+
+    %% Protected resource access
+    subgraph "Resource Access"
+        Protected --> ValidateAccess["Validate Token"]
+        ValidateAccess --> TokenCheck{"Token Valid?"}
+        TokenCheck -->|"Yes"| GrantAccess["Access Granted"] 
+        TokenCheck -->|"No"| TokenExpired{"Token Expired?"}
+        TokenExpired -->|"Yes"| RefreshToken["Use Refresh Token"]
+        TokenExpired -->|"No"| DenyAccess["Access Denied"]
+        RefreshToken --> CreateNewToken["Generate New JWT"]
+        CreateNewToken --> GrantAccess
+    end
+
+    %% Logout flow
+    subgraph "Logout Process"
+        Logout --> ClearTokens["Invalidate User Tokens"]
+        ClearTokens --> UpdateStatus["Update User Status"]
+        UpdateStatus --> LoggedOut["Session Ended"]
+    end
+
+    %% Apply styles
+    class User,AwaitVerify userActions
+    class StoreUser,AssignRoles,SendVerification,VerifyEmail,ValidateCreds,ValidateMFA,BuildSession,GenerateClaims,CreateTokens,ValidateAccess,CreateNewToken systemProcess
+    class EmailVerified,GrantAccess,LoggedOut success
+    class DenyAccess failure
+    class ReturnTokens,CreateTokens,RefreshToken authToken
+    class Registration,Login,Protected,Logout userActions

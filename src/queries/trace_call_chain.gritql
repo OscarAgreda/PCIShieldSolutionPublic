@@ -1,0 +1,14 @@
+-- Trace Method Call Chain Query
+-- This query traces method calls from a given method name
+-- through the entire call chain (up to the specified depth)
+
+SELECT
+  method.name AS callerName,
+  method.file.path AS callerFile,
+  call.callee.name AS calleeName,
+  call.callee.file.path AS calleeFile,
+  call.line
+FROM Method AS method
+JOIN LATERAL method.calls AS call
+WHERE method.name = "{{METHOD_NAME}}" OR call.callee.name = "{{METHOD_NAME}}"
+TRAVERSE CALLS 6

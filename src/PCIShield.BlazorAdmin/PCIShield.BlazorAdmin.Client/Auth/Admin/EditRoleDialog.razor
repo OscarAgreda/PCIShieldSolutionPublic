@@ -1,0 +1,99 @@
+﻿@using Microsoft.AspNetCore.Authorization
+@using PCIShield.BlazorMauiShared.Auth
+@using System.ComponentModel.DataAnnotations
+@inject IHttpAuthClientService AdminService
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudForm @ref="_form" @bind-IsValid="_isValid">
+            <MudStack Spacing="3">
+                <MudTextField @bind-Value="_newRoleName"
+                              Label="Role Name"
+                              Required="true"
+                              RequiredError="Role name is required"
+                              Variant="Variant.Outlined" />
+            </MudStack>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary"
+                   Disabled="@(!_isValid || _isUpdating)"
+                   OnClick="UpdateRole"
+                   Variant="Variant.Filled">
+            @if (_isUpdating)
+            {
+                <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                <MudText Class="ms-2">Updating...</MudText>
+            }
+            else
+            {
+                <MudText>Update Role</MudText>
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = new MudDialogContainer();
+
+    [Parameter]
+    public string RoleId { get; set; } = string.Empty;
+
+    [Parameter]
+    public string CurrentRoleName { get; set; } = string.Empty;
+
+    private MudForm? _form;
+    private bool _isValid;
+    private bool _isUpdating;
+    private string _newRoleName = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        _newRoleName = CurrentRoleName;
+    }
+
+    private async Task UpdateRole()
+    {
+        if (_form != null)
+        {
+            await _form.Validate();
+        }
+
+        if (!_isValid)
+        {
+            return;
+        }
+
+        _isUpdating = true;
+
+        var request = new UpdateRoleRequest
+        {
+            Id = RoleId,
+            Name = _newRoleName
+        };
+
+        var result = await AdminService.UpdateRoleAsync(request);
+
+        result.Match(
+            Right: _ =>
+            {
+                Snackbar.Add("Role updated successfully", Severity.Success);
+                MudDialog.Close(DialogResult.Ok(true));
+            },
+            Left: error =>
+            {
+                Snackbar.Add($"Error updating role: {error}", Severity.Error);
+                _isUpdating = false;
+            }
+        );
+
+        StateHasChanged();
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+}

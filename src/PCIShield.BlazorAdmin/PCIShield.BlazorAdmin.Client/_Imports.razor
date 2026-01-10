@@ -1,0 +1,81 @@
+﻿@* Framework & Core *@
+@using System
+@using System.Net.Http
+@using System.Net.Http.Json
+@using System.Collections.Generic
+@* @using System.ComponentModel.DataAnnotations *@
+@using System.Diagnostics
+@using System.Globalization
+@using System.Reflection
+@using System.Linq.Expressions
+
+@* Blazor Core *@
+@using Microsoft.AspNetCore.Components
+
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.Components.Web
+@using static Microsoft.AspNetCore.Components.Web.RenderMode
+@using Microsoft.AspNetCore.Components.Web.Virtualization
+@using Microsoft.JSInterop
+
+@* SignalR *@
+@using Microsoft.AspNetCore.SignalR.Client
+@using PCIShield.BlazorAdmin.Client.SignalR
+
+@* MudBlazor *@
+@using MudBlazor
+@using MudBlazor.ThemeManager
+
+@* Application Core *@
+@using PCIShield.BlazorAdmin.Client
+
+@inject NavigationManager Navigation
+@using PCIShield.BlazorAdmin.Client.Shared.State
+@* @using PCIShield.BlazorAdmin.Services *@
+@using PCIShield.Client.Services.Auth
+@using PCIShield.Client.Services.DashBoard
+@using PCIShield.Client.Services.InvoiceSession
+@using PCIShield.Client.Services.Merchant
+@using PCIShield.Domain.ModelsDto
+
+@* Reactive Extensions *@
+@using System.Reactive
+@using System.Reactive.Linq
+@using System.Reactive.Subjects
+@using ReactiveUI
+@using static LanguageExt.Prelude
+@using Unit = System.Reactive.Unit
+
+@* Services *@
+@using PCIShield.Client.Services.Common
+
+@using Microsoft.Extensions.Localization
+@using PCIShield.Client.Services.Assessment
+
+
+@* Shared Models *@
+@using BlazorMauiShared.Models
+
+
+@* Common Service Injections *@
+@inject NavigationManager NavigationManager
+@inject IDialogService DialogService
+@* @inject IExportService ExportService *@
+@inject ISnackbar Snackbar
+@inject ITokenService _tokenService
+
+
+@inject IHttpAuthClientService AdminService
+@inject IHttpMerchantClientService merchantHttpService
+@inject IHttpAssessmentClientService assessmentHttpService
+
+
+@inject IHttpDashBoardClientService _dashboardHttpService
+
+
+@inject ISignalRNotificationStrategy SignalRStrategy
+
+
+
+

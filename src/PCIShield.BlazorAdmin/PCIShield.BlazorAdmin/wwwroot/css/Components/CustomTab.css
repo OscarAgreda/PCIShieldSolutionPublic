@@ -1,0 +1,17 @@
+﻿.tab-title {
+    font-weight: 400 !important;
+    font-size: 12px;
+    line-height: 14.63px !important;
+    color: #343030;
+}
+
+.tab-title .mud-tab-active {
+    font-weight: 700 !important;
+    font-size: 12px;
+    line-height: 14.63px !important;
+    color: #343030 !important;
+}
+
+.tab-title .mud-tab-slider-horizontal {
+    background: #F17B40;
+}

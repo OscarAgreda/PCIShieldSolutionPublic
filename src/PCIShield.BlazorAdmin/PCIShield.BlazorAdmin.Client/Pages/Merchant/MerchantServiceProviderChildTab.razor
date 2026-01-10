@@ -1,0 +1,254 @@
+@* MerchantServiceProviderChildTab.razor *@
+@page "/MerchantServiceProviderChildTab"
+@using PCIShield.BlazorMauiShared.Models.Merchant
+@using LanguageExt
+@using LanguageExt.Common
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.SignalR.Client
+@using MudBlazor
+@using Severity = MudBlazor.Severity
+@using FluentValidation
+@using System.Reactive.Threading.Tasks
+@using PCIShield.BlazorAdmin.Client.Services
+@using System.Reactive.Disposables
+@inject ILogger<MerchantServiceProviderChildTab> _logger
+@inject IStringLocalizer<MerchantServiceProviderChildTab> Localizer
+@inject ISnackbar Snackbar
+@inject IHttpMerchantClientService _merchantHttpService
+@inject IDialogService DialogService
+@namespace PCIShield.BlazorAdmin.Client.Pages.Merchant
+
+
+
+<MudPaper Elevation="1" Class="pa-4">
+    <MudTable Items="@ServiceProviders" Hover="true" Striped="true" Virtualize="true" RowsPerPage="20">
+        <HeaderContent>
+            <MudTh>@Localizer["ProviderName"]</MudTh>
+            <MudTh>@Localizer["ServiceType"]</MudTh>
+            <MudTh>@Localizer["IsPCICompliant"]</MudTh>
+            <MudTh>@Localizer["AOCExpiryDate"]</MudTh>
+            <MudTh>@Localizer["ResponsibilityMatrix"]</MudTh>
+            <MudTh>@Localizer["CreatedAt"]</MudTh>
+            <MudTh>@Localizer["UpdatedAt"]</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>@context.ProviderName</MudTd>
+            <MudTd>@context.ServiceType</MudTd>
+            <MudTd>@context.IsPCICompliant</MudTd>
+            <MudTd>@context.AOCExpiryDate</MudTd>
+            <MudTd>@context.ResponsibilityMatrix</MudTd>
+            <MudTd>@context.CreatedAt</MudTd>
+            <MudTd>@context.UpdatedAt</MudTd>
+       @*      <MudTd>
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Primary"
+                           OnClick="@(EventUtil.AsNonRenderingEventHandler(() => EditChildItemServiceProvider(context)))">@Localizer["Edit"]</MudButton>
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Error"
+                           OnClick="@(EventUtil.AsNonRenderingEventHandler(() => DeleteChildItemServiceProvider(context)))">@Localizer["Delete"]</MudButton>
+            </MudTd> *@
+        </RowTemplate>
+    </MudTable>
+@*     <MudButton Variant="Variant.Outlined" Color="Color.Primary" Class="mt-4"
+               OnClick="@AddChildItemServiceProvider">@Localizer["Add Service Provider"]</MudButton> *@
+</MudPaper>
+
+<MudOverlay Visible="@IsLoading"
+            DarkBackground="true"
+            ZIndex="9999"
+            AutoClose="false">
+    <MudProgressCircular Color="Color.Primary"
+                         Indeterminate="true"
+                         Size="Size.Large" />
+</MudOverlay>
+
+@code {
+
+    [Parameter]
+    public Guid MerchantId { get; set; }
+
+    [Parameter] public string _serviceProviderEditingUserId { get; set; }
+
+    [Parameter]
+    public List<ServiceProviderDto> ServiceProviders { get; set; } = new();
+
+
+    [Parameter]
+    public bool IsLoading { get; set; }
+
+    [Parameter]
+    public EventCallback<(Exception ex, ErrorHandlingService.ClientOperationContext context)> OnError { get; set; }
+
+
+
+    [Parameter]
+    public EventCallback<ServiceProviderDto> OnServiceProviderAdded { get; set; }
+
+
+    [Parameter]
+    public EventCallback<ServiceProviderDto> OnServiceProviderUpdated { get; set; }
+
+
+    [Parameter]
+    public EventCallback<ServiceProviderDto> OnServiceProviderDeleted { get; set; }
+
+    private IValidator<ServiceProviderDto> _updateServiceProviderValidator;
+
+    private readonly CompositeDisposable _disposables = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _updateServiceProviderValidator = new InlineValidator<ServiceProviderDto>();
+        await base.OnInitializedAsync();
+    }
+
+
+    protected void RefreshUi()
+    {
+        //InvokeAsync(StateHasChanged);
+    }
+
+
+
+
+    private async Task AddChildItemServiceProvider()
+    {
+        await TryAsync(async () =>
+        {
+            var newServiceProvider = new ServiceProviderDto
+                {
+                    MerchantId = MerchantId,
+                CreatedAt = DateTime.UtcNow,
+                    CreatedBy = Guid.Parse(_serviceProviderEditingUserId),
+                };
+            var validationResult = await _updateServiceProviderValidator.ValidateAsync(newServiceProvider);
+            if (!validationResult.IsValid)
+            {
+                var errors = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage));
+                var ex = new Exception(errors);
+                await OnError.InvokeAsync((ex, ErrorHandlingService.ClientOperationContext.ServiceProviderCreate));
+                return;
+            }
+            var response = await _merchantHttpService.CreateServiceProviderAsync(newServiceProvider).ToObservable().ToListObservable().ToTryOption().ToAsync().ToTry();
+            await response.Match(
+                Succ: result =>
+                    result.Match(
+                        Some: async backResult =>
+                        {
+                            ServiceProviders.Add(backResult.ServiceProvider);
+                        },
+                        None: () =>
+                        {
+                            Snackbar.Add(Localizer["Failed to create serviceProvider"], Severity.Error);
+                            return Task.CompletedTask;
+                        }
+                    ),
+                Fail: ex =>
+                {
+                    _logger.LogError(ex, "Error creating serviceProvider");
+                    Snackbar.Add(Localizer["Error creating serviceProvider"], Severity.Error);
+                    return Task.CompletedTask;
+                }
+            );
+        });
+    }
+
+
+    private async Task EditChildItemServiceProvider(ServiceProviderDto item)
+    {
+        try
+        {
+            var validationResult = await _updateServiceProviderValidator.ValidateAsync(item);
+            if (!validationResult.IsValid)
+            {
+                var errors = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage));
+                var ex = new Exception(errors);
+                await OnError.InvokeAsync((ex, ErrorHandlingService.ClientOperationContext.ServiceProviderUpdate));
+                return;
+            }
+            ServiceProviderDto? response = await _merchantHttpService.UpdateServiceProviderAsync(item);
+            if (response != null)
+            {
+                var index = ServiceProviders.FindIndex(x => x.ServiceProviderId == item.ServiceProviderId);
+                if (index != -1)
+                {
+                    ServiceProviders[index] = response;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await OnError.InvokeAsync((ex, ErrorHandlingService.ClientOperationContext.ServiceProviderCreate));
+        }
+    }
+
+    private async Task<bool> ShowDeleteConfirmDialog()
+    {
+        bool? result = await DialogService.ShowMessageBox("Confirm Delete", "Are you sure you want to delete this item?", yesText: "Delete", cancelText: "Cancel");
+        if (result == true)
+        {
+            return await Task.FromResult(true);
+        }
+        else
+        {
+            return await Task.FromResult(false);
+        }
+    }
+
+    private async Task DeleteChildItemServiceProvider(ServiceProviderDto serviceProvider)
+    {
+        try
+        {
+            var dialogResult = await ShowDeleteConfirmDialog();
+            if (dialogResult)
+            {
+                await TryAsync(async () =>
+                {
+                    var validationResult = await _updateServiceProviderValidator.ValidateAsync(serviceProvider);
+                    if (!validationResult.IsValid)
+                    {
+                        var errors = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage));
+                        var ex = new Exception(errors);
+                        await OnError.InvokeAsync((ex, ErrorHandlingService.ClientOperationContext.ServiceProviderDelete));
+                        return;
+                    }
+                    await _merchantHttpService
+                        .DeleteServiceProviderAsync(serviceProvider.ServiceProviderId)
+                        .ToObservable()
+                        .ToListObservable()
+                        .ToTryOption()
+                        .ToAsync()
+                        .ToTry()
+                        .Match(
+                            Succ: async _ =>
+                            {
+                                ServiceProviders.Remove(serviceProvider);
+                            },
+                            Fail: ex =>
+                            {
+                                _logger.LogError(ex, "Failed to delete serviceProvider");
+                                Snackbar.Add(Localizer["Failed to delete serviceProvider"], Severity.Error);
+                                return Task.CompletedTask;
+                            }
+                        );
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+                        await OnError.InvokeAsync((ex, ErrorHandlingService.ClientOperationContext.ServiceProviderDelete));
+        }
+    }
+
+
+
+
+    public async ValueTask DisposeAsync()
+    {
+        _disposables.Dispose();
+    }
+
+
+}
+
+

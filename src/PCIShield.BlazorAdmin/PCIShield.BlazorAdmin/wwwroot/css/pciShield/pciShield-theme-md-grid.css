@@ -1,0 +1,442 @@
+/* ================================================
+   PCISHIELD DATA GRID EXCELLENCE SYSTEM
+   Advanced Grid Styling for Complex Data Tables
+   ================================================ */
+
+/* ================================================
+   GRID CONTAINER & STRUCTURE
+   ================================================ */
+
+.pciShield-datagrid {
+    border: 1px solid rgba(0, 0, 0, 0.06) !important;
+    border-radius: 12px !important;
+    overflow: hidden !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+    background: white !important;
+}
+
+    .pciShield-datagrid:hover {
+        box-shadow: 0 4px 20px rgba(41, 62, 140, 0.08) !important;
+    }
+
+    /* ================================================
+   GRID TOOLBAR STYLING
+   ================================================ */
+
+    .pciShield-datagrid .mud-table-toolbar {
+        background: linear-gradient(135deg, #F8F9FA 0%, #FFFFFF 100%) !important;
+        border-bottom: 2px solid rgba(41, 62, 140, 0.1) !important;
+        padding: 16px !important;
+        min-height: 64px !important;
+    }
+
+        .pciShield-datagrid .mud-table-toolbar .mud-stack {
+            gap: 12px !important;
+        }
+
+    /* Enhanced Search Box in Toolbar */
+    .pciShield-datagrid .pciShield-search-enhanced {
+        flex: 1 !important;
+        max-width: 400px !important;
+    }
+
+        .pciShield-datagrid .pciShield-search-enhanced .mud-input {
+            background: white !important;
+            border: 2px solid transparent !important;
+            border-radius: 24px !important;
+            padding-left: 40px !important;
+            height: 36px !important;
+            font-size: 12px !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        }
+
+            .pciShield-datagrid .pciShield-search-enhanced .mud-input:focus {
+                border-color: var(--pciShield-primary) !important;
+                box-shadow: 0 0 0 4px rgba(41, 62, 140, 0.1) !important;
+                transform: translateY(-1px);
+            }
+
+    /* ================================================
+   TABLE HEADER STYLING
+   ================================================ */
+
+    .pciShield-datagrid .mud-table-head {
+        background: linear-gradient(180deg, #293E8C 0%, #1B2C6A 100%) !important;
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 100 !important;
+    }
+
+        .pciShield-datagrid .mud-table-head .mud-table-row {
+            height: 48px !important;
+        }
+
+        .pciShield-datagrid .mud-table-head .mud-table-cell {
+            color: white !important;
+            font-size: 11px !important;
+            font-weight: 600 !important;
+            letter-spacing: 0.05em !important;
+            text-transform: uppercase !important;
+            padding: 12px 16px !important;
+            border-bottom: none !important;
+            white-space: nowrap !important;
+        }
+
+        /* Header Icons */
+        .pciShield-datagrid .mud-table-head .mud-icon-root {
+            color: rgba(255, 255, 255, 0.8) !important;
+            font-size: 16px !important;
+            vertical-align: middle !important;
+        }
+
+    /* Sort Indicators */
+    .pciShield-datagrid .mud-table-sortlabel {
+        color: white !important;
+        transition: all 0.2s ease !important;
+    }
+
+        .pciShield-datagrid .mud-table-sortlabel:hover {
+            color: rgba(255, 255, 255, 0.9) !important;
+        }
+
+    .pciShield-datagrid .mud-table-sortlabel-icon {
+        color: var(--pciShield-accent) !important;
+        opacity: 1 !important;
+    }
+
+    /* ================================================
+   TABLE BODY & ROWS
+   ================================================ */
+
+    .pciShield-datagrid .mud-table-body .mud-table-row {
+        transition: all 0.2s ease !important;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.04) !important;
+        position: relative !important;
+    }
+
+        /* Alternating Row Colors */
+        .pciShield-datagrid .mud-table-body .mud-table-row:nth-child(even) {
+            background: rgba(248, 249, 250, 0.5) !important;
+        }
+
+        /* Hover Effect */
+        .pciShield-datagrid .mud-table-body .mud-table-row:hover {
+            background: linear-gradient(90deg, rgba(41, 62, 140, 0.04) 0%, rgba(41, 62, 140, 0.02) 100%) !important;
+            transform: translateX(2px);
+            box-shadow: -4px 0 0 0 var(--pciShield-primary) !important;
+        }
+
+    /* Selected Row */
+    .pciShield-datagrid .mud-table-row-selected {
+        background: rgba(41, 62, 140, 0.08) !important;
+        box-shadow: inset 0 0 0 2px rgba(41, 62, 140, 0.2) !important;
+    }
+
+    /* ================================================
+   TABLE CELLS
+   ================================================ */
+
+    .pciShield-datagrid .mud-table-body .mud-table-cell {
+        padding: 12px 16px !important;
+        font-size: 12px !important;
+        color: var(--pciShield-text-secondary) !important;
+        vertical-align: middle !important;
+    }
+
+        /* First Column Emphasis */
+        .pciShield-datagrid .mud-table-body .mud-table-cell:first-child {
+            font-weight: 500 !important;
+            color: var(--pciShield-text-primary) !important;
+        }
+
+    /* Action Column */
+    .pciShield-datagrid .mud-table-cell:has(.mud-menu) {
+        padding: 8px !important;
+        text-align: center !important;
+    }
+
+    /* ================================================
+   HIERARCHY & EXPAND COLUMNS
+   ================================================ */
+
+    .pciShield-datagrid .mud-table-cell-expand {
+        width: 48px !important;
+        padding: 0 !important;
+    }
+
+    .pciShield-datagrid .mud-icon-button-expand {
+        transition: transform 0.3s ease !important;
+    }
+
+        .pciShield-datagrid .mud-icon-button-expand.mud-expanded {
+            transform: rotate(90deg) !important;
+            color: var(--pciShield-primary) !important;
+        }
+
+    /* ================================================
+   CHILD ROW CONTENT
+   ================================================ */
+
+    .pciShield-datagrid .mud-table-row-group {
+        background: linear-gradient(180deg, #F8F9FA 0%, #FFFFFF 100%) !important;
+        animation: slideDown 0.3s ease-out !important;
+    }
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        max-height: 0;
+    }
+
+    to {
+        opacity: 1;
+        max-height: 500px;
+    }
+}
+
+/* ================================================
+   CHIPS IN GRID
+   ================================================ */
+
+.pciShield-datagrid .mud-chip {
+    height: 22px !important;
+    font-size: 10px !important;
+    font-weight: 600 !important;
+    padding: 0 10px !important;
+    letter-spacing: 0.02em !important;
+}
+
+.pciShield-datagrid .pciShield-chip-primary {
+    background: linear-gradient(135deg, #293E8C 0%, #1B2C6A 100%) !important;
+    color: white !important;
+}
+
+.pciShield-datagrid .pciShield-chip-secondary {
+    background: linear-gradient(135deg, #F8F9FA 0%, #E0E0E0 100%) !important;
+    color: var(--pciShield-text-secondary) !important;
+}
+
+/* ================================================
+   FILTER ROW STYLING
+   ================================================ */
+
+.pciShield-datagrid .mud-table-filter-row {
+    background: rgba(41, 62, 140, 0.02) !important;
+    border-bottom: 2px solid rgba(41, 62, 140, 0.1) !important;
+}
+
+    .pciShield-datagrid .mud-table-filter-row .mud-input {
+        background: white !important;
+        border-radius: 4px !important;
+        height: 28px !important;
+        font-size: 11px !important;
+        padding: 0 8px !important;
+    }
+
+        .pciShield-datagrid .mud-table-filter-row .mud-input:focus {
+            border: 1px solid var(--pciShield-primary) !important;
+            box-shadow: 0 0 0 3px rgba(41, 62, 140, 0.1) !important;
+        }
+
+/* ================================================
+   ACTION MENU STYLING
+   ================================================ */
+
+.pciShield-datagrid .mud-menu-list {
+    padding: 4px !important;
+    border-radius: 8px !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+.pciShield-datagrid .mud-menu-item {
+    border-radius: 4px !important;
+    font-size: 12px !important;
+    padding: 8px 12px !important;
+    margin: 2px !important;
+    transition: all 0.2s ease !important;
+}
+
+    .pciShield-datagrid .mud-menu-item:hover {
+        background: rgba(41, 62, 140, 0.08) !important;
+        transform: translateX(2px);
+    }
+
+    .pciShield-datagrid .mud-menu-item.text-error {
+        color: #EF4444 !important;
+    }
+
+        .pciShield-datagrid .mud-menu-item.text-error:hover {
+            background: rgba(239, 68, 68, 0.08) !important;
+        }
+
+/* ================================================
+   PAGINATION STYLING
+   ================================================ */
+
+.pciShield-datagrid .mud-table-pagination {
+    background: linear-gradient(180deg, #FFFFFF 0%, #F8F9FA 100%) !important;
+    border-top: 2px solid rgba(41, 62, 140, 0.1) !important;
+    padding: 12px 16px !important;
+}
+
+.pciShield-datagrid .mud-table-pagination-caption {
+    font-size: 11px !important;
+    color: var(--pciShield-text-secondary) !important;
+    font-weight: 500 !important;
+}
+
+.pciShield-datagrid .mud-table-pagination-select {
+    margin: 0 16px !important;
+}
+
+    .pciShield-datagrid .mud-table-pagination-select .mud-select {
+        font-size: 11px !important;
+    }
+
+.pciShield-datagrid .mud-table-pagination-actions .mud-icon-button {
+    color: var(--pciShield-primary) !important;
+    transition: all 0.2s ease !important;
+}
+
+    .pciShield-datagrid .mud-table-pagination-actions .mud-icon-button:hover:not(:disabled) {
+        background: rgba(41, 62, 140, 0.08) !important;
+        transform: scale(1.1);
+    }
+
+    .pciShield-datagrid .mud-table-pagination-actions .mud-icon-button:disabled {
+        opacity: 0.3 !important;
+    }
+
+/* ================================================
+   LOADING & EMPTY STATES
+   ================================================ */
+
+.pciShield-datagrid .mud-table-loading {
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(4px) !important;
+}
+
+.pciShield-datagrid .mud-table-empty-content {
+    padding: 48px !important;
+    text-align: center !important;
+}
+
+    .pciShield-datagrid .mud-table-empty-content .mud-icon-root {
+        font-size: 64px !important;
+        color: #E0E0E0 !important;
+        margin-bottom: 16px !important;
+    }
+
+/* ================================================
+   COLUMN RESIZE HANDLES
+   ================================================ */
+
+.pciShield-datagrid .mud-resizer {
+    width: 3px !important;
+    background: transparent !important;
+    transition: all 0.2s ease !important;
+}
+
+    .pciShield-datagrid .mud-resizer:hover {
+        background: var(--pciShield-primary) !important;
+        width: 4px !important;
+    }
+
+.pciShield-datagrid .mud-resizing {
+    background: var(--pciShield-accent) !important;
+}
+
+/* ================================================
+   SPECIAL CELL TYPES
+   ================================================ */
+
+/* Date Cells */
+.pciShield-datagrid .mud-table-cell:has(.pciShield-text-caption) {
+    color: var(--pciShield-text-disabled) !important;
+    font-style: italic;
+}
+
+/* Numeric Cells */
+.pciShield-datagrid .mud-table-cell.pciShield-text-right {
+    text-align: right !important;
+    font-family: 'Roboto Mono', monospace !important;
+}
+
+/* Status Cells */
+.pciShield-datagrid .mud-table-cell:has(.pciShield-status) {
+    text-align: center !important;
+}
+
+/* ================================================
+   RESPONSIVE BEHAVIOR
+   ================================================ */
+
+@media (max-width: 960px) {
+    .pciShield-datagrid .mud-table-head .mud-table-cell {
+        font-size: 10px !important;
+        padding: 8px !important;
+    }
+
+    .pciShield-datagrid .mud-table-body .mud-table-cell {
+        font-size: 11px !important;
+        padding: 8px !important;
+    }
+
+    .pciShield-datagrid .mud-table-toolbar {
+        padding: 12px !important;
+    }
+}
+
+@media (max-width: 600px) {
+    .pciShield-datagrid {
+        border-radius: 8px !important;
+    }
+
+        .pciShield-datagrid .mud-table-container {
+            overflow-x: auto !important;
+        }
+}
+
+/* ================================================
+   ANIMATION CLASSES
+   ================================================ */
+
+.pciShield-datagrid .fade-in-row {
+    animation: fadeInRow 0.4s ease-out;
+}
+
+@keyframes fadeInRow {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ================================================
+   FILTER MODE TOGGLE SECTION
+   ================================================ */
+
+.pciShield-datagrid + .pciShield-container-secondary {
+    margin-top: 16px !important;
+    background: linear-gradient(135deg, #F8F9FA 0%, #FFFFFF 100%) !important;
+    border: 1px solid rgba(41, 62, 140, 0.08) !important;
+}
+
+/* ================================================
+   PERFORMANCE OPTIMIZATIONS
+   ================================================ */
+
+.pciShield-datagrid * {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.pciShield-datagrid .mud-table-body {
+    will-change: transform;
+}

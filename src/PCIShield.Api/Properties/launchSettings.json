@@ -1,0 +1,21 @@
+{
+  "iisSettings": {
+    "windowsAuthentication": false,
+    "anonymousAuthentication": true
+  },
+  "profiles": {
+    "PCIShield.Api": {
+      "commandName": "Project",
+      "launchBrowser": false,
+      "applicationUrl": "https://localhost:52509;http://localhost:5250",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "COMPlus_EnableDiagnostics": "1",
+        "COMPlus_DbgEnableMiniDump": "1",
+        "COMPlus_DbgBreakOnException": "1",
+        "COMPlus_DbgMiniDumpType": "0x1F"
+      },
+      "dotnetRunMessages": true
+    }
+  }
+}

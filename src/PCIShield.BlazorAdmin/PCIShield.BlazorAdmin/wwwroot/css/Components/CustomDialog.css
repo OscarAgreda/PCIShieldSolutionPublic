@@ -1,0 +1,76 @@
+﻿.container-dialog{
+   width:368px;
+   height:238px;
+   padding:24px 40px;
+   gap:12px;
+   overflow-y:unset !important;
+}
+
+.container-dialog .mud-dialog-title {
+    padding: 0px !important;
+}
+
+.btn-cancel-dialog {
+    width: 92px;
+    height: 31px;
+    border-radius: 30px !important;
+    padding: 8px 24px !important;
+    border: 1px solid #293E8C !important;
+    background-color: #FFFFFF;
+    text-transform: none !important;
+}
+
+.btn-cancel-dialog .mud-button-label {
+    font-weight: 700;
+    font-size: 12px;
+    line-height: 14.63px;
+    text-align: center;
+    color: #293E8C;
+}
+
+.btn-ok-dialog {
+    width: 113px;
+    height: 31px;
+    border-radius: 30px !important;
+    padding: 8px 24px !important;
+    background-color: #293E8C !important;
+    text-transform: none !important;
+}
+
+.btn-ok-dialog .mud-button-label {
+    font-weight: 700;
+    font-size: 12px;
+    line-height: 14.63px;
+    text-align: center;
+    color: #FFFFFF;
+}
+
+.title-dialog {
+    font-weight: 600 !important;
+    font-size: 16px !important;
+    line-height: 19.5px !important;
+    text-align: center;
+    color: #293E8C;
+}
+
+.content-dialog {
+    overflow:unset !important;
+    margin: 0px !important;
+    padding: 0px !important;
+    font-weight: 400;
+    font-size: 12px;
+    line-height: 14.63px;
+    text-align: center;
+    color: #707070;
+}
+
+.icon-dialog{
+    width:73px !important;
+    height:73px !important;
+}
+
+.action-class {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}

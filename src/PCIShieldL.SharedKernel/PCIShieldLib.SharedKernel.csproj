@@ -1,0 +1,48 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <WarningLevel>0</WarningLevel>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <PackageId>PCIShieldLib.SharedKernel</PackageId>
+    <Title>PCIShieldLib.SharedKernel</Title>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <Authors>Oscar Agreda</Authors>
+    <Company>Oscar.com</Company>
+    <PackageProjectUrl>https://github.com/ardalis/firstEncounterFirst-encounter-ddd-ddds</PackageProjectUrl>
+    <Description>An SharedKernal packaged used as a sample in the FIRST-ENCOUNTER-DDD First-encounters FirstEncounterFirst-encounter-ddd course by Amanda Lerman and Oscar Agreda.</Description>
+    <Summary>Includes common abstractions and base types.</Summary>
+    <RepositoryUrl>https://github.com/ardalis/firstEncounterFirst-encounter-ddd-ddds</RepositoryUrl>
+    <PackageTags>aspnet asp.net aspnetcore asp.net core first-encounter-ddd first-encounter-dddesign value object entity aggregate domain event firstEncounterFirst-encounter-ddd</PackageTags>
+    <PackageReleaseNotes>Update DomainEvent to use DateTimeOffset.Now.</PackageReleaseNotes>
+    <Version>2.1.2</Version>
+    <AssemblyName>PCIShieldLib.SharedKernel</AssemblyName>
+    <PackageIconUrl>https://user-images.githubusercontent.com/782127/33497760-facf6550-d69c-11e7-94e4-b3856da259a9.png</PackageIconUrl>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+    <LangVersion>14.0</LangVersion>
+   <Platforms>AnyCPU</Platforms>
+      <UseSharedCompilation>true</UseSharedCompilation>
+      <BuildInParallel>true</BuildInParallel>
+  </PropertyGroup>
+  
+
+
+  <ItemGroup>
+      <PackageReference Include="LanguageExt.Core" Version="4.4.9" />
+      <PackageReference Include="Ardalis.GuardClauses" Version="5.0.0" />
+    <PackageReference Include="Ardalis.Specification" Version="8.0.0" />
+      <PackageReference Include="MediatR" Version="12.5.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Abstractions" Version="9.0.10" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.10" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.10" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.10" />
+    <PackageReference Include="MongoDB.Bson" Version="3.3.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+   
+  </ItemGroup>
+</Project>

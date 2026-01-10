@@ -1,0 +1,384 @@
+@* AddControlDialog.razor *@
+@using System.ComponentModel.DataAnnotations
+@using global::BlazorMauiShared.Models.AssessmentControl
+@inject IStringLocalizer<AddControlDialog> Localizer
+@inject ISnackbar Snackbar
+@using static LanguageExt.Prelude;
+@using Array = System.Array;
+@using Severity = MudBlazor.Severity
+@namespace PCIShield.BlazorAdmin.Client.Pages.Assessment
+
+
+<MudDialog DisableSidePadding="true">
+    <div class="pciShield-style-dialog">
+    <TitleContent>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+            <MudIcon Icon="@Icons.Material.Filled.TableView" Color="Color.Primary" />
+            <MudText Typo="Typo.h6">@Localizer["Add Control"]</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        <MudContainer Style="max-height: 700px; overflow-y: auto;" Class="pa-4">
+            <MudForm @ref="form" Model="@model" Validation="@ValidateForm" @bind-IsValid="@_formIsValid" @bind-Errors="@_formErrors">
+                <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6">
+                    <MudTabPanel Text="@Localizer["New Control"]">
+                        <MudGrid>
+                            <MudItem Class="mud-grid-item-pciShield-entity item-custom">
+                                <MudInputLabel Class="style-text" Style="margin-bottom:5px;">@Localizer["Control Code"]</MudInputLabel>
+                                <MudTextField T="string"
+                                              Value="@model.ControlCode"
+                                              ValueChanged="@(v => OnFieldChanged(s => model.ControlCode = s, v))"
+                                              MaxLength="100"
+                                              Counter="100"
+                                              Dense="true"
+                                              Immediate="true"
+                                              Variant="Variant.Outlined"
+                                              Required="true"
+                                              RequiredError="@Localizer["Control Code is required"]"
+                                              StartIcon="@Icons.Material.Filled.Edit"
+                                              Error="@(!string.IsNullOrEmpty(GetFieldError(() => model.ControlCode)))"
+                                              ErrorText="@(GetFieldError(() => model.ControlCode))"
+                                              Class="style-mud-input size-mud-input"
+                                              Style="width:380px; height:31px;" />
+                            </MudItem>
+                            <MudItem Class="mud-grid-item-pciShield-entity item-custom">
+                                <MudInputLabel Class="style-text" Style="margin-bottom:5px;">@Localizer["Requirement Number"]</MudInputLabel>
+                                <MudTextField T="string"
+                                              Value="@model.RequirementNumber"
+                                              ValueChanged="@(v => OnFieldChanged(s => model.RequirementNumber = s, v))"
+                                              MaxLength="100"
+                                              Counter="100"
+                                              Dense="true"
+                                              Immediate="true"
+                                              Variant="Variant.Outlined"
+                                              Required="true"
+                                              RequiredError="@Localizer["Requirement Number is required"]"
+                                              StartIcon="@Icons.Material.Filled.Edit"
+                                              Error="@(!string.IsNullOrEmpty(GetFieldError(() => model.RequirementNumber)))"
+                                              ErrorText="@(GetFieldError(() => model.RequirementNumber))"
+                                              Class="style-mud-input size-mud-input"
+                                              Style="width:380px; height:31px;" />
+                            </MudItem>
+                            <MudItem Class="mud-grid-item-pciShield-entity item-custom">
+                                <MudInputLabel Class="style-text" Style="margin-bottom:5px;">@Localizer["Control Title"]</MudInputLabel>
+                                <MudTextField T="string"
+                                              Value="@model.ControlTitle"
+                                              ValueChanged="@(v => OnFieldChanged(s => model.ControlTitle = s, v))"
+                                              MaxLength="2000"
+                                              Counter="2000"
+                                              Lines="3"
+                                              Dense="true"
+                                              Immediate="true"
+                                              Variant="Variant.Outlined"
+                                              Required="true"
+                                              RequiredError="@Localizer["Control Title is required"]"
+                                              StartIcon="@Icons.Material.Filled.Edit"
+                                              Error="@(!string.IsNullOrEmpty(GetFieldError(() => model.ControlTitle)))"
+                                              ErrorText="@(GetFieldError(() => model.ControlTitle))"
+                                              Class="style-mud-input"
+                                              Style="width:380px;" />
+                            </MudItem>
+                            <MudItem Class="mud-grid-item-pciShield-entity item-custom">
+                                <MudInputLabel Class="style-text" Style="margin-bottom:5px;">@Localizer["Control Description"]</MudInputLabel>
+                                <MudTextField T="string"
+                                              Value="@model.ControlDescription"
+                                              ValueChanged="@(v => OnFieldChanged(s => model.ControlDescription = s, v))"
+                                              MaxLength="2000"
+                                              Counter="2000"
+                                              Lines="3"
+                                              Dense="true"
+                                              Immediate="true"
+                                              Variant="Variant.Outlined"
+                                              Required="true"
+                                              RequiredError="@Localizer["Control Description is required"]"
+                                              StartIcon="@Icons.Material.Filled.Home"
+                                              Error="@(!string.IsNullOrEmpty(GetFieldError(() => model.ControlDescription)))"
+                                              ErrorText="@(GetFieldError(() => model.ControlDescription))"
+                                              Class="style-mud-input"
+                                              Style="width:380px;" />
+                            </MudItem>
+                            <MudItem Class="mud-grid-item-pciShield-entity item-custom">
+                                <MudInputLabel Class="style-text" Style="margin-bottom:5px;">@Localizer["Is Mandatory"]</MudInputLabel>
+                                <MudCheckBox T="bool"
+                                              Value="@model.IsMandatory"
+                                              ValueChanged="@(v => OnFieldChanged(s => model.IsMandatory = s, v))"
+                                              Color="Color.Primary"
+                                              Dense="true"
+                                              Class="style-check style-text" />
+                            </MudItem>
+                            <MudItem Class="mud-grid-item-pciShield-entity item-custom">
+                                <MudInputLabel Class="style-text" Style="margin-bottom:5px;">@Localizer["Testing Guidance"]</MudInputLabel>
+                                <MudTextField T="string"
+                                              Value="@model.TestingGuidance"
+                                              ValueChanged="@(v => OnFieldChanged(s => model.TestingGuidance = s, v))"
+                                              MaxLength="100"
+                                              Counter="100"
+                                              Dense="true"
+                                              Immediate="true"
+                                              Variant="Variant.Outlined"
+                                              StartIcon="@Icons.Material.Filled.Edit"
+                                              Error="@(!string.IsNullOrEmpty(GetFieldError(() => model.TestingGuidance)))"
+                                              ErrorText="@(GetFieldError(() => model.TestingGuidance))"
+                                              Class="style-mud-input size-mud-input"
+                                              Style="width:380px; height:31px;" />
+                            </MudItem>
+                            <MudItem Class="mud-grid-item-pciShield-entity item-custom">
+                                <MudInputLabel Class="style-text" Style="margin-bottom:5px;">@Localizer["Frequency Days"]</MudInputLabel>
+                                <MudNumericField T="int"
+                                              Value="@model.FrequencyDays"
+                                              ValueChanged="@(v => OnFieldChanged(s => model.FrequencyDays = s, v))"
+                                              Min="0"
+                                              Max="1000"
+                                              Step="1"
+                                              Culture="@CultureInfo.CurrentCulture"
+                                              Dense="true"
+                                              Immediate="true"
+                                              Variant="Variant.Outlined"
+                                              Required="true"
+                                              RequiredError="@Localizer["Frequency Days is required"]"
+                                              StartIcon="@Icons.Material.Filled.Edit"
+                                              Error="@(!string.IsNullOrEmpty(GetFieldError(() => model.FrequencyDays)))"
+                                              ErrorText="@(GetFieldError(() => model.FrequencyDays))"
+                                              Class="style-mud-input size-mud-input"
+                                              Style="width:380px; height:31px;" />
+                            </MudItem>
+                            <MudItem Class="mud-grid-item-pciShield-entity item-custom">
+                                <MudInputLabel Class="style-text" Style="margin-bottom:5px;">@Localizer["Effective Date"]</MudInputLabel>
+                                <MudDatePicker
+                                               T="DateTime"
+                                              Value="@model.EffectiveDate"
+                                              Culture="@CultureInfo.CurrentCulture"
+                                              DateFormat="MM/dd/yyyy"
+                                              Editable="true"
+                                              PickerVariant="PickerVariant.Dialog"
+                                              DisableToolbar="false"
+                                              Dense="true"
+                                              OpenTo="OpenTo.Date"
+                                              Variant="Variant.Outlined"
+                                              Required="true"
+                                              RequiredError="@Localizer["Effective Date is required"]"
+                                              AdornmentIcon="@Icons.Material.Filled.Event"
+                                              Adornment="Adornment.Start"
+                                              Error="@(!string.IsNullOrEmpty(GetFieldError(() => model.EffectiveDate)))"
+                                              ErrorText="@(GetFieldError(() => model.EffectiveDate))"
+                                              Class="style-mud-input size-mud-input"
+                                              Style="width:380px; height:31px;" />
+                            </MudItem>
+     // ToDo       newControl.TenantId = Guid.Parse("00000000-0000-0000-0000-000000000000");
+                        </MudGrid>
+                    </MudTabPanel>
+                    <MudTabPanel Text="@Localizer["Link Existing"]">
+                        <MudGrid>
+                            @if (!AvailableControls.Any())
+                            {
+                                <MudItem xs="12">
+                                    <MudAlert Severity="Severity.Info" Variant="Variant.Filled">
+                                        @Localizer["No existing Controls available to link"]
+                                    </MudAlert>
+                                </MudItem>
+                            }
+                            else
+                            {
+                                <MudItem Class="mud-grid-item-pciShield-entity style-search-mud-select margin-bottom-item">
+                                    <MudInputLabel Class="style-text">@Localizer["Select Control"]</MudInputLabel>
+                                    <MudAutocomplete T="AssessmentControlDto"
+                                                     Value="selectedControl"
+                                                     ValueChanged="OnControlChanged"
+                                                     Variant="Variant.Outlined"
+                                                     Dense="true"
+                                                     OpenOnFocus="true"
+                                                     Immediate="true"
+                                                     Strict="false"
+                                                     MaxItems="20"
+                                                     SearchFunc="SearchControls"
+                                                     ToStringFunc="ToDisplayString"
+                                                     CoerceText="true"
+                                                     Clearable="false"
+                                                     Required="true"
+                                                     RequiredError="@Localizer["Please select a Control"]"
+                                                     Class="style-mud-input size-mud-input"
+                                                     Style="width:380px; height:31px;" />
+                                </MudItem>
+                            }
+                        </MudGrid>
+                    </MudTabPanel>
+                </MudTabs>
+            </MudForm>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Variant="Variant.Text" Class="btn-cancel">@Localizer["Cancel"]</MudButton>
+        <MudButton Color="Color.Primary"
+                   OnClick="Submit"
+                   Variant="Variant.Filled"
+                   Class="btn-save"
+                   Disabled="@(!_formIsValid)">@Localizer["Add"]</MudButton>
+    </DialogActions>
+    </div>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    MudDialog MudDialog
+    {
+        get; set;
+    }
+
+    [Parameter] public List<AssessmentControlDto> AvailableControls { get; set; } = new();
+    [Parameter]
+    public Guid AssessmentId
+    {
+        get; set;
+    }
+
+    private AssessmentControlDto selectedControl;
+    private MudForm form;
+    private AddControlModel model = new();
+    private bool _formIsValid;
+    private string[] _formErrors = Array.Empty<string>();
+
+    protected override void OnParametersSet()
+    {
+        if (AvailableControls?.Any() == true && selectedControl == null)
+        {
+            selectedControl = AvailableControls.First();
+            OnControlChanged(selectedControl);
+        }
+    }
+
+    private void OnFieldChanged<T>(Action<T> setter, T value)
+    {
+        setter(value);
+        StateHasChanged();
+    }
+
+    private string? GetFieldError<T>(System.Linq.Expressions.Expression<Func<T>> expression)
+    {
+        if (_formErrors == null || !_formErrors.Any())
+            return string.Empty;
+
+        var memberExpression = expression.Body as System.Linq.Expressions.MemberExpression;
+        if (memberExpression == null)
+            return null;
+
+        var propertyName = memberExpression.Member.Name;
+        return _formErrors.FirstOrDefault(e => e.Contains(propertyName)) ?? string.Empty;
+    }
+
+    private void OnControlChanged(AssessmentControlDto control)
+    {
+        selectedControl = control;
+    }
+
+    private string ToDisplayString(AssessmentControlDto control)
+    {
+        if (control == null)
+            return string.Empty;
+        return $"{control?.Control?.ControlCode} - {control?.Control?.RequirementNumber}";
+    }
+
+    private async Task<IEnumerable<AssessmentControlDto>> SearchControls(string value, CancellationToken cancellationToken)
+    {
+        await Task.Delay(5, cancellationToken);
+        if (string.IsNullOrEmpty(value))
+            return AvailableControls;
+
+        return AvailableControls.Where(s =>
+            (s.Control.ControlCode?.Contains(value, StringComparison.InvariantCultureIgnoreCase) ?? false) ||
+            (s.Control.RequirementNumber?.Contains(value, StringComparison.InvariantCultureIgnoreCase) ?? false)
+        );
+    }
+
+    private Func<object, string> ValidateForm => obj =>
+    {
+        if (string.IsNullOrEmpty(model.ControlCode) || selectedControl == null)
+        {
+            return "Please either enter a new Control or select an existing one";
+        }
+
+        return null;
+    };
+
+    private async Task Submit()
+    {
+        await form.Validate();
+        if (!_formIsValid)
+            return;
+
+        var joinRequest = new CreateAssessmentControlJoinRequest
+            {
+                AssessmentId = AssessmentId
+            };
+
+        if (!string.IsNullOrEmpty(model.ControlCode))
+        {
+            // For new control
+            var newControl = ControlFactory.CreateNewEmpty();
+            newControl.ControlCode = model.ControlCode;
+            newControl.RequirementNumber = model.RequirementNumber;
+            newControl.ControlTitle = model.ControlTitle;
+            newControl.ControlDescription = model.ControlDescription;
+            newControl.IsMandatory = model.IsMandatory;
+            newControl.TestingGuidance = model.TestingGuidance;
+            newControl.FrequencyDays = model.FrequencyDays;
+            newControl.EffectiveDate = model.EffectiveDate;
+
+            newControl.IsDeleted = false;
+            newControl.UpdatedAt = DateTime.UtcNow;
+            newControl.UpdatedBy = Guid.Parse("06B247E1-EEA4-EF62-1111-A7838E4E0DBF");
+            newControl.CreatedAt = DateTime.UtcNow;
+            newControl.CreatedBy = Guid.Parse("2CD63ACA-28F4-52A5-D27D-0B2557B8ADF0");
+     // ToDo       newControl.TenantId = Guid.Parse("00000000-0000-0000-0000-000000000000");
+
+            joinRequest.Control = newControl;
+            joinRequest.AssessmentControl = AssessmentControlFactory.CreateNewEmpty();
+        }
+        else if (selectedControl != null)
+        {
+            // For existing control
+            joinRequest.Control = selectedControl.Control;
+            joinRequest.AssessmentControl = selectedControl.CloneAsNew();
+        }
+
+        await MudDialog.CloseAsync(DialogResult.Ok(joinRequest));
+    }
+
+    private void Cancel() => MudDialog.CloseAsync();
+
+    public class AddControlModel
+    {
+        public string ControlCode
+        {
+            get; set;
+        }
+        public string RequirementNumber
+        {
+            get; set;
+        }
+        public string ControlTitle
+        {
+            get; set;
+        }
+        public string ControlDescription
+        {
+            get; set;
+        }
+        public bool IsMandatory
+        {
+            get; set;
+        }
+        public string TestingGuidance
+        {
+            get; set;
+        }
+        public int FrequencyDays
+        {
+            get; set;
+        }
+        public DateTime EffectiveDate
+        {
+            get; set;
+        }
+        public bool IsNew => !string.IsNullOrEmpty(ControlCode);
+    }
+}

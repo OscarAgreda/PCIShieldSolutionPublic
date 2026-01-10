@@ -1,0 +1,125 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>14.0</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <WarningLevel>0</WarningLevel>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+
+
+
+
+    <NoWarn>
+      $(NoWarn);
+      CS1591;  <!-- missing XML comments, example -->
+      CS0618;   <!-- obsolete member, example -->
+      NU1903;
+      NU1902;
+    </NoWarn>
+   <Platforms>AnyCPU</Platforms>
+      <UseSharedCompilation>true</UseSharedCompilation>
+      <BuildInParallel>true</BuildInParallel>
+    <!--<Platforms>AnyCPU;ARM64</Platforms>-->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Services\Specifications\**" />
+    <EmbeddedResource Remove="Services\Specifications\**" />
+    <None Remove="Services\Specifications\**" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <EFOptimizeContext>true</EFOptimizeContext>
+    <EFScaffoldModelStage>build</EFScaffoldModelStage>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Elastic.Clients.Elasticsearch" Version="8.14.6" />
+     
+
+
+      <PackageReference Include="Confluent.Kafka" Version="2.9.0" />
+    <PackageReference Include="Audit.NET" Version="27.5.2" />
+    <PackageReference Include="Audit.NET.Elasticsearch" Version="27.2.0" />
+      <PackageReference Include="Audit.NET.MongoDB" Version="27.5.2" />
+  
+    <PackageReference Include="Google.Apis.Auth" Version="1.69.0" />
+    <PackageReference Include="Hangfire.AspNetCore" Version="1.8.18" />
+    <PackageReference Include="Hangfire.SqlServer" Version="1.8.18" />
+ 
+    <PackageReference Include="FluentValidation" Version="11.11.0" />
+    <PackageReference Include="MailKit" Version="4.11.0" />
+
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="9.0.10" />
+    <PackageReference Include="LanguageExt.Core" Version="4.4.9" />
+
+    <PackageReference Include="Oracle.EntityFrameworkCore" Version="9.23.90" />
+    <PackageReference Include="Oracle.ManagedDataAccess.Core" Version="23.9.1" />
+      <PackageReference Include="System.Text.Json" Version="9.0.10" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Hybrid" Version="9.9.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.10" />
+      <PackageReference Include="MongoDB.Driver.Core" Version="2.30.0" />
+      <!--<PackageReference Include="MongoDB.Driver.GridFS" Version="2.25.0" />-->
+    <PackageReference Include="NRedisStack" Version="0.13.3" />
+    <!--<PackageReference Include="OpenTelemetry" Version="1.8.1" />
+    <PackageReference Include="OpenTelemetry.Api" Version="1.8.1" />-->
+    <PackageReference Include="Polly" Version="8.5.2" />
+      <PackageReference Include="MediatR" Version="12.5.0" />
+    <PackageReference Include="Quartz.Extensions.Hosting" Version="3.14.0" />
+    <PackageReference Include="Quartz.Serialization.Json" Version="3.14.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.3.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.10" />
+    <PackageReference Include="Ardalis.Specification.EntityFrameworkCore" Version="8.0.0" />
+      <PackageReference Include="Autofac" Version="8.2.1" />
+      <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="10.0.0" />
+    <PackageReference Include="Ardalis.EFCore.Extensions" Version="6.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.10" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.10">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" PrivateAssets="all" Version="9.0.10" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.10" />
+    <!--<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.2" />-->
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.10" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.10" />
+    <PackageReference Include="Microsoft.Extensions.ObjectPool" Version="9.0.10" />
+
+      <PackageReference Include="RabbitMQ.Client" Version="6.8.1" />
+
+    <PackageReference Include="Sentry" Version="5.5.1" />
+
+    <PackageReference Include="Serilog" Version="4.2.0" />
+
+    <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
+    <PackageReference Include="Serilog.Sinks.MSSqlServer" Version="8.2.0" />
+    <PackageReference Include="Serilog.Sinks.Seq" Version="9.0.0" />
+    <!--<PackageReference Include="SQLite" Version="3.13.0" />-->
+    <PackageReference Include="NETStandard.Library" Version="2.0.3" />
+    <PackageReference Include="StackExchange.Redis" Version="2.8.31" />
+    <PackageReference Include="StackExchange.Redis.Extensions.Core" Version="11.0.0" />
+    <PackageReference Include="StackExchange.Redis.Extensions.Newtonsoft" Version="11.0.0" />
+
+    <PackageReference Include="System.Reactive" Version="6.0.1" />
+ 
+
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\PCIShield.Domain\PCIShield.Domain.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Services\Elasticsearch\Mappins\" />
+    <Folder Include="Services\EventStoreDb\" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Services\Email\EmailTemplates\default.html">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+  </ItemGroup>
+</Project>

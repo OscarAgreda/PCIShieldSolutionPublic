@@ -1,0 +1,76 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <WarningLevel>0</WarningLevel>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+
+
+
+
+    <NoWarn>
+      $(NoWarn);
+      CS1591;  <!-- missing XML comments, example -->
+      CS0618;   <!-- obsolete member, example -->
+      NU1903;
+      NU1902;
+    </NoWarn>
+    <LangVersion>14.0</LangVersion>
+   <Platforms>AnyCPU</Platforms>
+      <UseSharedCompilation>true</UseSharedCompilation>
+      <BuildInParallel>true</BuildInParallel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="ContextObject\**" />
+    <Compile Remove="Strategies\**" />
+    <EmbeddedResource Remove="ContextObject\**" />
+    <EmbeddedResource Remove="Strategies\**" />
+    <None Remove="ContextObject\**" />
+    <None Remove="Strategies\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+
+    
+      <PackageReference Include="Flurl" Version="4.0.0" />
+
+    <!--https://github.com/SteveDunn/Vogen-->
+    <PackageReference Include="Vogen" Version="8.0.2" />
+
+    
+   
+
+      <PackageReference Include="Z.EntityFramework.Plus.EFCore" Version="9.103.8" />
+      <PackageReference Include="LanguageExt.Core" Version="4.4.9" />
+    <PackageReference Include="Ardalis.GuardClauses" Version="5.0.0" />
+    <PackageReference Include="Ardalis.Result" Version="10.1.0" />
+    <PackageReference Include="Dapper.Contrib" Version="2.0.78" />
+    <PackageReference Include="Hangfire.AspNetCore" Version="1.8.18" />
+    <PackageReference Include="Hangfire.SqlServer" Version="1.8.18" />
+      <PackageReference Include="MediatR" Version="12.5.0" />
+
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.0.1" />
+    <PackageReference Include="MimeKit" Version="4.11.0" />
+      <PackageReference Include="MongoDB.Driver.Core" Version="2.30.0" />
+      <!--<PackageReference Include="MongoDB.Driver.GridFS" Version="2.25.0" />-->
+    <PackageReference Include="Polly" Version="8.5.2" />
+    <PackageReference Include="Quartz.Extensions.Hosting" Version="3.14.0" />
+    <PackageReference Include="Quartz.Serialization.Json" Version="3.14.0" />
+
+    <PackageReference Include="Serilog" Version="4.2.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
+    <PackageReference Include="Serilog.Sinks.MSSqlServer" Version="8.2.0" />
+
+
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+ 
+    <ProjectReference Include="..\PCIShieldL.SharedKernel\PCIShieldLib.SharedKernel.csproj" />
+  </ItemGroup>
+</Project>

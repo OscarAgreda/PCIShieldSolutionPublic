@@ -1,0 +1,11 @@
+-- Find DTO Usage Query
+-- This query finds all places where a specific DTO is used
+
+SELECT
+  method.name AS methodName,
+  method.file.path AS filePath,
+  class.name AS className
+FROM Class AS class
+JOIN LATERAL class.methods AS method
+WHERE class.name LIKE "%{{DTO_NAME}}%"
+   OR method.definition CONTAINS "{{DTO_NAME}}"

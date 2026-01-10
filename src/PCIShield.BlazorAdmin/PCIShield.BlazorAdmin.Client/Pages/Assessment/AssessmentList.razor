@@ -1,0 +1,796 @@
+@* /AssessmentList.razor *@
+@page "/AssessmentList"
+@using MudBlazor
+@using MudBlazor.Utilities
+@using PCIShield.BlazorMauiShared.CustomDto
+@using PCIShield.BlazorAdmin.Client.Shared.Components
+@using System.Reactive.Linq
+@using System.Reactive.Disposables
+@using global::BlazorMauiShared.Models.Assessment
+@using PCIShield.Client.Services.Assessment
+@using PCIShield.BlazorMauiShared.ServiceIcon
+@implements IAsyncDisposable
+@implements IHandleEvent
+@rendermode InteractiveAuto
+@inject IStringLocalizer<AssessmentList> Localizer
+@inject ILogger<AssessmentList> _logger
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@inject IHttpAssessmentClientService assessmentHttpService
+@inject ISignalRNotificationStrategy SignalRStrategy
+@namespace PCIShield.BlazorAdmin.Client.Pages.Assessment
+
+<MudBreadcrumbs Items="_breadCrumbs" Separator="|" Class="pciShield-breadcrumb pciShield-text-caption"></MudBreadcrumbs>
+
+<MudPaper Class="pciShield-container pciShield-container-secondary" Elevation="0">
+    <MudGrid Class="pciShield-grid" Style="width: 100%;">
+        <MudItem xs="12" sm="5" Class="pciShield-grid-item">
+            <MudText Class="pciShield-title-page">@Localizer["Assessments"]</MudText>
+            <MudText Class="pciShield-text-body pciShield-mt-sm">@Localizer["In this module you can manage your Assessment information"]</MudText>
+        </MudItem>
+        <MudSpacer />
+        <MudItem xs="12" sm="5" Class="pciShield-grid-item d-flex justify-end align-end pciShield-gap-sm">
+            <MudButton Color="Color.Primary"
+                       Size="Size.Small"
+                       Variant="Variant.Filled"
+                       Class="pciShield-btn pciShield-btn-primary"
+                       StartIcon="@Icons.Material.Filled.Add"
+                       OnClick="NavigateToCreateNewAssessment">
+                @Localizer["New Assessment"]
+            </MudButton>
+
+            <MudButton StartIcon="@ServiceCustomIcon.iconImport"
+                       Class="pciShield-btn-icon pciShield-btn-secondary pciShield-shadow"
+                       IconClass="pciShield-text-primary" />
+
+            <MudButton StartIcon="@ServiceCustomIcon.iconHelp"
+                       Class="pciShield-btn-icon pciShield-btn-secondary pciShield-shadow"
+                       IconClass="pciShield-text-primary" />
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+@if (!string.IsNullOrEmpty(_orchestrator.ErrorMessage))
+{
+    <MudAlert Severity="Severity.Error"
+              ShowCloseIcon="true"
+              CloseIconClicked="() => _orchestrator.ClearError()"
+              Class="pciShield-mt-md pciShield-mb-md pciShield-shadow">
+        @_orchestrator.ErrorMessage
+    </MudAlert>
+}
+
+<MudPaper Elevation="0" Class="pciShield-container pciShield-shadow position-relative">
+    @if (_orchestrator.IsBusy)
+    {
+        <MudOverlay Visible="true"
+                    DarkBackground="false"
+                    Absolute="true"
+                    Class="pciShield-overlay">
+            <MudProgressCircular Color="Color.Primary"
+                                 Size="Size.Small"
+                                 Indeterminate="true" />
+        </MudOverlay>
+    }
+
+    <MudGrid Class="pciShield-grid pciShield-mb-lg" Style="width: 100%;">
+        <MudItem xs="12" sm="5" Class="pciShield-grid-item">
+            <MudText Class="pciShield-title-section">@Localizer["Assessment List"]</MudText>
+        </MudItem>
+        <MudSpacer />
+        <MudItem xs="12" sm="5" Class="pciShield-grid-item d-flex justify-end align-end pciShield-gap-sm">
+            <MudTextField T="string"
+                          Value="@_searchString"
+                          ValueChanged="OnSearchStringChanged"
+                          Placeholder="Search..."
+                          Immediate="true"
+                          Clearable="true"
+                          UnderLine="false"
+                          OnClearButtonClick="@(async () => await ResetSearch())"
+                          Class="pciShield-search-enhanced" />
+
+            <MudTooltip Text="@GetExportButtonTooltip()">
+                <MudIconButton Icon="@ServiceCustomIcon.iconExport"
+                               Class="pciShield-btn-icon pciShield-btn-secondary pciShield-shadow"
+                               OnClick="ExportToExcel"
+                               Disabled="@(!_orchestrator.IsDataLoaded)" />
+            </MudTooltip>
+            <MudTooltip Text="Reset all filters and search">
+                <MudIconButton Icon="@ServiceCustomIcon.iconPrint"
+                               Color="Color.Default"
+                               Class="pciShield-btn-icon pciShield-btn-secondary pciShield-shadow"
+                               OnClick="ClearFilters"
+                               Disabled="@(!_orchestrator.IsDataLoaded)" />
+            </MudTooltip>
+        </MudItem>
+    </MudGrid>
+
+    <MudDataGrid T="AssessmentDto"
+                 @ref="grid"
+                 ServerData="@ServerReload"
+                 Virtualize="true"
+                 @bind-CurrentPage="_gridState.Page"
+                 PageSize="@_gridState.PageSize"
+                 PageSizeOptions="@_pageSizeOptions"
+                 SortMode="SortMode.Multiple"
+                 Filterable="@_isFilteringEnabled"
+                 FilterMode="@_filterMode"
+                 FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive"
+                 Hideable="true"
+                 ColumnResizeMode="ResizeMode.Container"
+                 Loading="@(_orchestrator.IsBusy || _orchestrator.IsSearching)"
+                 LoadingIndicator="true"
+                 LoadingProgressColor="Color.Primary"
+                 Hover="true"
+                 Dense="true"
+                 Striped="true"
+                 Bordered="false"
+                 Elevation="0"
+                 Class="pciShield-datagrid pciShield-table pciShield-table-striped pciShield-table-hover"
+                 RowClassFunc="GetRowClass"
+                 TotalItems="@_orchestrator.TotalCount">
+
+        <ToolBarContent>
+            <MudStack Row="true" AlignItems="AlignItems.Center" Class="flex-grow-1" Spacing="2">
+                <MudTextField T="string"
+                              Value="@_searchString"
+                              ValueChanged="OnSearchStringChanged"
+                              Placeholder="Search assessments..."
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Search"
+                              IconSize="Size.Medium"
+                              Immediate="true"
+                              Clearable="true"
+                              OnClearButtonClick="@(async () => await ResetSearch())"
+                              Class="pciShield-search-enhanced flex-grow-1" />
+
+                <MudTooltip Text="@GetExportButtonTooltip()">
+                    <MudIconButton Icon="@Icons.Material.Filled.Download"
+                                   Color="Color.Primary"
+                                   Class="pciShield-btn-icon pciShield-btn-primary pciShield-shadow"
+                                   OnClick="ExportToExcel"
+                                   Disabled="@(!_orchestrator.IsDataLoaded)" />
+                </MudTooltip>
+
+                <MudTooltip Text="Reset all filters and search">
+                    <MudIconButton Icon="@Icons.Material.Filled.ClearAll"
+                                   Color="Color.Default"
+                                   Class="pciShield-btn-icon pciShield-btn-secondary pciShield-shadow"
+                                   OnClick="ClearFilters"
+                                   Disabled="@(!_orchestrator.IsDataLoaded)" />
+                </MudTooltip>
+
+                <MudTooltip Text="Refresh data">
+                    <MudIconButton Icon="@Icons.Material.Filled.Refresh"
+                                   Color="Color.Default"
+                                   Class="pciShield-btn-icon pciShield-btn-secondary pciShield-shadow pciShield-transition pciShield-hover-lift"
+                                   OnClick="ResetGridState" />
+                </MudTooltip>
+            </MudStack>
+        </ToolBarContent>
+
+        <Columns>
+            <HierarchyColumn T="AssessmentDto" />
+            <TemplateColumn CellClass="pciShield-text-right pciShield-text-caption" HeaderClass="pciShield-title-section pciShield-text-center" Sortable="false" Filterable="false">
+                <CellTemplate>
+                    <MudMenu Icon="@Icons.Material.Filled.MoreVert" Dense="true" Ripple="false">
+                        <MudMenuItem OnClick="(() => _orchestrator.OnView(context.Item))" Class="pciShield-menu-item">
+                            @Localizer["View"]
+                        </MudMenuItem>
+                        <MudMenuItem OnClick="(() => _orchestrator.OnEdit(context.Item))" Class="pciShield-menu-item">
+                            @Localizer["Edit"]
+                        </MudMenuItem>
+                        <MudMenuItem OnClick="(() => _orchestrator.OnDelete(context.Item))" Class="pciShield-menu-item text-error">
+                            @Localizer["Delete"]
+                        </MudMenuItem>
+                    </MudMenu>
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.AssessmentCode" Title="@Localizer["Assessment Code"]"
+                            HeaderClass="pciShield-title-section" CellClass="pciShield-text-body" Sortable="true" />
+            <PropertyColumn Property="x => x.AssessmentPeriod" Title="@Localizer["Assessment Period"]"
+                            HeaderClass="pciShield-title-section" CellClass="pciShield-text-body" Sortable="true" />
+            <PropertyColumn Property="x => x.ComplianceScore" Title="@Localizer["Compliance Score"]"
+                            Format="C" HeaderClass="pciShield-title-section text-right" CellClass="pciShield-text-body text-right" Sortable="true">
+                <CellTemplate>
+                    <MudText Class="pciShield-text-body">@context.Item.ComplianceScore?.ToString("N2")</MudText>
+                </CellTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.AssessmentType" HeaderClass="pciShield-title-section" CellClass="pciShield-text-body"
+                            Sortable="true" Title="@Localizer["Assessment Type"]" />
+            <TemplateColumn Title="@Localizer["Rank"]"
+                            HeaderClass="pciShield-title-section text-center"
+                            CellClass="text-center">
+                <CellTemplate>
+                    @{
+                        var rankColor = context.Item.Rank switch
+                        {
+                            <= 3 => Color.Success,
+                            <= 6 => Color.Warning,
+                            _ => Color.Error
+                        };
+                    }
+                    <MudChip Size="Size.Small" Color="@rankColor">
+                        Rank @context.Item.Rank
+                    </MudChip>
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.QSAReviewRequired" HeaderClass="pciShield-title-section" CellClass="pciShield-text-body"
+                            Sortable="true" Title="@Localizer["Qsareview Required"]">
+                <CellTemplate>
+                    <MudChip Class="@(context.Item.QSAReviewRequired ? "pciShield-chip pciShield-chip-primary" : "pciShield-chip pciShield-chip-secondary")"
+                             Size="Size.Small">
+                        @(context.Item.QSAReviewRequired ? "Yes" : "No")
+                    </MudChip>
+                </CellTemplate>
+            </PropertyColumn>
+            <TemplateColumn Title="@Localizer["Start Date"]"
+                            HeaderClass="pciShield-title-section"
+                            CellClass="pciShield-text-body">
+                <CellTemplate>
+                        <MudStack Spacing="0">
+                            <MudText Typo="Typo.body2">@context.Item.StartDate.ToString("MMM dd, yyyy")</MudText>
+                            <MudText Typo="Typo.caption" Class="pciShield-text-caption">
+                                @((DateTime.Now - context.Item.StartDate).Days) days ago
+                            </MudText>
+                        </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="@Localizer["End Date"]"
+                            HeaderClass="pciShield-title-section"
+                            CellClass="pciShield-text-body">
+                <CellTemplate>
+                        @{
+                            var daysUntilDue = (context.Item.EndDate - DateTime.Now).Days;
+                            var urgencyColor = daysUntilDue switch
+                            {
+                                <= 7 => "color: #EF4444",
+                                <= 30 => "color: #F59E0B",
+                                _ => "color: #16A34A"
+                            };
+                        }
+                        <MudStack Spacing="0">
+                            <MudText Typo="Typo.body2">@context.Item.EndDate.ToString("MMM dd, yyyy")</MudText>
+                            <MudText Typo="Typo.caption" Style="@urgencyColor">
+                                @(daysUntilDue > 0 ? $"in {daysUntilDue} days" : $"{Math.Abs(daysUntilDue)} days overdue")
+                            </MudText>
+                        </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.CompletionDate" HeaderClass="pciShield-title-section" CellClass="pciShield-text-body"
+                            Title="@Localizer["Completion Date"]">
+                <CellTemplate>
+                    <MudText>@context.Item.CompletionDate?.ToString("MMM dd, yyyy")</MudText>
+                </CellTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.CreatedAt" HeaderClass="pciShield-title-section" CellClass="pciShield-text-caption"
+                            Title="@Localizer["Created At"]">
+                <CellTemplate>
+                    <MudText Class="pciShield-text-caption">@context.Item.CreatedAt.ToString("dd/MM/yyyy")</MudText>
+                </CellTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.UpdatedAt" HeaderClass="pciShield-title-section" CellClass="pciShield-text-caption"
+                            Title="@Localizer["Updated At"]">
+                <CellTemplate>
+                    <MudText Class="pciShield-text-caption">@context.Item.UpdatedAt?.ToString("dd/MM/yyyy")</MudText>
+                </CellTemplate>
+            </PropertyColumn>
+            <TemplateColumn CellClass="pciShield-text-right pciShield-text-caption" HeaderClass="pciShield-title-section pciShield-text-center"
+                            Sortable="false" Filterable="false">
+                <CellTemplate>
+                    <MudMenu Icon="@Icons.Material.Filled.MoreVert" Dense="true" Ripple="false">
+                        <MudMenuItem OnClick="(() => _orchestrator.OnView(context.Item))" Class="pciShield-menu-item">
+                            @Localizer["View"]
+                        </MudMenuItem>
+                        <MudMenuItem OnClick="(() => _orchestrator.OnEdit(context.Item))" Class="pciShield-menu-item">
+                            @Localizer["Edit"]
+                        </MudMenuItem>
+                        <MudMenuItem OnClick="(() => _orchestrator.OnDelete(context.Item))" Class="pciShield-menu-item text-error">
+                            @Localizer["Delete"]
+                        </MudMenuItem>
+                    </MudMenu>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+
+        <ChildRowContent>
+            <MudCard Elevation="0" Class="pciShield-card pciShield-container pciShield-mt-md">
+                <MudGrid>
+                    <MudItem xs="12" sm="6" md="4">
+                        <MudPaper Class="pciShield-form-section" Elevation="0">
+                            <MudText Typo="Typo.subtitle1" Class="pciShield-form-section-title">Basic Information</MudText>
+                            <MudStack Spacing="2">
+                                <div class="pciShield-field-group">
+                                    <MudText Class="pciShield-field-label">Assessment Code</MudText>
+                                    <MudText Class="pciShield-text-body">@context.Item.AssessmentCode</MudText>
+                                </div>
+                                <div class="pciShield-field-group">
+                                    <MudText Class="pciShield-field-label">Assessment Period</MudText>
+                                    <MudText Class="pciShield-text-body">@context.Item.AssessmentPeriod</MudText>
+                                </div>
+                            </MudStack>
+                        </MudPaper>
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="4">
+                        <MudPaper Class="pciShield-form-section" Elevation="0">
+                            <MudText Typo="Typo.subtitle1" Class="pciShield-form-section-title">Numeric Information</MudText>
+                            <MudStack Spacing="2">
+                                <div class="pciShield-field-group">
+                                    <MudText Class="pciShield-field-label">Compliance Score</MudText>
+                                    <MudText Class="pciShield-text-body">@context.Item.ComplianceScore?.ToString("N2")</MudText>
+                                </div>
+                                <div class="pciShield-field-group">
+                                    <MudText Class="pciShield-field-label">Assessment Type</MudText>
+                                    <MudText Class="pciShield-text-body">@context.Item.AssessmentType</MudText>
+                                </div>
+                                <div class="pciShield-field-group">
+                                    <MudText Class="pciShield-field-label">Rank</MudText>
+                                    <MudText Class="pciShield-text-body">@context.Item.Rank</MudText>
+                                </div>
+                            </MudStack>
+                        </MudPaper>
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="4">
+                        <MudPaper Class="pciShield-form-section" Elevation="0">
+                            <MudText Typo="Typo.subtitle1" Class="pciShield-form-section-title">Status Information</MudText>
+                            <MudStack Spacing="2">
+                                <div class="pciShield-field-group">
+                                    <MudText Class="pciShield-field-label">Qsareview Required</MudText>
+                                    <MudChip Class="@(context.Item.QSAReviewRequired ? "pciShield-status pciShield-status-active" : "pciShield-status pciShield-status-inactive")"
+                                             Size="Size.Small">
+                                        @(context.Item.QSAReviewRequired ? "Yes" : "No")
+                                    </MudChip>
+                                </div>
+                                <div class="pciShield-field-group">
+                                    <MudText Class="pciShield-field-label">Start Date</MudText>
+                                    <MudText Class="pciShield-text-body">@context.Item.StartDate.ToString("dd/MM/yyyy")</MudText>
+                                </div>
+                                <div class="pciShield-field-group">
+                                    <MudText Class="pciShield-field-label">End Date</MudText>
+                                    <MudText Class="pciShield-text-body">@context.Item.EndDate.ToString("dd/MM/yyyy")</MudText>
+                                </div>
+                                <div class="pciShield-field-group">
+                                    <MudText Class="pciShield-field-label">Completion Date</MudText>
+                                    <MudText Class="pciShield-text-body">@context.Item.CompletionDate?.ToString("dd/MM/yyyy")</MudText>
+                                </div>
+                                <div class="pciShield-field-group">
+                                    <MudText Class="pciShield-field-label">Created At</MudText>
+                                    <MudText Class="pciShield-text-caption">@context.Item.CreatedAt.ToString("dd/MM/yyyy")</MudText>
+                                </div>
+                                <div class="pciShield-field-group">
+                                    <MudText Class="pciShield-field-label">Updated At</MudText>
+                                    <MudText Class="pciShield-text-caption">@context.Item.UpdatedAt?.ToString("dd/MM/yyyy")</MudText>
+                                </div>
+                            </MudStack>
+                        </MudPaper>
+                    </MudItem>
+                </MudGrid>
+            </MudCard>
+        </ChildRowContent>
+
+        <PagerContent>
+            <MudDataGridPager T="AssessmentDto"
+                              Class="pciShield-text-caption"
+                              InfoFormat=@Localizer["Showing {first_item} - {last_item} of {all_items} entries"]
+                              RowsPerPageString=@Localizer["Data shown"] />
+        </PagerContent>
+    </MudDataGrid>
+
+    <div class="d-flex flex-wrap pciShield-mt-lg align-center pciShield-container-secondary pciShield-shadow" style="padding: var(--pciShield-space-md); border-radius: var(--pciShield-radius-md);">
+        <MudSwitch T="bool"
+                   Checked="@_isFilteringEnabled"
+                   ValueChanged="OnFilteringEnabledChanged"
+                   Color="Color.Primary"
+                   Size="Size.Small"
+                   Label="Enable Column Filtering"
+                   Class="pciShield-text-body" />
+
+        <MudDivider Vertical="true"
+                    FlexItem="true"
+                    Class="mx-4" />
+
+        <MudRadioGroup T="DataGridFilterMode"
+                       Value="@_filterMode"
+                       ValueChanged="OnFilterModeChanged"
+                       Disabled="@(!_isFilteringEnabled)"
+                       Class="pciShield-text-body">
+            <MudRadio Dense="true"
+                      Value="@DataGridFilterMode.Simple"
+                      Color="Color.Primary"
+                      Disabled="@(!_isFilteringEnabled)">
+                @Localizer["Simple"]
+            </MudRadio>
+            <MudRadio Dense="true"
+                      Value="@DataGridFilterMode.ColumnFilterMenu"
+                      Color="Color.Tertiary"
+                      Disabled="@(!_isFilteringEnabled)">
+                @Localizer["Column Menu"]
+            </MudRadio>
+            <MudRadio Dense="true"
+                      Value="@DataGridFilterMode.ColumnFilterRow"
+                      Disabled="@(!_isFilteringEnabled)">
+                @Localizer["Column Row"]
+            </MudRadio>
+        </MudRadioGroup>
+    </div>
+</MudPaper>
+
+
+@if (_orchestrator.IsDataLoaded)
+{
+    <SearchAnalyticsPanel T="AssessmentDto"
+                          Metrics="@_orchestrator.Analytics"
+                          Title="Assessment Search Analytics"
+                          ShowSearchTerms="true"
+                          ShowPerformanceChart="true"
+                          ShowPartialSearches="true"
+                          Class="pciShield-card pciShield-container pciShield-mt-lg pciShield-shadow pciShield-transition pciShield-hover-lift">
+        <ExtraContent>
+        </ExtraContent>
+    </SearchAnalyticsPanel>
+}
+
+
+@code {
+    private GenericListOrchestrator<AssessmentDto> _orchestrator;
+    private MudDataGrid<AssessmentDto> grid;
+    private GridState<AssessmentDto> _gridState = new() { Page = 0, PageSize = 10 };
+    private readonly int[] _pageSizeOptions = new[] { 5, 10, 15, 20 };
+
+    private bool _isFilteringEnabled = true;
+    private DataGridFilterMode _filterMode = DataGridFilterMode.Simple;
+    private DataGridFilterMode _previousFilterMode;
+
+    private readonly Dictionary<string, (DateTime Timestamp, Func<AssessmentDto, bool>)> _filterCache = new();
+    private readonly CompositeDisposable _subscriptions = new();
+
+    private string _searchString = "";
+
+    private bool _shouldRender = true;
+    protected override bool ShouldRender()
+    {
+        if (!_shouldRender)
+            return false;
+        _shouldRender = false;
+        return true;
+    }
+
+    Task IHandleEvent.HandleEventAsync(EventCallbackWorkItem item, object arg) => item.InvokeAsync(arg);
+
+    protected override async Task OnInitializedAsync()
+    {
+        _orchestrator = new GenericListOrchestrator<AssessmentDto>(
+            logger: _logger,
+            snackbar: Snackbar,
+            dialog: DialogService,
+            signalR: SignalRStrategy,
+            localizer: Localizer,
+            aggregatorName: "Assessment", 
+            getAllPagedFunc: async (page, pageSize) =>
+            {
+                ListAssessmentResponse? resp = await assessmentHttpService.GetPagedAssessmentsListAsync(page, pageSize);
+                if (resp == null)
+                {
+                    return new PagedResult<AssessmentDto> { Items = new List<AssessmentDto>(), Count = 0 };
+                }
+                return new PagedResult<AssessmentDto>
+                {
+                    Items = resp.Assessments,
+                    Count = resp.Assessments?.Count() ?? 0,
+                     TotalCount = resp.TotalCount,
+                     PageNumber = resp.PageNumber,
+                     PageSize = resp.PageSize,
+                     TotalPages = resp.TotalPages,
+                };
+            },
+            getFilteredFunc: async (page, pageSize, filters, sorts) =>
+            {
+                ListAssessmentResponse? resp = await assessmentHttpService.GetFilteredAssessmentListAsync(page, pageSize, filters, sorts);
+                if (resp == null)
+                {
+                    return new PagedResult<AssessmentDto> { Items = new List<AssessmentDto>(), Count = 0 };
+                }
+                return new PagedResult<AssessmentDto>
+                {
+                    Items = resp.Assessments,
+                    Count = resp.Assessments?.Count() ?? 0,
+                     TotalCount = resp.TotalCount,
+                     PageNumber = resp.PageNumber,
+                     PageSize = resp.PageSize,
+                     TotalPages = resp.TotalPages,
+                };
+            },
+            onEditNavigating: (item) =>
+            {
+                if (item != null)
+                {
+                    Navigation.NavigateTo($"/AssessmentMasterPage/{item.AssessmentId}");
+                }
+            },
+             onViewNavigating: (item) =>
+            {
+                if (item != null)
+                {
+                    Navigation.NavigateTo($"/AssessmentReadOnlyPage/{item.AssessmentId}");
+                }
+            },
+            onDeleteAction: async (item) =>
+            {
+                if (item == null) return;
+                bool confirmed = await OpenDeleteDialog(item);
+                if (!confirmed) return;
+                await assessmentHttpService.DeleteAssessmentAsync(item.AssessmentId);
+                Snackbar.Add("Assessment deleted successfully", Severity.Success);
+                var gridResult = await ServerReload(_gridState);
+                _orchestrator.Items = gridResult.Items.ToList();
+                _orchestrator.TotalCount = gridResult.TotalItems;
+                await grid.ReloadServerData();
+            },
+            editingUserId: Guid.NewGuid(), //auth user id
+            invokeAsync: InvokeAsync,
+            onCreateEvt: (dto, evt) => {  },
+            onUpdateEvt: (dto, evt) => {  },
+            onDeleteEvt: (dto, evt) => {  },
+            onBeingEditedEvt: (dto, evt) => {  },
+            onEditingFinishedEvt: (dto, evt) => {  }
+        );
+
+        _orchestrator.SetSearchDependencies(
+            updateGridFilters: (term) =>
+            {
+                var globalSearchId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+                if (grid.FilterDefinitions == null) grid.FilterDefinitions = new List<IFilterDefinition<AssessmentDto>>();
+                grid.FilterDefinitions = new List<IFilterDefinition<AssessmentDto>>(grid.FilterDefinitions.Where(f => f.Id != globalSearchId));
+
+                if (!string.IsNullOrWhiteSpace(term))
+                {
+                    var searchFilter = new FilterDefinition<AssessmentDto>
+                    {
+                        Id = globalSearchId,
+                        Title = "Global Search",
+                        Value = term,
+                        Operator = "contains",
+                    };
+                    grid.FilterDefinitions.Add(searchFilter);
+                }
+            },
+            predicateFactory: GetOrCreateFilterPredicate,
+            reloadGridData: async () => await grid.ReloadServerData()
+        );
+
+        await _orchestrator.InitializeAsync();
+        await base.OnInitializedAsync();
+        RefreshUi();
+    }
+
+    public async Task<GridData<AssessmentDto>> ServerReload(GridState<AssessmentDto> state)
+    {
+        try
+        {
+            // Build the filter dictionary
+            var filterParams = new Dictionary<string, string>();
+            foreach (var filterDef in state.FilterDefinitions)
+            {
+                if (filterDef.Value != null)
+                {
+                    if (filterDef.Column != null)
+                    {
+                        if (!filterParams.ContainsKey(filterDef.Column.PropertyName.ToLower()))
+                            filterParams.Add(filterDef.Column.PropertyName.ToLower(), filterDef?.ToString() ?? string.Empty);
+                    }
+                    else
+                    {
+                        // global search
+                        filterParams.Add("search", filterDef?.ToString() ?? string.Empty);
+                    }
+                }
+            }
+
+            var sortParams = state.SortDefinitions
+                .Select(x => new PCIShieldLib.SharedKernel.Interfaces.Sort
+                    {
+                        Field = x.SortBy,
+                        Direction = x.Descending ?
+                            PCIShieldLib.SharedKernel.Interfaces.SortDirection.Descending :
+                            PCIShieldLib.SharedKernel.Interfaces.SortDirection.Ascending
+                    })
+                .ToList();
+
+           // if (!filterParams.ContainsKey("listtype"))
+           // {
+          //      filterParams.Add("listtype", ListType.ToString());
+          //  }
+
+
+            return await _orchestrator.ServerReload(state, filterParams, sortParams);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in ServerReload");
+            Snackbar.Add($"Error reloading data: {ex.Message}", Severity.Error);
+            return new GridData<AssessmentDto> { Items = new List<AssessmentDto>(), TotalItems = 0 };
+        }
+    }
+
+    private Func<AssessmentDto, bool> GetOrCreateFilterPredicate(string term)
+    {
+        if (_filterCache.TryGetValue(term, out var cached) &&
+            DateTime.UtcNow.Subtract(cached.Timestamp).TotalMinutes < 5)
+        {
+            return cached.Item2;
+        }
+
+        var predicate = new Func<AssessmentDto, bool>(c =>
+            (!string.IsNullOrEmpty(c.AssessmentCode) &&
+             c.AssessmentCode.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+            (!string.IsNullOrEmpty(c.AssessmentPeriod) &&
+             c.AssessmentPeriod.Contains(term, StringComparison.OrdinalIgnoreCase))
+        );
+
+        _filterCache[term] = (DateTime.UtcNow, predicate);
+        return predicate;
+    }
+
+    private void OnSearchStringChanged(string val)
+    {
+        _searchString = val;
+        _orchestrator.InitiateSearch(val);
+    }
+
+    private async Task ResetSearch()
+    {
+        _searchString = string.Empty;
+        var gridResult = await ServerReload(_gridState);
+        _orchestrator.Items = gridResult.Items.ToList();
+        _orchestrator.TotalCount = gridResult.TotalItems;
+        RefreshUi();
+    }
+
+    private async Task ResetGridState()
+    {
+        _gridState = new GridState<AssessmentDto>
+        {
+            Page = 0,
+            PageSize = 10,
+            FilterDefinitions = new HashSet<IFilterDefinition<AssessmentDto>>(),
+            SortDefinitions = new HashSet<SortDefinition<AssessmentDto>>()
+        };
+        var gridResult = await ServerReload(_gridState);
+        _orchestrator.Items = gridResult.Items.ToList();
+        _orchestrator.TotalCount = gridResult.TotalItems;
+        RefreshUi();
+    }
+
+    private void ClearFilters()
+    {
+        _searchString = string.Empty;
+        Observable.StartAsync(async () =>
+        {
+            var res = await ServerReload(_gridState);
+            _orchestrator.Items = res.Items.ToList();
+            _orchestrator.TotalCount = res.TotalItems;
+            RefreshUi();
+        }).Subscribe();
+    }
+
+    private void ExportToExcel()
+    {
+        Snackbar.Add("Export completed successfully ()", Severity.Success);
+    }
+
+    private string GetExportButtonTooltip()
+        => _orchestrator.IsDataLoaded ? "Export to Excel" : "No data available to export";
+
+    private void NavigateToCreateNewAssessment()
+    {
+        Navigation.NavigateTo($"/AssessmentMasterPage/{Guid.Empty}");
+    }
+
+    private async Task OnFilteringEnabledChanged(bool enabled)
+    {
+        _isFilteringEnabled = enabled;
+        if (!_isFilteringEnabled)
+        {
+            _previousFilterMode = _filterMode;
+            _filterMode = DataGridFilterMode.Simple;
+        }
+        else
+        {
+            _filterMode = _previousFilterMode;
+        }
+
+        var reload = await ServerReload(_gridState);
+        _orchestrator.Items = reload.Items.ToList();
+        _orchestrator.TotalCount = reload.TotalItems;
+        RefreshUi();
+    }
+
+    private async Task OnFilterModeChanged(DataGridFilterMode mode)
+    {
+        _filterMode = mode;
+        var reload = await ServerReload(_gridState);
+        _orchestrator.Items = reload.Items.ToList();
+        _orchestrator.TotalCount = reload.TotalItems;
+        RefreshUi();
+    }
+
+    private async Task<bool> OpenDeleteDialog(AssessmentDto assessment)
+    {
+        var parameters = new DialogParameters
+                {
+                    { "Title", "Delete Assessment" },
+                    { "ContentText", $"You are about to delete <strong>{assessment.AssessmentCode}</strong>. Are you sure you want to delete it?" },
+                    { "Icon", ServiceCustomIcon.iconDeleteDialog }, 
+                    { "ShowIcon", true }, 
+                    { "HasButtons", true },
+                    { "Buttons", new Dictionary<string, CustomMudDialog.ButtonOptions>
+                        {
+                            { "Cancel", new CustomMudDialog.ButtonOptions { Text = "Cancel", Variant = Variant.Outlined, Class = "btn-cancel-dialog"} },
+                            { "Delete", new CustomMudDialog.ButtonOptions { Text = "Delete", Variant = Variant.Filled, Class = "btn-ok-dialog"} },
+                        }
+                    }
+                };
+
+        var options = new DialogOptions
+            {
+                CloseOnEscapeKey = true,
+                BackdropClick = true,
+                Position = DialogPosition.TopCenter,
+                MaxWidth = MaxWidth.Small
+            };
+
+        var dialog = await DialogService.ShowAsync<CustomMudDialog>("Confirm action", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            switch (result.Data as string)
+            {
+                case "Delete":
+                    return true;
+                    break;
+
+                case "AutoClose":
+                    break;
+
+                default:
+                    break;
+            }
+        }
+
+        return false;
+    }
+
+    private void RefreshUi()
+    {
+        _shouldRender = true;
+        Observable.StartAsync(async () =>
+        {
+            await InvokeAsync(StateHasChanged);
+        }).Subscribe(onNext: _ =>
+        {
+        });
+    }
+
+    private async Task OnPageSizeChanged()
+    {
+        await grid.ReloadServerData();
+    }
+
+    private string GetRowClass(AssessmentDto assessment, int rowNumber)
+    {
+        return rowNumber % 2 == 0 ? "even-row" : "odd-row";
+    }
+
+
+    private List<BreadcrumbItem> _breadCrumbs = new List<BreadcrumbItem>
+    {
+        new BreadcrumbItem("Home", href: "/"),
+        new BreadcrumbItem("Assessments", href: "/AssessmentList", disabled: true)
+    };
+    public async ValueTask DisposeAsync()
+    {
+        _orchestrator?.Dispose();
+    }
+}

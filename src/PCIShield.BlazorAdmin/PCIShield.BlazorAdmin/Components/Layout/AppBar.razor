@@ -1,0 +1,179 @@
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.Extensions.Localization
+@using MudBlazor
+@using PCIShield.BlazorAdmin.Client.Auth
+@using PCIShield.BlazorMauiShared.ServiceIcon
+
+@inject IStringLocalizer<AppBar> Localizer
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+<MudAppBar Fixed="true" Class="app-bar" Elevation="0">
+    <MudGrid Class="barContainer containerBarMargin">
+        <MudItem Class="containerBarMargin">
+            <MudLink Href="/">
+                <MudImage Src="/img/Pci.png" Class="logoPCIShield" />
+            </MudLink>
+        </MudItem>
+        <MudItem Class="containerBarMargin" id="container-search">
+            <MudTextField @bind-Value="_searchTerm"
+                          Placeholder="@Localizer["SearchInPCIShield"]"
+                          Immediate="true"
+                          Class="search"
+                          UnderLine="false"
+                          Style="width: 254px; height:35px; padding-left:50px;"
+                          OnKeyDown="@HandleSearchKeyDown" />
+        </MudItem>
+        <MudSpacer />
+
+        <MudItem Class="containerBarMargin" id="itemCompany">
+            <MudSelect @bind-Value="_country" Variant="Variant.Outlined" class="NavBarSelectCompany" PopoverClass="popover-company-style">
+                <MudSelectItem Value="@("PCIShield")">
+                    <img src="img/Pci.png" height="14" class="mr-4" />
+                    <MudInputLabel>PCIShield</MudInputLabel>
+                </MudSelectItem>
+            </MudSelect>
+        </MudItem>
+
+        <MudItem Class="containerBarMargin" id="containerOtherAction">
+            <MudButton Class="btn-icon-padding" Ripple="false">
+                <MudIcon Icon="@ServiceCustomIcon.barIconContact" />
+            </MudButton>
+            <MudButton Class="btn-icon-padding" Ripple="false">
+                <MudIcon Icon="@ServiceCustomIcon.barIconHelp" />
+            </MudButton>
+            <MudMenu PopoverClass="menu-popover-custom-notification" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopCenter" OpenChanged="@(open => SetActiveMenu(open, "notification"))" Class="color-notification">
+                <ActivatorContent>
+                    <MudBadge Content="3" Overlap="true" Style="padding-left:5px;">
+                        <MudIcon Class="@(_activeMenu == "notification" ? "icon-menu-open-activeNotification" : "icon-menu-open-no-activeNotification")"
+                                 Icon="@ServiceCustomIcon.barIconNotification" />
+                    </MudBadge>
+                </ActivatorContent>
+                <ChildContent>
+                    <MudListSubheader Class="header-notification">
+                        <MudText Class="lbl-notification">@Localizer["Notifications"]</MudText>
+                        <MudSpacer />
+                        <MudButton class="btn-marcar-leidas">@Localizer["Mark A Read"]</MudButton>
+                    </MudListSubheader>
+                    <MudGrid Class="grid-notification" Direction="Row" AlignItems="Align.Center" Justify="Justify.SpaceBetween">
+                        <MudItem Class="icon-container">
+                            <MudIcon Class="icon-notification" Icon="@ServiceCustomIcon.menuIconSales" />
+                        </MudItem>
+                        <MudItem Class="message-container">
+                            <MudText Class="principial-text-notification">@Localizer["Tax Credit Invoice"]</MudText>
+                            <MudText Class="sub-information-notification">@Localizer["Almacenes Hierro Payment", "$159.99"]</MudText>
+                        </MudItem>
+                        <MudItem Class="time-container">
+                            <MudText Class="item-notification-time">@Localizer["MinutesAgo", "28"]</MudText>
+                        </MudItem>
+                    </MudGrid>
+                    <MudDivider Style="padding-top:5px; padding-bottom:5px;" />
+                    <MudGrid Class="grid-notification" Direction="Row" AlignItems="Align.Center" Justify="Justify.SpaceBetween">
+                        <MudItem Class="icon-container">
+                            <MudIcon Class="icon-notification" Icon="@ServiceCustomIcon.menuIconSales" />
+                        </MudItem>
+                        <MudItem Class="message-container">
+                            <MudText Class="principial-text-notification">@Localizer["Tax Credit Invoice"]</MudText>
+                            <MudText Class="sub-information-notification">@Localizer["Almacenes Hierro Payment", "$159.99"]</MudText>
+                        </MudItem>
+                        <MudItem Class="time-container">
+                            <MudText Class="item-notification-time">@Localizer["Minutes Ago", "28"]</MudText>
+                        </MudItem>
+                    </MudGrid>
+                </ChildContent>
+            </MudMenu>
+        </MudItem>
+
+        <MudItem Class="containerBarMargin" id="containerAccessUser">
+            <AuthorizeView>
+                <Authorized>
+                    <MudMenu PopoverClass="menu-popover-custom-profile" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopCenter" OpenChanged="@(open => SetActiveMenu(open, "profile"))">
+                        <ActivatorContent>
+                            <MudButton Class="btnUser" Ripple="false">
+                                <MudIcon Icon="@ServiceCustomIcon.barIconProfile"
+                                         Class="@($"iconBar-margin {(_activeMenu == "profile" ? "icon-menu-open-activeProfile" : "icon-menu-closed-no-activeProfile")}")" />
+                                <MudText Class="@($"nameUser {(_activeMenu == "profile" ? "clicked-text" : "")}")">@context.User.Identity?.Name</MudText>
+                            </MudButton>
+                        </ActivatorContent>
+                        <ChildContent>
+                            <MudListSubheader Class="sub-header-item">
+                                <MudIcon Icon="@ServiceCustomIcon.barIconProfile" Class="user-icon" />
+                                <div class="user-info">
+                                    <MudText Class="user-name">@context.User.Identity?.Name</MudText>
+                                    <MudText Class="user-email">@(context.User.FindFirst(c => c.Type == "email")?.Value ?? "user@example.com")</MudText>
+                                </div>
+                            </MudListSubheader>
+                            <MudDivider />
+                            <MudMenuItem Class="item-option-profile">@Localizer["My Account"]</MudMenuItem>
+                            <MudMenuItem Class="item-option-profile">@Localizer["Help"]</MudMenuItem>
+                            <MudMenuItem Class="item-option-profile">@Localizer["Plan Subscribed"]</MudMenuItem>
+                            <MudMenuItem Class="item-option-profile">@Localizer["Wizard"]</MudMenuItem>
+                            <MudDivider />
+                            <MudMenuItem Class="item-option-profile" Icon="@ServiceCustomIcon.barIconLogout" OnClick="LogoutAsync">@Localizer["LogOut"]</MudMenuItem>
+                        </ChildContent>
+                    </MudMenu>
+                </Authorized>
+                <NotAuthorized>
+                    <MudButton OnClick="NavigateToLogin" Variant="Variant.Text" Color="Color.Primary">
+                        @Localizer["Login"]
+                    </MudButton>
+                </NotAuthorized>
+            </AuthorizeView>
+        </MudItem>
+        <MudItem Class="containerBarMargin d-none" id="container-menu-mobile">
+            <MudIconButton Icon="@ServiceCustomIcon.iconHamburguer" Class="mr-1" OnClick="ToggleMobileMenu" />
+        </MudItem>
+    </MudGrid>
+</MudAppBar>
+
+@code {
+    private string _searchTerm = string.Empty;
+    private string _country = "PCIShield";
+    private string? _activeMenu; // Simplified state: holds the name of the open menu, or null.
+
+    [Parameter] public EventCallback OnToggleMenu { get; set; }
+
+    private async Task ToggleMobileMenu()
+    {
+        await OnToggleMenu.InvokeAsync();
+    }
+
+    private void SetActiveMenu(bool isOpen, string menuName)
+    {
+        _activeMenu = isOpen ? menuName : null;
+    }
+
+    private async Task HandleSearchKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key is "Enter" or "NumpadEnter")
+        {
+            await HandleSearch();
+        }
+    }
+
+    private Task HandleSearch()
+    {
+        // In a real app, you would navigate or perform a search.
+        Console.WriteLine($"Searching for: {_searchTerm}");
+        Snackbar.Add($"Searching for: '{_searchTerm}'", Severity.Info);
+        return Task.CompletedTask;
+    }
+
+    private async Task LogoutAsync()
+    {
+        try
+        {
+            NavigationManager.NavigateTo("/Auth/Logout", false);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error during logout: {ex.Message}");
+            Snackbar.Add("Logout failed. Please try again.", Severity.Error);
+        }
+    }
+
+    private void NavigateToLogin()
+    {
+        NavigationManager.NavigateTo("/Auth/Login");
+    }
+}

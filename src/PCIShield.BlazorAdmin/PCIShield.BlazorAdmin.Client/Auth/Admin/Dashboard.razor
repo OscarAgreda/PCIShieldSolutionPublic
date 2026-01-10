@@ -1,0 +1,249 @@
+﻿@page "/admin/dashboard"
+@using Microsoft.AspNetCore.Authorization
+@using PCIShield.BlazorMauiShared.Auth
+@attribute [Authorize(Roles = "Administrator")]
+
+@inject IHttpAuthClientService AdminService
+@inject NavigationManager NavManager
+@inject ISnackbar Snackbar
+
+<PageTitle>Admin Dashboard</PageTitle>
+
+<MudBreadcrumbs Items="_breadCrumbs" Separator="|" Class="pciShield-breadcrumb mb-4"></MudBreadcrumbs>
+
+<MudPaper Class="pciShield-container pciShield-shadow mb-4" Elevation="0">
+    <MudGrid Class="pciShield-grid" Style="width: 100%;">
+        <MudItem xs="12" sm="6" Class="pciShield-grid-item">
+            <MudText Class="pciShield-title-page">Administration Dashboard</MudText>
+            <MudText Class="pciShield-text-body mt-2">System overview and key metrics</MudText>
+        </MudItem>
+        <MudItem xs="12" sm="6" Class="d-flex align-end justify-end">
+            <MudButton Variant="Variant.Filled" 
+                       Color="Color.Primary" 
+                       StartIcon="@Icons.Material.Filled.Refresh"
+                       OnClick="LoadDashboardData"
+                       Class="pciShield-btn pciShield-btn-primary">
+                Refresh
+            </MudButton>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+@if (_isLoading)
+{
+    <MudGrid Spacing="3">
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="pa-4" Elevation="1">
+                <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="100px" />
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="pa-4" Elevation="1">
+                <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="100px" />
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="pa-4" Elevation="1">
+                <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="100px" />
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="pa-4" Elevation="1">
+                <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="100px" />
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+}
+else if (_stats != null)
+{
+    @* Statistics Cards *@
+    <MudGrid Spacing="3" Class="mb-4">
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="pa-4 pciShield-shadow" Elevation="1">
+                <MudStack Spacing="2">
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                        <MudIcon Icon="@Icons.Material.Filled.People" Color="Color.Primary" Size="Size.Large" />
+                        <MudText Typo="Typo.h4" Color="Color.Primary">@_stats.TotalUsers</MudText>
+                    </MudStack>
+                    <MudText Typo="Typo.body2" Color="Color.Default">Total Users</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Registered accounts</MudText>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="pa-4 pciShield-shadow" Elevation="1">
+                <MudStack Spacing="2">
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Large" />
+                        <MudText Typo="Typo.h4" Color="Color.Success">@_stats.ActiveUsers</MudText>
+                    </MudStack>
+                    <MudText Typo="Typo.body2" Color="Color.Default">Active Users</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Logged in last 30 days</MudText>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="pa-4 pciShield-shadow" Elevation="1">
+                <MudStack Spacing="2">
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                        <MudIcon Icon="@Icons.Material.Filled.Lock" Color="Color.Error" Size="Size.Large" />
+                        <MudText Typo="Typo.h4" Color="Color.Error">@_stats.LockedUsers</MudText>
+                    </MudStack>
+                    <MudText Typo="Typo.body2" Color="Color.Default">Locked Accounts</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Currently locked out</MudText>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="pa-4 pciShield-shadow" Elevation="1">
+                <MudStack Spacing="2">
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                        <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Warning" Size="Size.Large" />
+                        <MudText Typo="Typo.h4" Color="Color.Warning">@_stats.UnconfirmedEmails</MudText>
+                    </MudStack>
+                    <MudText Typo="Typo.body2" Color="Color.Default">Unconfirmed Emails</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Pending verification</MudText>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <MudGrid Spacing="3">
+        @* Role Distribution Chart *@
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-4 pciShield-shadow" Elevation="1">
+                <MudText Typo="Typo.h6" Class="mb-4">Users by Role</MudText>
+                @if (_stats.UsersByRole.Any())
+                {
+                    <MudStack Spacing="3">
+                        @foreach (var roleGroup in _stats.UsersByRole.OrderByDescending(x => x.Value))
+                        {
+                            <MudStack Spacing="1">
+                                <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                    <MudText Typo="Typo.body2">@roleGroup.Key</MudText>
+                                    <MudText Typo="Typo.body2" Color="Color.Primary"><strong>@roleGroup.Value</strong></MudText>
+                                </MudStack>
+                                <MudProgressLinear 
+                                    Color="Color.Primary" 
+                                    Value="@((double)roleGroup.Value / _stats.TotalUsers * 100)" 
+                                    Size="Size.Small" 
+                                    Rounded="true" />
+                            </MudStack>
+                        }
+                    </MudStack>
+                }
+                else
+                {
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">No role data available</MudText>
+                }
+            </MudPaper>
+        </MudItem>
+
+        @* Recent Login Activity *@
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-4 pciShield-shadow" Elevation="1">
+                <MudText Typo="Typo.h6" Class="mb-4">Recent Login Activity</MudText>
+                @if (_stats.RecentLogins.Any())
+                {
+                    <MudList T="AdminDashboardStatsDto" Dense="true">
+                        @foreach (var login in _stats.RecentLogins.Take(8))
+                        {
+                            <MudListItem>
+                                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                                    <MudStack Spacing="0">
+                                        <MudText Typo="Typo.body2">
+                                            <MudIcon Icon="@(login.Success ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.Error)" 
+                                                     Color="@(login.Success ? Color.Success : Color.Error)" 
+                                                     Size="Size.Small" />
+                                            User ID: @login.UserId.Substring(0, 8)...
+                                        </MudText>
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                            @login.LoginDate.ToString("MMM dd, yyyy HH:mm") - @(login.IpAddress ?? "Unknown IP")
+                                        </MudText>
+                                    </MudStack>
+                                    @if (!login.Success && !string.IsNullOrEmpty(login.FailureReason))
+                                    {
+                                        <MudChip Size="Size.Small" Color="Color.Error">@login.FailureReason</MudChip>
+                                    }
+                                </MudStack>
+                            </MudListItem>
+                            <MudDivider />
+                        }
+                    </MudList>
+                }
+                else
+                {
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">No recent login activity</MudText>
+                }
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    @* Quick Actions *@
+    <MudPaper Class="pa-4 pciShield-shadow mt-4" Elevation="1">
+        <MudText Typo="Typo.h6" Class="mb-3">Quick Actions</MudText>
+        <MudStack Row="true" Spacing="2">
+            <MudButton Variant="Variant.Outlined" 
+                       Color="Color.Primary" 
+                       StartIcon="@Icons.Material.Filled.People"
+                       OnClick="@(() => NavManager.NavigateTo("/admin/users"))">
+                Manage Users
+            </MudButton>
+            <MudButton Variant="Variant.Outlined" 
+                       Color="Color.Secondary" 
+                       StartIcon="@Icons.Material.Filled.Security"
+                       OnClick="@(() => NavManager.NavigateTo("/admin/roles"))">
+                Manage Roles
+            </MudButton>
+            <MudButton Variant="Variant.Outlined" 
+                       Color="Color.Info" 
+                       StartIcon="@Icons.Material.Filled.PersonAdd"
+                       OnClick="@(() => NavManager.NavigateTo("/admin/users/create"))">
+                Create User
+            </MudButton>
+        </MudStack>
+    </MudPaper>
+}
+
+@code {
+    private AdminDashboardStatsDto? _stats;
+    private bool _isLoading = true;
+
+    private List<BreadcrumbItem> _breadCrumbs = new()
+    {
+        new("Home", href: "/"),
+        new("Administration", href: "/admin/dashboard"),
+        new("Dashboard", href: null, disabled: true)
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDashboardData();
+    }
+
+    private async Task LoadDashboardData()
+    {
+        _isLoading = true;
+        StateHasChanged();
+
+        var result = await AdminService.GetDashboardStatsAsync();
+        
+        result.Match(
+            Right: stats =>
+            {
+                _stats = stats;
+                _isLoading = false;
+            },
+            Left: error =>
+            {
+                Snackbar.Add($"Error loading dashboard: {error}", Severity.Error);
+                _isLoading = false;
+            }
+        );
+
+        StateHasChanged();
+    }
+}

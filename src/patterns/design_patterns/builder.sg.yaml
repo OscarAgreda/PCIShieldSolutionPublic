@@ -1,0 +1,18 @@
+rule:
+  pattern: |
+    class $CLASS$Builder {
+      $$$
+      public $RETURN_TYPE Build() {
+        $$$
+      }
+      $$$
+    }
+  kind: class_declaration
+  
+# This rule matches Builder pattern implementations like:
+# - CustomerBuilder with Build() method
+# - InvoiceBuilder with Build() method
+#
+# The $CLASS placeholder will match the class name being built
+# The $RETURN_TYPE placeholder will match the return type of Build()
+# The $$$ placeholders will match any other code in the class

@@ -1,0 +1,93 @@
+﻿flowchart TD
+    %% ─────────────────────────
+    %%  LEGEND
+    %% ─────────────────────────
+    classDef good stroke:#0f0,stroke-width:2px;
+    classDef err stroke:#f00,stroke-width:2px,stroke-dasharray: 5 5;
+
+    %% ─────────────────────────
+    %%  ENTRY – AUTHN
+    %% ─────────────────────────
+    U([Browser / Mobile App])
+
+    U -->|POST /login_customer| A{AccountAuthV2Controller}
+
+    A --> S[(SignInManager)]
+    S -->|valid pwd| C1{Credentials OK?}
+
+    C1 -- No --> E1[[401]]
+    class E1 err
+
+    C1 -- Yes --> STAMP[Fetch SecurityStamp]
+    STAMP --> L1[2-FA check / lockout]
+
+    L1 -->|2FA path| TFA[Authenticator / Recovery] --> C3{Success?}
+    C3 -- No --> E1
+    C3 -- Yes --> CONT1[Continue]
+    L1 -->|no 2FA| CONT1
+
+    %% ─────────────────────────
+    %%  DOMAIN & TENANCY
+    %% ─────────────────────────
+    CONT1 --> R1[Load Customer *or* Employee]
+    R1 --> TENANT[ITenantProvider.Set(TenantId)]
+    R1 --> AUD[Update aggregates<br/>LastLogin, Online flags]
+
+    %% ─────────────────────────
+    %%  PERMISSIONS LOOK-UP
+    %% ─────────────────────────
+    CONT1 --> RP[DB: RolePermissions<br/>+ PermissionVersion]
+    RP --> PERM[perm[] list]
+
+    %% ─────────────────────────
+    %%  CLAIMS & TOKENS
+    %% ─────────────────────────
+    PERM & TENANT --> G2[Build Claims<br/>sub, tid, roles[], perm[],<br/>scope, jti, stp, pver]
+    G2 --> JWT[Access JWT 30 min<br/>HS256]
+    G2 --> RT_GEN[RefreshToken 30 days<br/>SHA-256 hash stored]
+
+    JWT & RT_GEN --> RESP[200 OK]
+
+    %% ─────────────────────────
+    %%  TOKEN REFRESH
+    %% ─────────────────────────
+    U -->|POST /refresh_token| REF[Refresh Endpoint]
+    REF --> HASH[Hash RT & look-up DB]
+    HASH -->|valid & not revoked| ROT[Rotate pair<br/>revoke old→new RT] --> RESP2[200 New tokens]
+    HASH -- invalid --> E2[[401 RT invalid/reused]]
+    class E2 err
+
+    %% ─────────────────────────
+    %%  API CALL WITH TOKEN
+    %% ─────────────────────────
+    U -->|Bearer token| API[Protected Endpoint]
+
+    API --> V[(JwtBearer Middleware)]
+    V -->|signature, exp| CVAL{Token OK?}
+    CVAL -- No --> E3[[401/498]]
+    class E3 err
+
+    CVAL -- Yes --> EVT1[OnTokenValidated]
+
+    EVT1 --> CHECK1[Security-stamp match?]
+    CHECK1 -- No --> E4[[401 revoked]]
+    class E4 err
+
+    CHECK1 -- Yes --> CHECK2[pver matches DB?]
+    CHECK2 -- No --> E4
+
+    CHECK2 -- Yes --> CHECK3[jti in Redis blacklist?]
+    CHECK3 -- Yes --> E4
+    CHECK3 -- No --> AUTHZ
+
+    AUTHZ[Dynamic Permission Policy Provider]
+    AUTHZ -->|perm claim| P_OK{Permission Satisfied?}
+    P_OK -- No --> E5[[403]]
+    class E5 err
+    P_OK -- Yes --> USECASE[Application Layer<br/>executes UC]
+
+    %% ─────────────────────────
+    %%  BACKGROUND JOBS
+    %% ─────────────────────────
+    USECASE --> EVT[Domain Event<br/>CustomerCacheRetrieved]
+    EVT --> HQ[Hangfire Job] --> SETTP[Set TenantId in JobFilter] --> DB_OP[Repo → AppDbContext]

@@ -1,0 +1,254 @@
+﻿@* AssessmentROCPackageChildTab.razor *@
+@page "/AssessmentROCPackageChildTab"
+@using PCIShield.BlazorMauiShared.Models.Assessment
+@using LanguageExt
+@using LanguageExt.Common
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.SignalR.Client
+@using MudBlazor
+@using Severity = MudBlazor.Severity
+@using FluentValidation
+@using System.Reactive.Threading.Tasks
+@using PCIShield.BlazorAdmin.Client.Services
+@using System.Reactive.Disposables
+@inject ILogger<AssessmentRocpackageChildTab> _logger
+@inject IStringLocalizer<AssessmentRocpackageChildTab> Localizer
+@inject ISnackbar Snackbar
+@inject IHttpAssessmentClientService _assessmentHttpService
+@inject IDialogService DialogService
+@namespace PCIShield.BlazorAdmin.Client.Pages.Assessment
+
+
+
+<MudPaper Elevation="1" Class="pa-4">
+    <MudTable Items="@ROCPackages" Hover="true" Striped="true" Virtualize="true" RowsPerPage="20">
+        <HeaderContent>
+            <MudTh>@Localizer["PackageVersion"]</MudTh>
+            <MudTh>@Localizer["GeneratedDate"]</MudTh>
+            <MudTh>@Localizer["QSAName"]</MudTh>
+            <MudTh>@Localizer["QSACompany"]</MudTh>
+            <MudTh>@Localizer["SignatureDate"]</MudTh>
+            <MudTh>@Localizer["AOCNumber"]</MudTh>
+            <MudTh>@Localizer["Rank"]</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>@context.PackageVersion</MudTd>
+            <MudTd>@context.GeneratedDate</MudTd>
+            <MudTd>@context.QSAName</MudTd>
+            <MudTd>@context.QSACompany</MudTd>
+            <MudTd>@context.SignatureDate</MudTd>
+            <MudTd>@context.AOCNumber</MudTd>
+            <MudTd>@context.Rank</MudTd>
+       @*      <MudTd>
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Primary"
+                           OnClick="@(EventUtil.AsNonRenderingEventHandler(() => EditChildItemROCPackage(context)))">@Localizer["Edit"]</MudButton>
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Error"
+                           OnClick="@(EventUtil.AsNonRenderingEventHandler(() => DeleteChildItemROCPackage(context)))">@Localizer["Delete"]</MudButton>
+            </MudTd> *@
+        </RowTemplate>
+    </MudTable>
+@*     <MudButton Variant="Variant.Outlined" Color="Color.Primary" Class="mt-4"
+               OnClick="@AddChildItemROCPackage">@Localizer["Add Rocpackage"]</MudButton> *@
+</MudPaper>
+
+<MudOverlay Visible="@IsLoading"
+            DarkBackground="true"
+            ZIndex="9999"
+            AutoClose="false">
+    <MudProgressCircular Color="Color.Primary"
+                         Indeterminate="true"
+                         Size="Size.Large" />
+</MudOverlay>
+
+@code {
+
+    [Parameter]
+    public Guid AssessmentId { get; set; }
+
+    [Parameter] public string _rocpackageEditingUserId { get; set; }
+
+    [Parameter]
+    public List<ROCPackageDto> ROCPackages { get; set; } = new();
+
+
+    [Parameter]
+    public bool IsLoading { get; set; }
+
+    [Parameter]
+    public EventCallback<(Exception ex, ErrorHandlingService.ClientOperationContext context)> OnError { get; set; }
+
+
+
+    [Parameter]
+    public EventCallback<ROCPackageDto> OnROCPackageAdded { get; set; }
+
+
+    [Parameter]
+    public EventCallback<ROCPackageDto> OnROCPackageUpdated { get; set; }
+
+
+    [Parameter]
+    public EventCallback<ROCPackageDto> OnROCPackageDeleted { get; set; }
+
+    private IValidator<ROCPackageDto> _updateROCPackageValidator;
+
+    private readonly CompositeDisposable _disposables = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _updateROCPackageValidator = new InlineValidator<ROCPackageDto>();
+        await base.OnInitializedAsync();
+    }
+
+
+    protected void RefreshUi()
+    {
+        //InvokeAsync(StateHasChanged);
+    }
+
+
+
+
+    private async Task AddChildItemROCPackage()
+    {
+        await TryAsync(async () =>
+        {
+            var newROCPackage = new ROCPackageDto
+                {
+                    AssessmentId = AssessmentId,
+                CreatedAt = DateTime.UtcNow,
+                    CreatedBy = Guid.Parse(_rocpackageEditingUserId),
+                };
+            var validationResult = await _updateROCPackageValidator.ValidateAsync(newROCPackage);
+            if (!validationResult.IsValid)
+            {
+                var errors = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage));
+                var ex = new Exception(errors);
+                await OnError.InvokeAsync((ex, ErrorHandlingService.ClientOperationContext.ROCPackageCreate));
+                return;
+            }
+            var response = await _assessmentHttpService.CreateROCPackageAsync(newROCPackage).ToObservable().ToListObservable().ToTryOption().ToAsync().ToTry();
+            await response.Match(
+                Succ: result =>
+                    result.Match(
+                        Some: async backResult =>
+                        {
+                            ROCPackages.Add(backResult.ROCPackage);
+                        },
+                        None: () =>
+                        {
+                            Snackbar.Add(Localizer["Failed to create rocpackage"], Severity.Error);
+                            return Task.CompletedTask;
+                        }
+                    ),
+                Fail: ex =>
+                {
+                    _logger.LogError(ex, "Error creating rocpackage");
+                    Snackbar.Add(Localizer["Error creating rocpackage"], Severity.Error);
+                    return Task.CompletedTask;
+                }
+            );
+        });
+    }
+
+
+    private async Task EditChildItemROCPackage(ROCPackageDto item)
+    {
+        try
+        {
+            var validationResult = await _updateROCPackageValidator.ValidateAsync(item);
+            if (!validationResult.IsValid)
+            {
+                var errors = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage));
+                var ex = new Exception(errors);
+                await OnError.InvokeAsync((ex, ErrorHandlingService.ClientOperationContext.ROCPackageUpdate));
+                return;
+            }
+            ROCPackageDto? response = await _assessmentHttpService.UpdateROCPackageAsync(item);
+            if (response != null)
+            {
+                var index = ROCPackages.FindIndex(x => x.ROCPackageId == item.ROCPackageId);
+                if (index != -1)
+                {
+                    ROCPackages[index] = response;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await OnError.InvokeAsync((ex, ErrorHandlingService.ClientOperationContext.ROCPackageCreate));
+        }
+    }
+
+    private async Task<bool> ShowDeleteConfirmDialog()
+    {
+        bool? result = await DialogService.ShowMessageBox("Confirm Delete", "Are you sure you want to delete this item?", yesText: "Delete", cancelText: "Cancel");
+        if (result == true)
+        {
+            return await Task.FromResult(true);
+        }
+        else
+        {
+            return await Task.FromResult(false);
+        }
+    }
+
+    private async Task DeleteChildItemROCPackage(ROCPackageDto rocpackage)
+    {
+        try
+        {
+            var dialogResult = await ShowDeleteConfirmDialog();
+            if (dialogResult)
+            {
+                await TryAsync(async () =>
+                {
+                    var validationResult = await _updateROCPackageValidator.ValidateAsync(rocpackage);
+                    if (!validationResult.IsValid)
+                    {
+                        var errors = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage));
+                        var ex = new Exception(errors);
+                        await OnError.InvokeAsync((ex, ErrorHandlingService.ClientOperationContext.ROCPackageDelete));
+                        return;
+                    }
+                    await _assessmentHttpService
+                        .DeleteROCPackageAsync(rocpackage.ROCPackageId)
+                        .ToObservable()
+                        .ToListObservable()
+                        .ToTryOption()
+                        .ToAsync()
+                        .ToTry()
+                        .Match(
+                            Succ: async _ =>
+                            {
+                                ROCPackages.Remove(rocpackage);
+                            },
+                            Fail: ex =>
+                            {
+                                _logger.LogError(ex, "Failed to delete rocpackage");
+                                Snackbar.Add(Localizer["Failed to delete rocpackage"], Severity.Error);
+                                return Task.CompletedTask;
+                            }
+                        );
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+                        await OnError.InvokeAsync((ex, ErrorHandlingService.ClientOperationContext.ROCPackageDelete));
+        }
+    }
+
+
+
+
+    public async ValueTask DisposeAsync()
+    {
+        _disposables.Dispose();
+    }
+
+
+}
+
+

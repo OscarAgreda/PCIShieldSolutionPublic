@@ -1,0 +1,41 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<WarningLevel>0</WarningLevel>
+		<EnableNETAnalyzers>true</EnableNETAnalyzers>
+		<AnalysisLevel>latest</AnalysisLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Bogus" Version="35.5.1" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0" />
+    <PackageReference Include="NBomber" Version="6.1.1" />
+    <PackageReference Include="NBomber.Contracts" Version="6.1.0" />
+    <PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
+    <!-- <PackageReference Include="NBomber.Data" Version="6.1.1" />
+    <PackageReference Include="NBomber.Http" Version="6.1.0" /> -->
+    <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.0" />
+    <PackageReference Include="Flurl.Http" Version="4.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+
+ 
+      <Reference Include="PCIShield.BlazorAdmin.Client">
+    <HintPath>C:\Temp\PciShield_PCIShield\code\src\PCIShield.BlazorAdmin\PCIShield.BlazorAdmin.Client\bin\Debug\net10.0\PCIShield.BlazorAdmin.Client.dll</HintPath>
+  </Reference>
+  <Reference Include="PCIShield.BlazorMauiShared">
+    <HintPath>C:\Temp\PciShield_PCIShield\code\src\PCIShield.BlazorAdmin\PCIShield.BlazorAdmin.Client\bin\Debug\net10.0\PCIShield.BlazorMauiShared.dll</HintPath>
+  </Reference>
+  <Reference Include="PCIShield.Client.Services">
+    <HintPath>C:\Temp\PciShield_PCIShield\code\src\PCIShield.BlazorAdmin\PCIShield.BlazorAdmin.Client\bin\Debug\net10.0\PCIShield.Client.Services.dll</HintPath>
+  </Reference>
+  <Reference Include="PCIShield.SharedKernel">
+    <HintPath>C:\Temp\PciShield_PCIShield\code\src\PCIShield.BlazorAdmin\PCIShield.BlazorAdmin.Client\bin\Debug\net10.0\PCIShieldLib.SharedKernel.dll</HintPath>
+  </Reference>
+
+
+  </ItemGroup>
+</Project>

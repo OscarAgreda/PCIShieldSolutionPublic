@@ -1,0 +1,705 @@
+@* AssessmentControlTab.razor *@
+@page "/AssessmentControlTab"
+@using MudBlazor
+@using global::BlazorMauiShared.Models.AssessmentControl
+@using PCIShield.Domain.ModelsDto
+@using LanguageExt
+@using LanguageExt.Common
+@using static LanguageExt.Prelude
+@using Microsoft.AspNetCore.Components.Web
+@using Severity = MudBlazor.Severity
+@using FluentValidation
+@using System.Reactive.Disposables
+@using System.Reactive.Threading.Tasks
+@using PCIShield.BlazorAdmin.Client.Services
+@using PCIShield.BlazorAdmin.Client.Shared.Components
+@inject ILogger<AssessmentControlTab> _logger
+@inject IStringLocalizer<AssessmentControlTab> Localizer
+
+@inject IHttpAssessmentClientService _assessmentHttpService
+
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@namespace PCIShield.BlazorAdmin.Client.Pages.Assessment
+
+<!-- ControlsTab.razor - Complete PCIShield Theme Implementation -->
+<MudPaper Class="pciShield-container pciShield-shadow mb-4" Elevation="0">
+    <MudGrid AlignItems="AlignItems.Center">
+        <MudItem xs="12" sm="8">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
+                <MudIcon Icon="@Icons.Material.Filled.Description"
+                         Color="Color.Primary"
+                         Size="Size.Large" />
+                <div>
+                    <MudText Class="pciShield-title-section">@Localizer["Manage Controls"]</MudText>
+                    <MudText Class="pciShield-text-body mt-1">@Localizer["Upload and manage compliance control documents"]</MudText>
+                </div>
+                <MudBadge Content="@(Controls?.Count ?? 0)"
+                          Color="Color.Primary"
+                          Overlap="true"
+                          Class="ml-2" />
+            </MudStack>
+        </MudItem>
+        <MudItem xs="12" sm="4" Class="d-flex justify-end">
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       OnClick="@AddJoinItemControl"
+                       StartIcon="@Icons.Material.Filled.Upload"
+                       Disabled="@(Controls?.Count >= 10)"
+                       Class="pciShield-btn pciShield-btn-primary">
+                @Localizer["Add Control"]
+            </MudButton>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+
+<div class="pciShield-style-join-tab">
+<!-- ControlsTab.razor - Complete PCIShield Theme Implementation -->
+<MudContainer MaxWidth="MaxWidth.False" Class="mt-4 pa-0">
+    <!-- Statistics Summary -->
+    <MudGrid Spacing="3" Class="mb-4">
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="pciShield-container pciShield-shadow" Elevation="1">
+                <MudStack AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.Folder" Color="Color.Primary" />
+                    <MudText Class="pciShield-text-caption">@Localizer["Total Controls"]</MudText>
+                    <MudText Typo="Typo.h5" Class="font-weight-bold">@(Controls?.Count ?? 0)</MudText>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="pciShield-container pciShield-shadow" Elevation="1">
+                <MudStack AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.CloudUpload" Color="Color.Success" />
+                    <MudText Class="pciShield-text-caption">@Localizer["Recent Uploads"]</MudText>
+                    <MudText Typo="Typo.h5" Class="font-weight-bold">
+                        @(Controls?.Count(e => e.Control.CreatedAt >= DateTime.Now.AddDays(-7)) ?? 0)
+                    </MudText>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <!-- Controls List/Grid -->
+    <MudItem xs="12">
+        @if (Controls == null || !Controls.Any())
+        {
+            <MudPaper Class="pciShield-container pciShield-shadow d-flex align-center justify-center py-8" Elevation="0">
+                <MudStack AlignItems="AlignItems.Center" Spacing="4">
+                    <MudIcon Icon="@Icons.Material.Filled.FolderOff"
+                             Color="Color.Default"
+                             Style="font-size: 64px;" />
+                    <MudText Typo="Typo.h6" Class="pciShield-title-section">@Localizer["No Controls uploaded"]</MudText>
+                    <MudText Class="pciShield-text-body">@Localizer["Start by uploading your first control document"]</MudText>
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               OnClick="@AddJoinItemControl"
+                               StartIcon="@Icons.Material.Filled.Upload"
+                               Class="pciShield-btn pciShield-btn-primary">
+                        @Localizer["Upload First Control"]
+                    </MudButton>
+                </MudStack>
+            </MudPaper>
+        }
+        else
+        {
+            <MudGrid Spacing="3">
+                @foreach (var control in Controls)
+                {
+                    <MudItem xs="12" sm="6" md="4">
+                        <MudCard Elevation="2"
+                                 Class="@GetAssessmentControlsCardClass(control)"
+                                 Style="position: relative; height: 100%;">
+
+                            <!-- Card Header -->
+                            <MudCardHeader Style="background: linear-gradient(135deg, #293E8C 0%, #1B2C6A 100%); color: white;">
+                                <CardHeaderAvatar>
+                                    <MudAvatar Size="Size.Medium"
+                                               Style="background: white; color: #293E8C;">
+                                        @if (!string.IsNullOrEmpty(control.Control.ControlCode) && control.Control.ControlCode.Length > 0)
+                                        {
+                                            @control.Control.ControlCode.Substring(0, Math.Min(2, control.Control.ControlCode.Length)).ToUpper()
+                                        }
+                                        else
+                                        {
+                                            <MudIcon Icon="@Icons.Material.Filled.Description" />
+                                        }
+                                    </MudAvatar>
+                                </CardHeaderAvatar>
+                                <CardHeaderContent>
+                                    <MudText Typo="Typo.body1" Class="font-weight-bold">
+                                        @(control.Control.ControlCode ?? "N/A")
+                                    </MudText>
+                                    <MudText Typo="Typo.body2" Style="opacity: 0.9;">
+                                        @((control?.Control?.ControlCode ?? "") + " " +
+                                                                    (control?.Control?.RequirementNumber ?? ""))
+                                    </MudText>
+                                </CardHeaderContent>
+                                <CardHeaderActions>
+                                    <MudMenu Icon="@Icons.Material.Filled.MoreVert"
+                                             Dense="true"
+                                             IconColor="Color.Inherit">
+                                        <MudMenuItem OnClick="@(() => StartEditControl(control))"
+                                                     Icon="@Icons.Material.Filled.Edit">
+                                            @Localizer["Edit"]
+                                        </MudMenuItem>
+                                        <MudDivider />
+                                        <MudMenuItem OnClick="@(() => DeleteJoinItemControl(control))"
+                                                     Icon="@Icons.Material.Filled.Delete"
+                                                     IconColor="Color.Error"
+                                                     >
+                                            @Localizer["Remove"]
+                                        </MudMenuItem>
+                                    </MudMenu>
+                                </CardHeaderActions>
+                            </MudCardHeader>
+
+                            <MudCardContent>
+                                @if (_editMode && _editingControlItem?.ControlId == control.ControlId)
+                                {
+                                    <!-- Edit Mode -->
+                                    <MudForm Model="@_editingControlItem" @ref="@_editForm">
+                                        <MudGrid Spacing="2">
+                                            <MudItem xs="12">
+                                                <MudTextField @bind-Value="@_editingControlItem.Control.ControlCode"
+                                                              Label="@Localizer["Control Code"]"
+                                                              Variant="Variant.Outlined"
+                                                              Dense="true"
+                                                              Class="pciShield-input"
+                                                              Required="true" />
+                                            </MudItem>
+                                            <MudItem xs="12">
+                                                <MudTextField @bind-Value="@_editingControlItem.Control.RequirementNumber"
+                                                              Label="@Localizer["Requirement Number"]"
+                                                              Variant="Variant.Outlined"
+                                                              Dense="true"
+                                                              Class="pciShield-input"
+                                                              Required="true" />
+                                            </MudItem>
+                                            <MudItem xs="12">
+                                                <MudTextField @bind-Value="@_editingControlItem.Control.ControlTitle"
+                                                              Label="@Localizer["Control Title"]"
+                                                              Variant="Variant.Outlined"
+                                                              Dense="true"
+                                                              Class="pciShield-input"
+                                                              Required="true" />
+                                            </MudItem>
+                                            <MudItem xs="12">
+                                                <MudTextField @bind-Value="@_editingControlItem.Control.ControlDescription"
+                                                              Label="@Localizer["Control Description"]"
+                                                              Variant="Variant.Outlined"
+                                                              Dense="true"
+                                                              Class="pciShield-input"
+                                                              Required="true" />
+                                            </MudItem>
+                                            <MudItem xs="12">
+                                                <MudTextField @bind-Value="@_editingControlItem.Control.TestingGuidance"
+                                                              Label="@Localizer["Testing Guidance"]"
+                                                              Variant="Variant.Outlined"
+                                                              Dense="true"
+                                                              Class="pciShield-input"
+                                                              />
+                                            </MudItem>
+                                            <MudItem xs="12">
+                                                <MudTextField @bind-Value="@_editingControlItem.Control.FrequencyDays"
+                                                              Label="@Localizer["Frequency Days"]"
+                                                              Variant="Variant.Outlined"
+                                                              Dense="true"
+                                                              Class="pciShield-input"
+                                                              Required="true" />
+                                            </MudItem>
+                                            <MudItem xs="12">
+                                                <MudTextField @bind-Value="@_editingControlItem.Control.IsMandatory"
+                                                              Label="@Localizer["Is Mandatory"]"
+                                                              Variant="Variant.Outlined"
+                                                              Dense="true"
+                                                              Class="pciShield-input"
+                                                              Required="true" />
+                                            </MudItem>
+                                            <MudItem xs="12">
+                                                <MudTextField @bind-Value="@_editingControlItem.Control.EffectiveDate"
+                                                              Label="@Localizer["Effective Date"]"
+                                                              Variant="Variant.Outlined"
+                                                              Dense="true"
+                                                              Class="pciShield-input"
+                                                              Required="true" />
+                                            </MudItem>
+                                        </MudGrid>
+                                    </MudForm>
+                                }
+                                else
+                                {
+                                    <!-- View Mode -->
+                                    <MudStack Spacing="2">
+                                        <!-- Title -->
+                                        <MudText Typo="Typo.subtitle1" Class="font-weight-bold">
+                                            @(control.Control.ControlCode + " " + control.Control.RequirementNumber ?? "Untitled")
+                                        </MudText>
+
+                                        <MudDivider />
+
+                                        <!-- Key Information -->
+                                        <MudGrid Spacing="1">
+                                        </MudGrid>
+
+                                        <!-- Metadata -->
+                                        <MudDivider />
+                                    </MudStack>
+                                }
+                            </MudCardContent>
+
+                            @if (_editMode && _editingControlItem?.ControlId == control.ControlId)
+                            {
+                                <MudCardActions Class="d-flex justify-end px-4 pb-4">
+                                    <MudButton OnClick="@CancelEditControl"
+                                               Variant="Variant.Text"
+                                               Color="Color.Default">
+                                        @Localizer["Cancel"]
+                                    </MudButton>
+                                    <MudButton Color="Color.Primary"
+                                               Variant="Variant.Filled"
+                                               OnClick="@(() => SaveControlChanges(_editingControlItem))"
+                                               Class="pciShield-btn pciShield-btn-primary">
+                                        @Localizer["Save"]
+                                    </MudButton>
+                                </MudCardActions>
+                            }
+
+                        </MudCard>
+                    </MudItem>
+                }
+            </MudGrid>
+        }
+    </MudItem>
+</MudContainer>
+
+<!-- Loading Overlay -->
+<MudOverlay Visible="@IsLoading"
+            DarkBackground="true"
+            ZIndex="9999"
+            AutoClose="false"
+            Class="pciShield-overlay">
+    <MudProgressCircular Color="Color.Primary"
+                         Indeterminate="true"
+                         Size="Size.Large" />
+</MudOverlay>
+
+
+
+</div>
+
+@code {
+
+    [Parameter]
+    public Guid AssessmentId
+    {
+        get; set;
+    }
+
+    [Parameter]
+    public string _controlEditingUserId
+    {
+        get; set;
+    }
+
+    [Parameter] public List<AssessmentControlDto> Controls { get; set; } = new();
+    private readonly CompositeDisposable _dirtyStateDisposables = new();
+    private readonly CompositeDisposable _disposables = new();
+
+    [Parameter]
+    public EventCallback<AssessmentControlDto> OnControlAdded
+    {
+        get; set;
+    }
+
+    [Parameter]
+    public EventCallback<AssessmentControlDto> OnControlUpdated
+    {
+        get; set;
+    }
+
+    [Parameter]
+    public EventCallback<AssessmentControlDto> OnControlDeleted
+    {
+        get; set;
+    }
+
+    [Parameter]
+    public EventCallback<(Exception ex, ErrorHandlingService.ClientOperationContext context)> OnError
+    {
+        get; set;
+    }
+    private bool _editMode;
+    private AssessmentControlDto? _editingControlItem;
+    private MudForm _editForm;
+    private Timer _editTimeoutTimer;
+
+    [Parameter]
+    public bool IsLoading
+    {
+        get; set;
+    }
+    private IValidator<AssessmentControlDto> _updateAssessmentControlValidator;
+
+    private async Task StartEditControl(AssessmentControlDto item)
+    {
+        _editMode = true;
+        _editingControlItem = item.Clone();
+        await BroadcastControlEvent(SignalROperations.BeingEdited, item);
+        StartEditTimeout();
+        RefreshUi();
+    }
+
+    private async Task StopEditingControl()
+    {
+        if (_editingControlItem != null)
+        {
+            await BroadcastControlEvent(SignalROperations.EditingFinished, _editingControlItem);
+        }
+        _editMode = false;
+        _editingControlItem = null;
+    }
+
+    private async Task CancelEditControl()
+    {
+        _editMode = false;
+        _editingControlItem = null;
+        RefreshUi();
+    }
+
+    private async Task UpdateControlState(Func<List<AssessmentControlDto>, List<AssessmentControlDto>> updateFn)
+    {
+    }
+
+    protected void RefreshUi()
+    {
+        Observable
+            .StartAsync(async () =>
+            {
+                await InvokeAsync(StateHasChanged);
+            })
+            .Subscribe(onNext: _ => { });
+    }
+
+    private async Task AddJoinItemControl()
+    {
+        try
+        {
+            var response = await _assessmentHttpService.GetPagedAssessmentControlsListAsync(1, 20);
+            var availableControls = response?.AssessmentControls?.Where(s => Controls.All(cs => cs.ControlId != s.ControlId)).ToList() ?? new List<AssessmentControlDto>();
+            var parameters = new DialogParameters
+            {
+                ["AvailableControls"] = availableControls,
+                ["AssessmentId"] = AssessmentId,
+            };
+            var dialog = await DialogService.ShowAsync<AddControlDialog>(
+                Localizer["Add Control"],
+                parameters,
+                new DialogOptions
+                {
+                    CloseOnEscapeKey = true,
+                    MaxWidth = MaxWidth.ExtraSmall,
+                    FullWidth = true,
+                }
+            );
+            var result = await dialog.Result;
+            if (result != null && !result.Canceled && result.Data is CreateAssessmentControlJoinRequest joinRequest)
+            {
+                var validationResult = await _updateAssessmentControlValidator.ValidateAsync(joinRequest.AssessmentControl);
+                if (!validationResult.IsValid)
+                {
+                    var errors = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage));
+                    throw new Exception(errors);
+                }
+                joinRequest.AssessmentControl.CreatedBy = Guid.Parse("2CD63ACA-28F4-52A5-D27D-0B2557B8ADF0");
+                joinRequest.AssessmentControl.UpdatedBy = Guid.Parse("06B247E1-EEA4-EF62-1111-A7838E4E0DBF");
+                var createdResponse = await _assessmentHttpService.CreateAssessmentControlAsync(joinRequest);
+                if (createdResponse?.AssessmentControl != null)
+                {
+                    joinRequest.AssessmentControl.AssessmentId = AssessmentId;
+                    if (createdResponse.AssessmentControl.Control != null)
+                        joinRequest.AssessmentControl.Control = createdResponse.AssessmentControl.Control;
+                    joinRequest.AssessmentControl.ControlId = createdResponse.AssessmentControl.ControlId;
+                    await BroadcastControlEvent(SignalROperations.Create, createdResponse.AssessmentControl);
+                    var successMessage = string.IsNullOrEmpty(joinRequest.Control?.ControlCode)
+                        ? "New Control added successfully"
+                        : "Existing Control linked successfully";
+
+                    Snackbar.Add(Localizer[successMessage], Severity.Success);
+
+                    await OnControlAdded.InvokeAsync(joinRequest.AssessmentControl);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await OnError.InvokeAsync((ex, ErrorHandlingService.ClientOperationContext.ControlCreate));
+        }
+    }
+
+    private async Task DeleteJoinItemControl(AssessmentControlDto joinItem)
+    {
+        var parameters = new DialogParameters
+        {
+            { "ContentText", "Are you sure you want to Remove this control from the assessment?" },
+            { "ButtonText", "Delete" },
+            { "Color", Color.Error },
+            { "Icon", Icons.Material.Filled.Delete },
+            { "Title", "Remove Control" },
+        };
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            BackdropClick = true,
+            Position = DialogPosition.Center,
+            MaxWidth = MaxWidth.ExtraSmall,
+            FullWidth = true,
+        };
+        var dialog = await DialogService.ShowAsync<ConfirmDialog>("Confirm Delete", parameters, options);
+        var result = await dialog.Result;
+        if (result != null && !result.Canceled)
+        {
+            Observable
+                .FromAsync(async () =>
+                {
+                    var validationResult = await _updateAssessmentControlValidator.ValidateAsync(joinItem);
+                    if (!validationResult.IsValid)
+                    {
+                        var errors = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage));
+                        var ex = new Exception(errors);
+                        await OnError.InvokeAsync((ex, ErrorHandlingService.ClientOperationContext.ControlDelete));
+                        return;
+                    }
+                    await _assessmentHttpService.DeleteAssessmentControlAsync(
+                    joinItem.AssessmentId,
+                    joinItem.ControlId
+                    );
+                    Controls.Remove(joinItem);
+                    await OnControlDeleted.InvokeAsync(joinItem);
+                    await BroadcastControlEvent(SignalROperations.Delete, joinItem);
+                })
+                .Catch<Unit, Exception>(ex =>
+                {
+                    var error = ex + "Error removing assessment-control relationship";
+                    _logger.LogError(error);
+                    Snackbar.Add("Error removing relationship", Severity.Error);
+                    return Observable.Empty<Unit>();
+                })
+                .Subscribe(_ =>
+                {
+                    Snackbar.Add("Control removed successfully", Severity.Success);
+                    RefreshUi();
+                });
+        }
+    }
+
+    private void HandleGenericControlEvent(GenericSignalREvent evt)
+    {
+        switch (evt.Operation)
+        {
+            // case SignalROperations.Create:
+            //     OnControlCreated(evt);
+            //     break;
+            // case SignalROperations.Update:
+            //     OnControlUpdatedHandler(evt);
+            //     break;
+            case SignalROperations.Delete:
+                OnControlDeletedHandler(evt);
+                break;
+            case SignalROperations.BeingEdited:
+                OnControlBeingEdited(evt);
+                break;
+            case SignalROperations.EditingFinished:
+                OnControlEditingFinished(evt);
+                break;
+            default:
+                _logger.LogInformation("Unhandled Control operation: {Op}", evt.Operation);
+                break;
+        }
+    }
+
+    // private async void OnControlCreated(GenericSignalREvent evt)
+    // {
+    //     if (evt.Parameters.TryGetValue("ControlId", out var rightIdObj) && Guid.TryParse(rightIdObj.ToString(), out var rightId))
+    //     {
+    //         var control = await _assessmentHttpService.GetOneFullAssessmentControlByIdAsync(rightId, AssessmentId);
+    //         if (control?.AssessmentControl != null)
+    //         {
+    //             Controls.Add(control.AssessmentControl);
+    //             await OnControlAdded.InvokeAsync(control.AssessmentControl);
+    //             Snackbar.Add("Control created by another user", Severity.Info);
+    //             await InvokeAsync(StateHasChanged);
+    //         }
+    //     }
+    // }
+
+    // private async void OnControlUpdatedHandler(GenericSignalREvent evt)
+    // {
+    //     if (evt.Parameters.TryGetValue("ControlId", out var rightIdObj) && Guid.TryParse(rightIdObj.ToString(), out var rightId))
+    //     {
+    //         var control = await _assessmentHttpService.GetOneFullAssessmentControlByIdAsync(rightId, AssessmentId);
+    //         if (control?.AssessmentControl != null)
+    //         {
+    //             var index = Controls.FindIndex(x => x.ControlId == rightId);
+    //             if (index >= 0)
+    //             {
+    //                 Controls[index] = control.AssessmentControl;
+    //                 await OnControlUpdated.InvokeAsync(control.AssessmentControl);
+    //                 Snackbar.Add("Control updated by another user", Severity.Info);
+    //                 await InvokeAsync(StateHasChanged);
+    //             }
+    //         }
+    //     }
+    // }
+
+    private async void OnControlDeletedHandler(GenericSignalREvent evt)
+    {
+        if (evt.Parameters.TryGetValue("ControlId", out var addrIdObj) && Guid.TryParse(addrIdObj.ToString(), out var addrId))
+        {
+            var removed = Controls.FirstOrDefault(x => x.ControlId == addrId);
+            if (removed != null)
+            {
+                Controls.Remove(removed);
+                await OnControlDeleted.InvokeAsync(removed);
+                Snackbar.Add("Control removed by another user", Severity.Info);
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+    }
+
+    private void OnControlBeingEdited(GenericSignalREvent evt)
+    {
+        if (evt.Parameters.TryGetValue("ControlId", out var addrIdObj) && Guid.TryParse(addrIdObj.ToString(), out var addrId))
+        {
+            var item = Controls.FirstOrDefault(x => x.ControlId == addrId);
+            if (item != null)
+            {
+                Snackbar.Add($"Control {addrId} is being edited by another user", Severity.Info);
+            }
+        }
+    }
+
+    private void OnControlEditingFinished(GenericSignalREvent evt)
+    {
+        if (evt.Parameters.TryGetValue("ControlId", out var addrIdObj) && Guid.TryParse(addrIdObj.ToString(), out var addrId))
+        {
+            Snackbar.Add($"Another user finished editing Control {addrId}", Severity.Info);
+        }
+    }
+
+    private async Task BroadcastControlEvent(string operation, AssessmentControlDto control)
+    {
+        var evt = new GenericSignalREvent(aggregateName: "AssessmentControl", entityId: control.ControlId, operation: operation, userId: _controlEditingUserId);
+        evt.Parameters["AssessmentId"] = AssessmentId;
+        evt.Parameters["ControlId"] = control.ControlId;
+        await SignalRStrategy.SendNotificationAsync(evt);
+    }
+
+    private string GetAssessmentControlsCardClass(AssessmentControlDto control)
+    {
+        var classes = new List<string> { "transition-all", "position-relative" };
+        return string.Join(" ", classes);
+    }
+
+    private async Task SaveControlChanges(AssessmentControlDto item)
+    {
+        await TryAsync(async () =>
+            {
+                if (item == null)
+                    return Unit.Default;
+                var updatedControl = await _assessmentHttpService.UpdateAssessmentControlAsync(item);
+                if (updatedControl == null)
+                {
+                    throw new Exception($"Failed to update control {item.ControlId} on server");
+                }
+                var existingControlIndex = Controls.FindIndex(c => c.ControlId == item.ControlId);
+                if (existingControlIndex >= 0)
+                {
+                    Controls[existingControlIndex] = item;
+                }
+                await OnControlUpdated.InvokeAsync(item);
+                await BroadcastControlEvent(SignalROperations.Update, item);
+                _editMode = false;
+                _editingControlItem = null;
+                await InvokeAsync(StateHasChanged);
+                return Unit.Default;
+            })
+            .Match(
+                Succ: _ => Snackbar.Add(Localizer["Changes saved successfully"], Severity.Success),
+                Fail: ex =>
+                {
+                    _logger.LogError(ex, "Error saving control changes");
+                    Snackbar.Add(Localizer["Error saving changes"], Severity.Error);
+                }
+            );
+    }
+
+    private void StartEditTimeout()
+    {
+        _editTimeoutTimer?.Dispose();
+        _editTimeoutTimer = new Timer(
+            async _ =>
+            {
+                await InvokeAsync(async () =>
+                {
+                    if (_editMode)
+                    {
+                        await CancelEditControl();
+                        Snackbar.Add("Edit session timed out", Severity.Warning);
+                        RefreshUi();
+                    }
+                });
+            },
+            null,
+            TimeSpan.FromSeconds(70),
+            Timeout.InfiniteTimeSpan
+        );
+    }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await base.OnInitializedAsync();
+            await SignalRStrategy.EnsureConnectedAsync();
+            SignalRStrategy
+                .GetEventStream()
+                .Where(evt => evt.AggregateName == "AssessmentControl")
+                .Where(evt => evt.UserId != _controlEditingUserId)
+                .Buffer(TimeSpan.FromMilliseconds(100))
+                .Where(events => events.Any())
+                .Subscribe(async events =>
+                {
+                    foreach (var evt in events)
+                    {
+                        if (evt.Parameters.TryGetValue("AssessmentId", out var assessmentIdObj) && Guid.TryParse(assessmentIdObj.ToString(), out var assessmentId) && assessmentId == AssessmentId)
+                        {
+                            HandleGenericControlEvent(evt);
+                        }
+                    }
+                    await InvokeAsync(StateHasChanged);
+                });
+            _updateAssessmentControlValidator = new InlineValidator<AssessmentControlDto>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in OnInitializedAsync");
+            Snackbar.Add("Error initializing page", Severity.Error);
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _dirtyStateDisposables.Dispose();
+        _disposables.Dispose();
+    }
+
+}
+
+

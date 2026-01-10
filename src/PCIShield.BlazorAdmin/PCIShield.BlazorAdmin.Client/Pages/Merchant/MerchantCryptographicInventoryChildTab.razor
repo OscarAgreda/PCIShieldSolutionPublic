@@ -1,0 +1,260 @@
+@* MerchantCryptographicInventoryChildTab.razor *@
+@page "/MerchantCryptographicInventoryChildTab"
+@using PCIShield.BlazorMauiShared.Models.Merchant
+@using LanguageExt
+@using LanguageExt.Common
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.SignalR.Client
+@using MudBlazor
+@using Severity = MudBlazor.Severity
+@using FluentValidation
+@using System.Reactive.Threading.Tasks
+@using PCIShield.BlazorAdmin.Client.Services
+@using System.Reactive.Disposables
+@inject ILogger<MerchantCryptographicInventoryChildTab> _logger
+@inject IStringLocalizer<MerchantCryptographicInventoryChildTab> Localizer
+@inject ISnackbar Snackbar
+@inject IHttpMerchantClientService _merchantHttpService
+@inject IDialogService DialogService
+@namespace PCIShield.BlazorAdmin.Client.Pages.Merchant
+
+
+
+<MudPaper Elevation="1" Class="pa-4">
+    <MudTable Items="@CryptographicInventories" Hover="true" Striped="true" Virtualize="true" RowsPerPage="20">
+        <HeaderContent>
+            <MudTh>@Localizer["KeyName"]</MudTh>
+            <MudTh>@Localizer["KeyType"]</MudTh>
+            <MudTh>@Localizer["Algorithm"]</MudTh>
+            <MudTh>@Localizer["KeyLength"]</MudTh>
+            <MudTh>@Localizer["KeyLocation"]</MudTh>
+            <MudTh>@Localizer["CreationDate"]</MudTh>
+            <MudTh>@Localizer["LastRotationDate"]</MudTh>
+            <MudTh>@Localizer["NextRotationDue"]</MudTh>
+            <MudTh>@Localizer["CreatedAt"]</MudTh>
+            <MudTh>@Localizer["UpdatedAt"]</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>@context.KeyName</MudTd>
+            <MudTd>@context.KeyType</MudTd>
+            <MudTd>@context.Algorithm</MudTd>
+            <MudTd>@context.KeyLength</MudTd>
+            <MudTd>@context.KeyLocation</MudTd>
+            <MudTd>@context.CreationDate</MudTd>
+            <MudTd>@context.LastRotationDate</MudTd>
+            <MudTd>@context.NextRotationDue</MudTd>
+            <MudTd>@context.CreatedAt</MudTd>
+            <MudTd>@context.UpdatedAt</MudTd>
+       @*      <MudTd>
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Primary"
+                           OnClick="@(EventUtil.AsNonRenderingEventHandler(() => EditChildItemCryptographicInventory(context)))">@Localizer["Edit"]</MudButton>
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Error"
+                           OnClick="@(EventUtil.AsNonRenderingEventHandler(() => DeleteChildItemCryptographicInventory(context)))">@Localizer["Delete"]</MudButton>
+            </MudTd> *@
+        </RowTemplate>
+    </MudTable>
+@*     <MudButton Variant="Variant.Outlined" Color="Color.Primary" Class="mt-4"
+               OnClick="@AddChildItemCryptographicInventory">@Localizer["Add Cryptographic Inventory"]</MudButton> *@
+</MudPaper>
+
+<MudOverlay Visible="@IsLoading"
+            DarkBackground="true"
+            ZIndex="9999"
+            AutoClose="false">
+    <MudProgressCircular Color="Color.Primary"
+                         Indeterminate="true"
+                         Size="Size.Large" />
+</MudOverlay>
+
+@code {
+
+    [Parameter]
+    public Guid MerchantId { get; set; }
+
+    [Parameter] public string _cryptographicInventoryEditingUserId { get; set; }
+
+    [Parameter]
+    public List<CryptographicInventoryDto> CryptographicInventories { get; set; } = new();
+
+
+    [Parameter]
+    public bool IsLoading { get; set; }
+
+    [Parameter]
+    public EventCallback<(Exception ex, ErrorHandlingService.ClientOperationContext context)> OnError { get; set; }
+
+
+
+    [Parameter]
+    public EventCallback<CryptographicInventoryDto> OnCryptographicInventoryAdded { get; set; }
+
+
+    [Parameter]
+    public EventCallback<CryptographicInventoryDto> OnCryptographicInventoryUpdated { get; set; }
+
+
+    [Parameter]
+    public EventCallback<CryptographicInventoryDto> OnCryptographicInventoryDeleted { get; set; }
+
+    private IValidator<CryptographicInventoryDto> _updateCryptographicInventoryValidator;
+
+    private readonly CompositeDisposable _disposables = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _updateCryptographicInventoryValidator = new InlineValidator<CryptographicInventoryDto>();
+        await base.OnInitializedAsync();
+    }
+
+
+    protected void RefreshUi()
+    {
+        //InvokeAsync(StateHasChanged);
+    }
+
+
+
+
+    private async Task AddChildItemCryptographicInventory()
+    {
+        await TryAsync(async () =>
+        {
+            var newCryptographicInventory = new CryptographicInventoryDto
+                {
+                    MerchantId = MerchantId,
+                CreatedAt = DateTime.UtcNow,
+                    CreatedBy = Guid.Parse(_cryptographicInventoryEditingUserId),
+                };
+            var validationResult = await _updateCryptographicInventoryValidator.ValidateAsync(newCryptographicInventory);
+            if (!validationResult.IsValid)
+            {
+                var errors = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage));
+                var ex = new Exception(errors);
+                await OnError.InvokeAsync((ex, ErrorHandlingService.ClientOperationContext.CryptographicInventoryCreate));
+                return;
+            }
+            var response = await _merchantHttpService.CreateCryptographicInventoryAsync(newCryptographicInventory).ToObservable().ToListObservable().ToTryOption().ToAsync().ToTry();
+            await response.Match(
+                Succ: result =>
+                    result.Match(
+                        Some: async backResult =>
+                        {
+                            CryptographicInventories.Add(backResult.CryptographicInventory);
+                        },
+                        None: () =>
+                        {
+                            Snackbar.Add(Localizer["Failed to create cryptographicInventory"], Severity.Error);
+                            return Task.CompletedTask;
+                        }
+                    ),
+                Fail: ex =>
+                {
+                    _logger.LogError(ex, "Error creating cryptographicInventory");
+                    Snackbar.Add(Localizer["Error creating cryptographicInventory"], Severity.Error);
+                    return Task.CompletedTask;
+                }
+            );
+        });
+    }
+
+
+    private async Task EditChildItemCryptographicInventory(CryptographicInventoryDto item)
+    {
+        try
+        {
+            var validationResult = await _updateCryptographicInventoryValidator.ValidateAsync(item);
+            if (!validationResult.IsValid)
+            {
+                var errors = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage));
+                var ex = new Exception(errors);
+                await OnError.InvokeAsync((ex, ErrorHandlingService.ClientOperationContext.CryptographicInventoryUpdate));
+                return;
+            }
+            CryptographicInventoryDto? response = await _merchantHttpService.UpdateCryptographicInventoryAsync(item);
+            if (response != null)
+            {
+                var index = CryptographicInventories.FindIndex(x => x.CryptographicInventoryId == item.CryptographicInventoryId);
+                if (index != -1)
+                {
+                    CryptographicInventories[index] = response;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await OnError.InvokeAsync((ex, ErrorHandlingService.ClientOperationContext.CryptographicInventoryCreate));
+        }
+    }
+
+    private async Task<bool> ShowDeleteConfirmDialog()
+    {
+        bool? result = await DialogService.ShowMessageBox("Confirm Delete", "Are you sure you want to delete this item?", yesText: "Delete", cancelText: "Cancel");
+        if (result == true)
+        {
+            return await Task.FromResult(true);
+        }
+        else
+        {
+            return await Task.FromResult(false);
+        }
+    }
+
+    private async Task DeleteChildItemCryptographicInventory(CryptographicInventoryDto cryptographicInventory)
+    {
+        try
+        {
+            var dialogResult = await ShowDeleteConfirmDialog();
+            if (dialogResult)
+            {
+                await TryAsync(async () =>
+                {
+                    var validationResult = await _updateCryptographicInventoryValidator.ValidateAsync(cryptographicInventory);
+                    if (!validationResult.IsValid)
+                    {
+                        var errors = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage));
+                        var ex = new Exception(errors);
+                        await OnError.InvokeAsync((ex, ErrorHandlingService.ClientOperationContext.CryptographicInventoryDelete));
+                        return;
+                    }
+                    await _merchantHttpService
+                        .DeleteCryptographicInventoryAsync(cryptographicInventory.CryptographicInventoryId)
+                        .ToObservable()
+                        .ToListObservable()
+                        .ToTryOption()
+                        .ToAsync()
+                        .ToTry()
+                        .Match(
+                            Succ: async _ =>
+                            {
+                                CryptographicInventories.Remove(cryptographicInventory);
+                            },
+                            Fail: ex =>
+                            {
+                                _logger.LogError(ex, "Failed to delete cryptographicInventory");
+                                Snackbar.Add(Localizer["Failed to delete cryptographicInventory"], Severity.Error);
+                                return Task.CompletedTask;
+                            }
+                        );
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+                        await OnError.InvokeAsync((ex, ErrorHandlingService.ClientOperationContext.CryptographicInventoryDelete));
+        }
+    }
+
+
+
+
+    public async ValueTask DisposeAsync()
+    {
+        _disposables.Dispose();
+    }
+
+
+}
+
+

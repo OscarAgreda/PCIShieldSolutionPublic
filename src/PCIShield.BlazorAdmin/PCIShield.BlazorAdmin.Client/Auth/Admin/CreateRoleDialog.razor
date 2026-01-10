@@ -1,0 +1,104 @@
+﻿@using Microsoft.AspNetCore.Authorization
+@using PCIShield.BlazorMauiShared.Auth
+@using System.ComponentModel.DataAnnotations
+@inject IHttpAuthClientService AdminService
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudForm @ref="_form" @bind-IsValid="_isValid">
+            <MudStack Spacing="3">
+                <MudTextField @bind-Value="_roleName"
+                              Label="Role Name"
+                              Required="true"
+                              RequiredError="Role name is required"
+                              Variant="Variant.Outlined"
+                              HelperText="Enter a unique name for this role" />
+
+                <MudTextField @bind-Value="_description"
+                              Label="Description (Optional)"
+                              Lines="3"
+                              Variant="Variant.Outlined"
+                              HelperText="Describe the purpose of this role" />
+            </MudStack>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary"
+                   Disabled="@(!_isValid || _isCreating)"
+                   OnClick="CreateRole"
+                   Variant="Variant.Filled">
+            @if (_isCreating)
+            {
+                <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                <MudText Class="ms-2">Creating...</MudText>
+            }
+            else
+            {
+                <MudText>Create Role</MudText>
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = new MudDialogContainer();
+
+    private MudForm? _form;
+    private bool _isValid;
+    private bool _isCreating;
+    private string _roleName = string.Empty;
+    private string? _description;
+
+    private async Task CreateRole()
+    {
+        if (_form != null)
+        {
+            await _form.Validate();
+        }
+
+        if (!_isValid)
+        {
+            return;
+        }
+
+        _isCreating = true;
+
+        var request = new CreateRoleRequest
+        {
+            Name = _roleName,
+            Description = _description
+        };
+
+        var result = await AdminService.CreateRoleAsync(request);
+
+        result.Match(
+            Right: response =>
+            {
+                if (response.Success)
+                {
+                    Snackbar.Add($"Role '{_roleName}' created successfully", Severity.Success);
+                    MudDialog.Close(DialogResult.Ok(true));
+                }
+                else
+                {
+                    Snackbar.Add(response.Message ?? "Failed to create role", Severity.Error);
+                    _isCreating = false;
+                }
+            },
+            Left: error =>
+            {
+                Snackbar.Add($"Error creating role: {error}", Severity.Error);
+                _isCreating = false;
+            }
+        );
+
+        StateHasChanged();
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+}

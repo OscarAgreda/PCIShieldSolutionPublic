@@ -1,0 +1,97 @@
+﻿.container-product-readOnly {
+    margin-top: 10px;
+    background: #ffffff;
+    border-radius: 7px !important;
+    height: 150px; /* Altura fija, asegúrate de que sea necesaria */
+    width: 250px; /* Cambia a 100% para que ocupe el ancho disponible */
+    padding: 16px; /* Añade un padding para mejorar el espaciado */
+    box-sizing: border-box; /* Asegura que el padding no afecte el ancho total */
+}
+
+.container-product-readOnly-info {
+    margin-top: 10px;
+    background: #ffffff;
+    border-radius: 7px !important;
+    min-height: 304px; /* Altura fija, asegúrate de que sea necesaria */
+    height: auto;
+    width: 388px; /* Cambia a 100% para que ocupe el ancho disponible */
+    padding: 16px; /* Añade un padding para mejorar el espaciado */
+    box-sizing: border-box; /* Asegura que el padding no afecte el ancho total */
+}
+
+.container-product-readOnly-grid .container-head-action {
+    justify-content: left;
+}
+
+.container-read-only-product-data {
+    display: flex !important;
+    justify-content: start;
+    gap: 20px;
+    margin: 0px !important;
+    padding: 0px !important;
+}
+
+.status-product-text {
+    font-weight: 400 !important;
+    font-size: 12px !important;
+    line-height: 100% !important;
+    color: #293E8C !important;
+}
+.container-head-status {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: right;
+}
+
+.container-product-info {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: left;
+}
+
+.lbl-product-text {
+    font-weight: 700 !important;
+    font-size: 12px !important;
+    line-height: 100% !important;
+    color: #343030 !important;
+}
+
+.info-product-text {
+    font-weight: 700 !important;
+    font-size: 24px !important;
+    line-height: 100% !important;
+    color: #343030 !important;
+}
+
+.date-product-text {
+    font-weight: 400 !important;
+    font-size: 12px !important;
+    line-height: 100% !important;
+    color: #293E8C !important;
+}
+
+.header-title-product {
+    font-weight: 600 !important;
+    font-size: 16px !important;
+    line-height: 100% !important;
+    color: #343030 !important;
+}
+
+.lbl-info-product {
+    font-weight: 400 !important;
+    font-size: 12px !important;
+    line-height: 100% !important;
+    color: #343030 !important;
+}
+
+.info-product {
+    font-weight: 400 !important;
+    font-size: 12px !important;
+    line-height: 100% !important;
+    color: #707070 !important;
+    white-space: normal !important;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}

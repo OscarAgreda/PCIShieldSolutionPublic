@@ -1,0 +1,352 @@
+﻿@page "/admin/users/create"
+
+@using Microsoft.AspNetCore.Authorization
+@using PCIShield.BlazorMauiShared.Auth
+@using System.ComponentModel.DataAnnotations
+
+@attribute [Authorize(Roles = "Administrator")]
+@inject IHttpAuthClientService AdminService
+@inject NavigationManager NavManager
+@inject ISnackbar Snackbar
+
+<PageTitle>Create User</PageTitle>
+
+<MudBreadcrumbs Items="_breadCrumbs" Separator="|" Class="pciShield-breadcrumb mb-4"></MudBreadcrumbs>
+
+<MudPaper Class="pciShield-container pciShield-shadow mb-4" Elevation="0">
+    <MudText Class="pciShield-title-page mb-2">Create New User</MudText>
+    <MudText Class="pciShield-text-body">Add a new user to the system with credentials and role assignments</MudText>
+</MudPaper>
+
+<MudForm Model="@_createRequest" @ref="_form" @bind-IsValid="_isFormValid" ValidationDelay="0">
+    <MudGrid Spacing="3">
+        <MudItem xs="12" md="8">
+            <MudPaper Class="pciShield-container pciShield-shadow pa-4" Elevation="1">
+                <MudText Typo="Typo.h6" Class="mb-4">Account Information</MudText>
+
+                <MudGrid Spacing="3">
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="_createRequest.UserName"
+                                      Label="Username"
+                                      Required="true"
+                                      RequiredError="Username is required"
+                                      Variant="Variant.Outlined"
+                                      Class="pciShield-input"
+                                      Dense="true"
+                                      HelperText="Unique username for login" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="_createRequest.Email"
+                                      Label="Email Address"
+                                      Required="true"
+                                      RequiredError="Email is required"
+                                      Validation="@(new EmailAddressAttribute())"
+                                      Variant="Variant.Outlined"
+                                      Class="pciShield-input"
+                                      Dense="true"
+                                      HelperText="Must be a valid email address" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="_createRequest.FirstName"
+                                      Label="First Name"
+                                      Variant="Variant.Outlined"
+                                      Class="pciShield-input"
+                                      Dense="true" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="_createRequest.LastName"
+                                      Label="Last Name"
+                                      Variant="Variant.Outlined"
+                                      Class="pciShield-input"
+                                      Dense="true" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="_createRequest.PhoneNumber"
+                                      Label="Phone Number"
+                                      Variant="Variant.Outlined"
+                                      Class="pciShield-input"
+                                      Dense="true" />
+                    </MudItem>
+                </MudGrid>
+
+                <MudDivider Class="my-4" />
+
+                <MudText Typo="Typo.h6" Class="mb-4">Password</MudText>
+                <MudGrid Spacing="3">
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="_createRequest.Password"
+                                      Label="Password"
+                                      InputType="@_passwordInputType"
+                                      Adornment="Adornment.End"
+                                      AdornmentIcon="@_passwordIcon"
+                                      OnAdornmentClick="TogglePasswordVisibility"
+                                      Required="true"
+                                      RequiredError="Password is required"
+                                      Variant="Variant.Outlined"
+                                      Class="pciShield-input"
+                                      Dense="true"
+                                      HelperText="Minimum 6 characters" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="_createRequest.ConfirmPassword"
+                                      Label="Confirm Password"
+                                      InputType="@_passwordInputType"
+                                      Required="true"
+                                      RequiredError="Password confirmation is required"
+                                      Variant="Variant.Outlined"
+                                      Class="pciShield-input"
+                                      Dense="true"
+                                      Validation="@(new Func<string, string?>(ValidatePasswordMatch))" />
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" md="4">
+            <MudStack Spacing="3">
+                <MudPaper Class="pa-4 pciShield-shadow" Elevation="1">
+                    <MudText Typo="Typo.h6" Class="mb-3">Options</MudText>
+                    <MudStack Spacing="2">
+                        <MudSwitch @bind-Value="_createRequest.EmailConfirmed"
+                                   Color="Color.Success"
+                                   Label="Email Confirmed" />
+                        <MudSwitch @bind-Value="_createRequest.SendWelcomeEmail"
+                                   Color="Color.Info"
+                                   Label="Send Welcome Email" />
+                    </MudStack>
+                </MudPaper>
+
+                <MudPaper Class="pa-4 pciShield-shadow" Elevation="1">
+                    <MudText Typo="Typo.h6" Class="mb-3">Quick Role Presets</MudText>
+                    <MudStack Spacing="1">
+                        <MudButton OnClick="@(() => SetPresetRoles("Administrator"))"
+                                   Variant="Variant.Outlined"
+                                   Color="Color.Error"
+                                   Size="Size.Small"
+                                   FullWidth="true">
+                            Administrator
+                        </MudButton>
+                        <MudButton OnClick="@(() => SetPresetRoles("Employee"))"
+                                   Variant="Variant.Outlined"
+                                   Color="Color.Primary"
+                                   Size="Size.Small"
+                                   FullWidth="true">
+                            Employee
+                        </MudButton>
+                        <MudButton OnClick="@(() => SetPresetRoles("Customer"))"
+                                   Variant="Variant.Outlined"
+                                   Color="Color.Info"
+                                   Size="Size.Small"
+                                   FullWidth="true">
+                            Customer
+                        </MudButton>
+                        <MudButton OnClick="@(() => SetPresetRoles("User"))"
+                                   Variant="Variant.Outlined"
+                                   Color="Color.Default"
+                                   Size="Size.Small"
+                                   FullWidth="true">
+                            Basic User
+                        </MudButton>
+                    </MudStack>
+                </MudPaper>
+            </MudStack>
+        </MudItem>
+
+        <MudItem xs="12">
+            <MudPaper Class="pciShield-container pciShield-shadow pa-4" Elevation="1">
+                <MudText Typo="Typo.h6" Class="mb-4">Role Assignment</MudText>
+                <MudSelect T="string"
+                           MultiSelection="true"
+                           @bind-SelectedValues="_selectedRoles"
+                           Label="Assigned Roles"
+                           Variant="Variant.Outlined"
+                           Class="pciShield-input"
+                           Dense="true"
+                           HelperText="Select one or more roles for this user">
+                    @foreach (var role in _availableRoles)
+                    {
+                        <MudSelectItem T="string" Value="@role">
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                <MudIcon Icon="@GetRoleIcon(role)" Size="Size.Small" />
+                                <MudText>@role</MudText>
+                            </MudStack>
+                        </MudSelectItem>
+                    }
+                </MudSelect>
+
+                @if (_selectedRoles.Any())
+                {
+                    <MudStack Row="true" Spacing="1" Class="mt-3">
+                        <MudText Typo="Typo.body2" Class="mr-2">Selected:</MudText>
+                        @foreach (var role in _selectedRoles)
+                        {
+                            <MudChip T="bool" Label="true"
+                                     Color="Color.Primary"
+                                     Size="Size.Small"
+                                     OnClose="@(() => RemoveRole(role))">
+                                @role
+                            </MudChip>
+                        }
+                    </MudStack>
+                }
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12">
+            <MudPaper Class="pa-4 pciShield-shadow" Elevation="1">
+                <MudStack Row="true" Spacing="2">
+                    <MudButton OnClick="CreateUser"
+                               Disabled="@(!_isFormValid || _isCreating)"
+                               Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.PersonAdd"
+                               Class="pciShield-btn pciShield-btn-primary">
+                        @if (_isCreating)
+                        {
+                            <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                            <MudText Class="ms-2">Creating User...</MudText>
+                        }
+                        else
+                        {
+                            <MudText>Create User</MudText>
+                        }
+                    </MudButton>
+                    <MudButton OnClick="@(() => NavManager.NavigateTo("/admin/users"))"
+                               Variant="Variant.Outlined"
+                               Class="pciShield-btn pciShield-btn-secondary">
+                        Cancel
+                    </MudButton>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudForm>
+
+@code {
+    private CreateUserRequest _createRequest = new();
+    private MudForm? _form;
+    private bool _isFormValid;
+    private bool _isCreating;
+    private IEnumerable<string> _selectedRoles = new List<string>();
+    private List<string> _availableRoles = new() { "Administrator", "User", "Customer", "Employee" };
+
+    private bool _passwordVisible;
+    private InputType _passwordInputType = InputType.Password;
+    private string _passwordIcon = Icons.Material.Filled.VisibilityOff;
+
+    private List<BreadcrumbItem> _breadCrumbs = new()
+    {
+        new("Home", href: "/"),
+        new("Administration", href: "/admin/dashboard"),
+        new("Users", href: "/admin/users"),
+        new("Create", href: null, disabled: true)
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Load available roles from backend
+        var rolesResult = await AdminService.GetRolesAsync();
+        rolesResult.Match(
+            Right: roles => _availableRoles = roles.Select(r => r.Name).ToList(),
+            Left: _ => { } // Use default roles if fetch fails
+        );
+    }
+
+    private async Task CreateUser()
+    {
+        if (_form != null)
+        {
+            await _form.Validate();
+        }
+
+        if (!_isFormValid)
+        {
+            Snackbar.Add("Please correct validation errors", Severity.Warning);
+            return;
+        }
+
+        _isCreating = true;
+        _createRequest.Roles = _selectedRoles.ToList();
+
+        var result = await AdminService.CreateUserAsync(_createRequest);
+
+        result.Match(
+            Right: response =>
+            {
+                if (response.Success)
+                {
+                    Snackbar.Add($"User '{_createRequest.UserName}' created successfully!", Severity.Success);
+                    NavManager.NavigateTo("/admin/users");
+                }
+                else
+                {
+                    Snackbar.Add(response.Message ?? "Failed to create user", Severity.Error);
+                    _isCreating = false;
+                }
+            },
+            Left: error =>
+            {
+                Snackbar.Add($"Error creating user: {error}", Severity.Error);
+                _isCreating = false;
+            }
+        );
+
+        StateHasChanged();
+    }
+
+    private void TogglePasswordVisibility()
+    {
+        if (_passwordVisible)
+        {
+            _passwordVisible = false;
+            _passwordInputType = InputType.Password;
+            _passwordIcon = Icons.Material.Filled.VisibilityOff;
+        }
+        else
+        {
+            _passwordVisible = true;
+            _passwordInputType = InputType.Text;
+            _passwordIcon = Icons.Material.Filled.Visibility;
+        }
+    }
+
+    private string? ValidatePasswordMatch(string confirmPassword)
+    {
+        if (confirmPassword != _createRequest.Password)
+        {
+            return "Passwords do not match";
+        }
+        return null;
+    }
+
+    private void SetPresetRoles(string preset)
+    {
+        _selectedRoles = preset switch
+        {
+            "Administrator" => new List<string> { "Administrator" },
+            "Employee" => new List<string> { "User", "Employee" },
+            "Customer" => new List<string> { "User", "Customer" },
+            "User" => new List<string> { "User" },
+            _ => new List<string>()
+        };
+        StateHasChanged();
+    }
+
+    private void RemoveRole(string role)
+    {
+        _selectedRoles = _selectedRoles.Where(r => r != role).ToList();
+        StateHasChanged();
+    }
+
+    private string GetRoleIcon(string role)
+    {
+        return role switch
+        {
+            "Administrator" => Icons.Material.Filled.AdminPanelSettings,
+            "User" => Icons.Material.Filled.Person,
+            "Customer" => Icons.Material.Filled.ShoppingCart,
+            "Employee" => Icons.Material.Filled.Work,
+            _ => Icons.Material.Filled.Security
+        };
+    }
+}

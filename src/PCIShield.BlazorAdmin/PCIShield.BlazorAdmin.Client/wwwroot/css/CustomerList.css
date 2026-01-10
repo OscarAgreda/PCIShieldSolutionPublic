@@ -1,0 +1,38 @@
+﻿::deep .customer-grid {
+    min-height: 400px;
+    position: relative;
+}
+
+::deep .customer-status-active {
+    background-color: var(--mud-palette-success-light);
+    border-radius: var(--mud-default-borderradius);
+    padding: 4px 8px;
+}
+
+::deep .customer-status-inactive {
+    background-color: var(--mud-palette-warning-light);
+    border-radius: var(--mud-default-borderradius);
+    padding: 4px 8px;
+}
+
+::deep .search-container {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+::deep .grid-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+::deep .customer-detail-card {
+    transition: all 0.2s ease-in-out;
+}
+
+    ::deep .customer-detail-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--mud-elevation-4);
+    }

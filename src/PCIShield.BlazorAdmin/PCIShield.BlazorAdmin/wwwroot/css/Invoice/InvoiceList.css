@@ -1,0 +1,24 @@
+﻿/*MANEJA EL ESTILO TACHADO DE LAS FILAS EN ESTADO ANULADA*/
+.is-voided {
+    text-decoration: line-through;
+    text-decoration-color: #707070;
+}
+
+.style-option-popup-invoice{
+    width: 150px;
+}
+
+.style-option-popup-invoice .mud-menu-list{
+    padding:0px;
+}
+    /* Estilo para los items del menú */
+    .custom-menu-item {
+        padding: 0px !important;
+    }
+
+.custom-menu-item .mud-typography-body1 {
+    font-size: 12px;
+    font-weight: 400;
+    color: #707070;
+    padding: 3px 16px;
+}

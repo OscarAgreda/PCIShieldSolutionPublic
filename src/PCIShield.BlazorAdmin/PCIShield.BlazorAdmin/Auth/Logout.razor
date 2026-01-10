@@ -1,0 +1,92 @@
+﻿@page "/Auth/Logout"
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Authentication.Cookies
+@using Microsoft.JSInterop
+@using MudBlazor
+@inject NavigationManager NavigationManager
+@inject ILogger<Logout> Logger
+@inject HttpClient HttpClient
+@inject IJSRuntime JSRuntime
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            Logger.LogInformation("Logout page initialized, processing logout");
+            
+            // Clear client-side tokens first (if in WASM)
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("localStorage.removeItem", "authToken");
+                await JSRuntime.InvokeVoidAsync("localStorage.removeItem", "refreshToken");
+                await JSRuntime.InvokeVoidAsync("localStorage.removeItem", "userId");
+                Logger.LogInformation("Client-side tokens cleared");
+            }
+            catch
+            {
+                // Ignore if we can't access localStorage (server-side)
+            }
+            
+            // Call logout API endpoint
+            try
+            {
+                // Build the full URL since HttpClient might not have BaseAddress
+                var baseUri = NavigationManager.BaseUri;
+                var logoutUrl = new Uri(new Uri(baseUri), "/api/auth/logout").ToString();
+                
+                using var httpClient = new HttpClient();
+                var response = await httpClient.PostAsync(logoutUrl, null);
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    Logger.LogInformation("Logout API call successful");
+                }
+                else
+                {
+                    Logger.LogWarning($"Logout API returned: {response.StatusCode}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error calling logout API");
+            }
+            
+            // Small delay for visual feedback
+            await Task.Delay(500);
+            
+            // Force full page reload to ensure complete logout
+            // NavigationException is expected when using forceLoad
+            try
+            {
+                NavigationManager.NavigateTo("/Auth/Login", forceLoad: true);
+            }
+            catch (NavigationException)
+            {
+                // This is expected - Blazor throws NavigationException to stop rendering
+                // and perform the navigation
+            }
+        }
+        catch (NavigationException)
+        {
+            // This is expected for forceLoad navigation
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error during logout");
+            try
+            {
+                NavigationManager.NavigateTo("/Auth/Login", forceLoad: true);
+            }
+            catch (NavigationException)
+            {
+                // Expected
+            }
+        }
+    }
+}
+
+<div class="d-flex justify-center align-center" style="height: 100vh;">
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+    <MudText Typo="Typo.h6" Class="ml-3">Logging out...</MudText>
+</div>

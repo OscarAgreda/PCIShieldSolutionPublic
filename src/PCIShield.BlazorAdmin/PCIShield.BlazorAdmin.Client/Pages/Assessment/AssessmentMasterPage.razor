@@ -1,0 +1,774 @@
+﻿@* AssessmentMasterPage.razor *@
+@page "/AssessmentMasterPage/{assessmentId:guid}"
+@using System.Reactive.Disposables
+@using System.Reactive.Linq
+@using System.Reactive.Subjects
+@using System.Linq.Expressions
+@using FluentValidation
+@using FluentValidation.Results
+@using LanguageExt
+@using LanguageExt.Common
+@using static LanguageExt.Prelude
+@using MudBlazor
+@using Severity = MudBlazor.Severity
+@using PCIShield.BlazorAdmin.Client.Services
+@using PCIShield.Client.Services.Common
+@using PCIShield.Client.Services.Assessment
+@using PCIShield.Domain.ModelsDto
+@using BlazorMauiShared.Models.Assessment
+@using PCIShield.BlazorMauiShared.Models.Assessment
+@using PCIShield.BlazorAdmin.Client.SignalR
+@using PCIShield.BlazorAdmin.Client.Shared.Components
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<AssessmentMasterPage> Localizer
+@implements IAsyncDisposable
+@implements IHandleEvent
+@inject ILogger<AssessmentMasterPage> _logger
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+@inject IDialogService DialogService
+@inject IHttpAssessmentClientService AssessmentHttpService
+@inject ISignalRNotificationStrategy SignalRStrategy
+@inject UpdateAssessmentValidator AssessmentValidator
+@namespace PCIShield.BlazorAdmin.Client.Pages.Assessment
+<div class="pciShield-style-master-detail">
+
+<MudBreadcrumbs Items="_breadCrumbs" Separator="|" Class="pciShield-style-breadcrumb mb-4"></MudBreadcrumbs>
+
+<MudPaper Class="pciShield-container pciShield-shadow mb-4" Elevation="0">
+    <MudText Class="pciShield-title-page mb-2">@Localizer["Assessment Details"]</MudText>
+    <MudText Class="pciShield-text-body">@Localizer["Configure assessment information and compliance settings"]</MudText>
+</MudPaper>
+
+<MudPaper Class="pciShield-container pciShield-shadow" Elevation="1">
+        <MudTabs Class="pciShield-style-tabs-primary mb-4"
+                 ActivePanelIndexChanged="OnTabChanged"
+             PanelClass="pa-0">
+
+        <MudTabPanel Text="@Localizer["General Information"]" Icon="@Icons.Material.Filled.Business">
+            <MudForm Model="@_orchestrator.Assessment"
+                     @bind-IsValid="@_formIsValid"
+                     @bind-Errors="@_formErrors"
+                     Validation="@(_orchestrator.ValidateValue)"
+                     ValidationDelay="0"
+                     OnValidSubmit="HandleValidSubmit"
+                     @ref="_editForm">
+
+                <!-- Basic Information Section -->
+                <MudPaper Class="pciShield-style-form-section" Elevation="0">
+                    <MudText Class="pciShield-style-form-section-title">@Localizer["Basic Information"]</MudText>
+                    <MudGrid Spacing="3">
+                        <MudItem xs="12" md="6">
+                            <div class="pciShield-style-field-group">
+                                <MudText Class="pciShield-style-field-label">@Localizer["Merchant"] *</MudText>
+                                <EnhancedMudSelect TEntity="MerchantDto"
+                                                   TValue="Guid"
+                                                   Value="@_orchestrator.Assessment.MerchantId"
+                                                   DataProvider="@_orchestrator.MerchantDataProvider"
+                                                   OnItemSelected="OnMerchantParentChanged"
+                                                   Required="true"
+                                                   RequiredError="@Localizer["Merchant is required"]"
+                                                   Class="pciShield-input pciShield-select"
+                                                   Dense="true"
+                                                   Variant="Variant.Outlined"
+                                                   Placeholder="Select Merchant"
+                                                   ShowSearch="true"
+                                                   Clearable="true" />
+                            </div>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <div class="pciShield-style-field-group">
+                                <MudText Class="pciShield-style-field-label">@Localizer["Scan Schedule"]</MudText>
+                                <EnhancedMudSelect TEntity="ScanScheduleDto"
+                                                   TValue="Guid"
+                                                   Value="@_orchestrator.Assessment.ScanScheduleId"
+                                                   DataProvider="@_orchestrator.ScanScheduleDataProvider"
+                                                   OnItemSelected="OnScanScheduleCascadeSelected"
+                                                   Required="true"
+                                                   RequiredError="@Localizer["Scan Schedule is required"]"
+                                                   Class="pciShield-input pciShield-select"
+                                                   Dense="true"
+                                                   Variant="Variant.Outlined"
+                                                   Placeholder="@Localizer["Select Scan Schedule"]"
+                                                   ShowSearch="true"
+                                                   Clearable="true" />
+                            </div>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <div class="pciShield-style-field-group">
+                                <MudText Class="pciShield-style-field-label">@Localizer["Vulnerability"]</MudText>
+                                <EnhancedMudSelect TEntity="VulnerabilityDto"
+                                                   TValue="Guid"
+                                                   Value="@_orchestrator.Assessment.VulnerabilityId"
+                                                   DataProvider="@_orchestrator.VulnerabilityDataProvider"
+                                                   OnItemSelected="OnVulnerabilityCascadeSelected"
+                                                   Required="true"
+                                                   RequiredError="@Localizer["Vulnerability is required"]"
+                                                   Class="pciShield-input pciShield-select"
+                                                   Dense="true"
+                                                   Variant="Variant.Outlined"
+                                                   Placeholder="@Localizer["Select Vulnerability"]"
+                                                   ShowSearch="true"
+                                                   Clearable="true" />
+                            </div>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <div class="pciShield-style-field-group">
+                                <MudText Class="pciShield-style-field-label">@Localizer["Payment Page"]</MudText>
+                                <EnhancedMudSelect TEntity="PaymentPageDto"
+                                                   TValue="Guid"
+                                                   Value="@_orchestrator.Assessment.PaymentPageId"
+                                                   DataProvider="@_orchestrator.PaymentPageDataProvider"
+                                                   OnItemSelected="OnPaymentPageCascadeSelected"
+                                                   Required="true"
+                                                   RequiredError="@Localizer["Payment Page is required"]"
+                                                   Class="pciShield-input pciShield-select"
+                                                   Dense="true"
+                                                   Variant="Variant.Outlined"
+                                                   Placeholder="@Localizer["Select Payment Page"]"
+                                                   ShowSearch="true"
+                                                   Clearable="true" />
+                            </div>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <div class="pciShield-style-field-group">
+                                <MudText Class="pciShield-style-field-label">@Localizer["Script"]</MudText>
+                                <EnhancedMudSelect TEntity="ScriptDto"
+                                                   TValue="Guid"
+                                                   Value="@_orchestrator.Assessment.ScriptId"
+                                                   DataProvider="@_orchestrator.ScriptDataProvider"
+                                                   OnItemSelected="OnScriptCascadeSelected"
+                                                   Required="true"
+                                                   RequiredError="@Localizer["Script is required"]"
+                                                   Class="pciShield-input pciShield-select"
+                                                   Dense="true"
+                                                   Variant="Variant.Outlined"
+                                                   Placeholder="@Localizer["Select Script"]"
+                                                   ShowSearch="true"
+                                                   Clearable="true" />
+                            </div>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <div class="pciShield-style-field-group">
+                                <MudText Class="pciShield-style-field-label">@Localizer["Assessment Code"]</MudText>
+                                <MudTextField T="string"
+                                              Value="@_orchestrator.Assessment.AssessmentCode"
+                                              ValueChanged="@(v => OnFieldChanged(s => _orchestrator.Assessment.AssessmentCode = s, v))"
+                                              MaxLength="30"
+                                              Counter="30"
+                                              Dense="true"
+                                              Immediate="true"
+                                              Variant="Variant.Outlined"
+                                              Adornment="Adornment.Start"
+                                              AdornmentIcon="@Icons.Material.Filled.QrCode"
+                                              Error="@(!string.IsNullOrEmpty(GetFieldError(() => _orchestrator.Assessment.AssessmentCode)))"
+                                              ErrorText="@(GetFieldError(() => _orchestrator.Assessment.AssessmentCode))"
+                                              Class="pciShield-input" />
+                            </div>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <div class="pciShield-style-field-group">
+                                <MudText Class="pciShield-style-field-label">@Localizer["Assessment Type"]</MudText>
+                                <MudSelect T="int"
+                                           Value="@_orchestrator.Assessment.AssessmentType"
+                                           ValueChanged="@(v => OnFieldChanged(s => _orchestrator.Assessment.AssessmentType = s, v))"
+                                           Dense="true"
+                                           AnchorOrigin="Origin.BottomCenter"
+                                           TransformOrigin="Origin.TopCenter"
+                                           Variant="Variant.Outlined"
+                                           Adornment="Adornment.Start"
+                                           AdornmentIcon="@Icons.Material.Filled.Category"
+                                           Class="pciShield-input pciShield-select">
+                                    @foreach (var lvl in AllowedAssessmentTypes)
+                                    {
+                                        <MudSelectItem Value="@lvl">
+                                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                                <MudChip T="string" Size="Size.Small" Color="Color.Primary">AssessmentType @lvl</MudChip>
+                                                <MudText Typo="Typo.body2">@(lvl)</MudText>
+                                            </MudStack>
+                                        </MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </div>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <div class="pciShield-style-field-group">
+                                <MudText Class="pciShield-style-field-label">@Localizer["Assessment Period"]</MudText>
+                                <MudTextField T="string"
+                                              Value="@_orchestrator.Assessment.AssessmentPeriod"
+                                              ValueChanged="@(v => OnFieldChanged(s => _orchestrator.Assessment.AssessmentPeriod = s, v))"
+                                              MaxLength="20"
+                                              Counter="20"
+                                              Dense="true"
+                                              Immediate="true"
+                                              Variant="Variant.Outlined"
+                                              Adornment="Adornment.Start"
+                                              AdornmentIcon="@Icons.Material.Filled.Flag"
+                                              Error="@(!string.IsNullOrEmpty(GetFieldError(() => _orchestrator.Assessment.AssessmentPeriod)))"
+                                              ErrorText="@(GetFieldError(() => _orchestrator.Assessment.AssessmentPeriod))"
+                                              Class="pciShield-input" />
+                            </div>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <div class="pciShield-style-field-group">
+                                <MudText Class="pciShield-style-field-label">@Localizer["Start Date"]</MudText>
+                                <MudDatePicker T="DateTime"
+                                               Date="@GetStartDate()"
+                                               DateChanged="OnStartDateChanged"
+                                               Culture="@CultureInfo.CurrentCulture"
+                                               DateFormat="dd/MM/yyyy"
+                                               Editable="true"
+                                               Placeholder="@Localizer["Select Date"]"
+                                               PickerVariant="PickerVariant.Dialog"
+                                               DisableToolbar="false"
+                                               Dense="true"
+                                               Variant="Variant.Outlined"
+                                               Adornment="Adornment.Start"
+                                               AdornmentIcon="@Icons.Material.Filled.CalendarToday"
+                                               Error="@(!string.IsNullOrEmpty(GetFieldError(() => _orchestrator.Assessment.StartDate)))"
+                                               ErrorText="@(GetFieldError(() => _orchestrator.Assessment.StartDate))"
+                                               Class="pciShield-input pciShield-datepicker" />
+                            </div>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <div class="pciShield-style-field-group">
+                                <MudText Class="pciShield-style-field-label">@Localizer["End Date"]</MudText>
+                                <MudDatePicker T="DateTime"
+                                               Date="@GetEndDate()"
+                                               DateChanged="OnEndDateChanged"
+                                               Culture="@CultureInfo.CurrentCulture"
+                                               DateFormat="dd/MM/yyyy"
+                                               Editable="true"
+                                               Placeholder="@Localizer["Select Date"]"
+                                               PickerVariant="PickerVariant.Dialog"
+                                               DisableToolbar="false"
+                                               Dense="true"
+                                               Variant="Variant.Outlined"
+                                               Adornment="Adornment.Start"
+                                               AdornmentIcon="@Icons.Material.Filled.CalendarToday"
+                                               Error="@(!string.IsNullOrEmpty(GetFieldError(() => _orchestrator.Assessment.EndDate)))"
+                                               ErrorText="@(GetFieldError(() => _orchestrator.Assessment.EndDate))"
+                                               Class="pciShield-input pciShield-datepicker" />
+                            </div>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <div class="pciShield-style-field-group">
+                                <MudText Class="pciShield-style-field-label">@Localizer["Completion Date"] *</MudText>
+                                <MudDatePicker T="DateTime?"
+                                               Date="@GetCompletionDate()"
+                                               DateChanged="OnCompletionDateChanged"
+                                               Culture="@CultureInfo.CurrentCulture"
+                                               DateFormat="dd/MM/yyyy"
+                                               Editable="true"
+                                               Placeholder="@Localizer["Select Date"]"
+                                               PickerVariant="PickerVariant.Dialog"
+                                               DisableToolbar="false"
+                                               Dense="true"
+                                               Variant="Variant.Outlined"
+                                               Required="true"
+                                               RequiredError="@Localizer["Completion Date is required"]"
+                                               Adornment="Adornment.Start"
+                                               AdornmentIcon="@Icons.Material.Filled.CalendarToday"
+                                               Error="@(!string.IsNullOrEmpty(GetFieldError(() => _orchestrator.Assessment.CompletionDate)))"
+                                               ErrorText="@(GetFieldError(() => _orchestrator.Assessment.CompletionDate))"
+                                               Class="pciShield-input pciShield-datepicker" />
+                            </div>
+                        </MudItem>
+                      @*   <MudItem xs="12" md="6">
+                            <div class="pciShield-style-field-group">
+                                <MudText Class="pciShield-style-field-label">@Localizer["Qsareview Required"]</MudText>
+                                <MudTextField T="string"
+                                              Value="@_orchestrator.Assessment.QSAReviewRequired"
+                                              ValueChanged="@(v => OnFieldChanged(s => _orchestrator.Assessment.QSAReviewRequired = s, v))"
+                                              MaxLength="100"
+                                              Counter="100"
+                                              Dense="true"
+                                              Immediate="true"
+                                              Variant="Variant.Outlined"
+                                              Adornment="Adornment.Start"
+                                              AdornmentIcon="@Icons.Material.Filled.Flag"
+                                              Error="@(!string.IsNullOrEmpty(GetFieldError(() => _orchestrator.Assessment.QSAReviewRequired)))"
+                                              ErrorText="@(GetFieldError(() => _orchestrator.Assessment.QSAReviewRequired))"
+                                              Class="pciShield-input" />
+                            </div>
+                        </MudItem> *@
+                    </MudGrid>
+                </MudPaper>
+
+                <!-- Compliance Information Section -->
+                <MudPaper Class="pciShield-style-form-section" Elevation="0">
+                    <MudText Class="pciShield-style-form-section-title">@Localizer["Compliance Information"]</MudText>
+                    <MudGrid Spacing="3">
+                        <MudItem xs="12" md="4">
+                            <div class="pciShield-style-field-group">
+                                <MudText Class="pciShield-style-field-label">@Localizer["Rank"]</MudText>
+                                <MudNumericField T="int"
+                                                 Value="@_orchestrator.Assessment.Rank"
+                                                 ValueChanged="@(v => OnFieldChanged(s => _orchestrator.Assessment.Rank = s, v))"
+                                                 Min="0"
+                                                 Max="100"
+                                                 Dense="true"
+                                                 Immediate="true"
+                                                 Variant="Variant.Outlined"
+                                                 Adornment="Adornment.Start"
+                                                 AdornmentIcon="@Icons.Material.Filled.EmojiEvents"
+                                                 Error="@(!string.IsNullOrEmpty(GetFieldError(() => _orchestrator.Assessment.Rank)))"
+                                                 ErrorText="@(GetFieldError(() => _orchestrator.Assessment.Rank))"
+                                                 Class="pciShield-input" />
+                            </div>
+                        </MudItem>
+                       @*  <MudItem xs="12" md="4">
+                            <div class="pciShield-style-field-group">
+                                <MudText Class="pciShield-style-field-label">@Localizer["Compliance Score"] *</MudText>
+                                <MudNumericField T="decimal"
+                                                 Value="@_orchestrator.Assessment.ComplianceScore"
+                                                 ValueChanged="@(v => OnFieldChanged(s => _orchestrator.Assessment.ComplianceScore = s, v))"
+                                                 Min="0"
+                                                 Max="999999999"
+                                                 Format="N2"
+                                                 Culture="@CultureInfo.CurrentCulture"
+                                                 Dense="true"
+                                                 Immediate="true"
+                                                 Variant="Variant.Outlined"
+                                                 Required="true"
+                                                 RequiredError="@Localizer["Compliance Score is required"]"
+                                                 Adornment="Adornment.Start"
+                                                 AdornmentIcon="@Icons.Material.Filled.Grade"
+                                                 Error="@(!string.IsNullOrEmpty(GetFieldError(() => _orchestrator.Assessment.ComplianceScore)))"
+                                                 ErrorText="@(GetFieldError(() => _orchestrator.Assessment.ComplianceScore))"
+                                                 Class="pciShield-input" />
+                            </div>
+                        </MudItem> *@
+                    </MudGrid>
+                </MudPaper>
+
+                <!-- System Information Section -->
+                <MudPaper Class="pciShield-style-form-section" Elevation="0">
+                    <MudText Class="pciShield-style-form-section-title">@Localizer["System Information"]</MudText>
+                    <MudGrid Spacing="3">
+                        <MudItem xs="12" md="6">
+                            <div class="pciShield-style-field-group">
+                                <MudText Class="pciShield-style-field-label">@Localizer["Created At"]</MudText>
+                                <MudDatePicker T="DateTime"
+                                               Date="@GetCreatedAt()"
+                                               DateChanged="OnCreatedAtChanged"
+                                               Culture="@CultureInfo.CurrentCulture"
+                                               DateFormat="dd/MM/yyyy HH:mm"
+                                               Editable="false"
+                                               Dense="true"
+                                               Variant="Variant.Outlined"
+                                               Disabled="true"
+                                               Adornment="Adornment.Start"
+                                               AdornmentIcon="@Icons.Material.Filled.AccessTime"
+                                               Class="pciShield-input pciShield-datepicker" />
+                            </div>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <div class="pciShield-style-field-group">
+                                <MudText Class="pciShield-style-field-label">@Localizer["Updated At"]</MudText>
+                                <MudDatePicker T="DateTime?"
+                                               Date="@GetUpdatedAt()"
+                                               DateChanged="OnUpdatedAtChanged"
+                                               Culture="@CultureInfo.CurrentCulture"
+                                               DateFormat="dd/MM/yyyy HH:mm"
+                                               Editable="false"
+                                               Dense="true"
+                                               Variant="Variant.Outlined"
+                                               Disabled="true"
+                                               Adornment="Adornment.Start"
+                                               AdornmentIcon="@Icons.Material.Filled.Update"
+                                               Class="pciShield-input pciShield-datepicker" />
+                            </div>
+                        </MudItem>
+                    </MudGrid>
+                </MudPaper>
+
+                <!-- Action Buttons -->
+                <MudDivider Class="my-4" />
+                <MudPaper Class="pciShield-container-secondary pa-4" Elevation="0">
+                    <MudStack Row="true" Spacing="2" Justify="Justify.FlexEnd">
+                        <MudButton Variant="Variant.Outlined"
+                                   Color="Color.Default"
+                                   Class="pciShield-btn pciShield-btn-secondary"
+                                   OnClick="Cancel">
+                            @Localizer["Cancel"]
+                        </MudButton>
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   Class="pciShield-btn pciShield-btn-primary"
+                                   OnClick="OnSaveAssessment"
+                                   Disabled="@(!_formIsValid)">
+                            @Localizer["Save Assessment"]
+                        </MudButton>
+                    </MudStack>
+                </MudPaper>
+            </MudForm>
+        </MudTabPanel>
+    </MudTabs>
+
+
+    @if (_mainTabActivated)
+    {
+        <MudDivider Class="my-4" />
+
+        <MudTabs Class="pciShield-tabs-enhanced mt-4"
+                 Outlined="true"
+                 Rounded="true"
+                 ApplyEffectsToContainer="true"
+                 PanelClass="pciShield-container pa-4 mt-3">
+
+            <!-- ROCPackages Tab -->
+            <MudTabPanel Text="@Localizer["Rocpackages"]"
+                         Icon="@Icons.Material.Filled.TableView"
+                         BadgeData="@(_orchestrator.Assessment.ROCPackages?.Count ?? 0)"
+                         BadgeColor="Color.Primary">
+                <AssessmentROCPackageChildTab AssessmentId="@_orchestrator.Assessment.AssessmentId"
+                                             ROCPackages="@_orchestrator.Assessment.ROCPackages"
+                                             _rocpackageEditingUserId="@_editingUserId"
+                                             IsLoading="@_orchestrator.IsLoading"
+                                             OnError="HandleChildError"
+                                             OnROCPackageAdded="@OnROCPackageChildTabAdded"
+                                             OnROCPackageUpdated="@OnROCPackageChildTabUpdated"
+                                             OnROCPackageDeleted="@OnROCPackageChildTabDeleted" />
+            </MudTabPanel>
+        </MudTabs>
+    }
+</MudPaper>
+
+<!-- Loading Overlay -->
+<MudOverlay Visible="@_orchestrator.IsLoading"
+            DarkBackground="true"
+            ZIndex="9999"
+            AutoClose="false"
+            Class="pciShield-overlay">
+    <MudProgressCircular Indeterminate="true"
+                         Color="Color.Primary"
+                         Size="Size.Large" />
+</MudOverlay>
+
+</div>
+
+@code {
+    private int _activeTabIndex;
+    private MudForm _editForm;
+    private bool _formIsValid;
+    private string[] _formErrors = System.Array.Empty<string>();
+    private bool _mainTabActivated = true;
+    private bool _rocpackageTabActivated;
+    private string _editingUserId = Guid.NewGuid().ToString();
+    private string _approvalComment;
+    private readonly CompositeDisposable _disposables = new();
+    private Subject<Unit> _refreshSubject = new();
+    private List<BreadcrumbItem> _breadCrumbs = new()
+    {
+        new("Home", href: "#"),
+        new("List", href: "/AssessmentList"),
+        new("Assessment", href: null, disabled: true)
+    };
+
+    [Parameter]
+    public Guid AssessmentId { get; set; }
+
+    private static readonly int[] AllowedAssessmentTypes = { 1, 2, 3, 4 };
+
+    private AssessmentMasterOrchestrator _orchestrator;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _logger.LogInformation("Initializing AssessmentMasterPage for Id={Id}", AssessmentId);
+        _breadCrumbs = new()
+        {
+            new BreadcrumbItem(Localizer["Home"], href: "#"),
+            new BreadcrumbItem(Localizer["List"], href: "/AssessmentList"),
+            new BreadcrumbItem(Localizer["Assessment"], href: null, disabled: true)
+        };
+        _orchestrator = new AssessmentMasterOrchestrator(
+            AssessmentHttpService,
+            SignalRStrategy,
+            _logger,
+            AssessmentValidator
+        );
+        _orchestrator.RefreshRequested
+            .Throttle(TimeSpan.FromMilliseconds(150))
+            .Subscribe(_ => InvokeAsync(StateHasChanged))
+            .DisposeWith(_disposables);
+        await _orchestrator.InitializeAsync(AssessmentId, _editingUserId);
+        _editForm = new MudForm();
+        await base.OnInitializedAsync();
+    }
+
+    Task IHandleEvent.HandleEventAsync(EventCallbackWorkItem item, object? arg)
+        => item.InvokeAsync(arg);
+
+    protected override bool ShouldRender() => true;
+
+    private DateTime GetStartDate()
+    {
+        if (_orchestrator?.Assessment?.StartDate == null ||
+            _orchestrator.Assessment.StartDate == default ||
+            _orchestrator.Assessment.StartDate == DateTime.MinValue)
+        {
+            return DateTime.Now;
+        }
+
+        if (_orchestrator.Assessment.StartDate.Kind == DateTimeKind.Utc)
+        {
+            return _orchestrator.Assessment.StartDate.ToLocalTime();
+        }
+        if (_orchestrator.Assessment.StartDate.Kind != DateTimeKind.Local)
+        {
+            return _orchestrator.Assessment.StartDate.ToLocalTime();
+        }
+        return _orchestrator.Assessment.StartDate;
+    }
+
+    private void OnStartDateChanged(DateTime? newDate)
+    {
+        if (newDate.HasValue)
+        {
+            _orchestrator.Assessment.StartDate = newDate.Value;
+            _orchestrator.RefreshRequested.OnNext(Unit.Default);
+        }
+    }
+
+    private DateTime GetEndDate()
+    {
+        if (_orchestrator?.Assessment?.EndDate == null ||
+            _orchestrator.Assessment.EndDate == default ||
+            _orchestrator.Assessment.EndDate == DateTime.MinValue)
+        {
+            return DateTime.Now;
+        }
+
+        if (_orchestrator.Assessment.EndDate.Kind == DateTimeKind.Utc)
+        {
+            return _orchestrator.Assessment.EndDate.ToLocalTime();
+        }
+        if (_orchestrator.Assessment.EndDate.Kind != DateTimeKind.Local)
+        {
+            return _orchestrator.Assessment.EndDate.ToLocalTime();
+        }
+        return _orchestrator.Assessment.EndDate;
+    }
+
+    private void OnEndDateChanged(DateTime? newDate)
+    {
+        if (newDate.HasValue)
+        {
+            _orchestrator.Assessment.EndDate = newDate.Value;
+            _orchestrator.RefreshRequested.OnNext(Unit.Default);
+        }
+    }
+
+    private DateTime GetCompletionDate()
+    {
+        if (_orchestrator?.Assessment?.CompletionDate == null ||
+            _orchestrator.Assessment.CompletionDate == default ||
+            _orchestrator.Assessment.CompletionDate == DateTime.MinValue)
+        {
+            return DateTime.Now;
+        }
+
+        if (_orchestrator.Assessment.CompletionDate.Value.Kind == DateTimeKind.Utc)
+        {
+            return _orchestrator.Assessment.CompletionDate.Value.ToLocalTime();
+        }
+        if (_orchestrator.Assessment.CompletionDate.Value.Kind != DateTimeKind.Local)
+        {
+            return _orchestrator.Assessment.CompletionDate.Value.ToLocalTime();
+        }
+        return _orchestrator.Assessment.CompletionDate.Value;
+    }
+
+    private void OnCompletionDateChanged(DateTime? newDate)
+    {
+        if (newDate.HasValue)
+        {
+            _orchestrator.Assessment.CompletionDate = newDate.Value;
+            _orchestrator.RefreshRequested.OnNext(Unit.Default);
+        }
+    }
+
+    private DateTime GetCreatedAt()
+    {
+        if (_orchestrator?.Assessment?.CreatedAt == null ||
+            _orchestrator.Assessment.CreatedAt == default ||
+            _orchestrator.Assessment.CreatedAt == DateTime.MinValue)
+        {
+            return DateTime.Now;
+        }
+
+        if (_orchestrator.Assessment.CreatedAt.Kind == DateTimeKind.Utc)
+        {
+            return _orchestrator.Assessment.CreatedAt.ToLocalTime();
+        }
+        if (_orchestrator.Assessment.CreatedAt.Kind != DateTimeKind.Local)
+        {
+            return _orchestrator.Assessment.CreatedAt.ToLocalTime();
+        }
+        return _orchestrator.Assessment.CreatedAt;
+    }
+
+    private void OnCreatedAtChanged(DateTime? newDate)
+    {
+        if (newDate.HasValue)
+        {
+            _orchestrator.Assessment.CreatedAt = newDate.Value;
+            _orchestrator.RefreshRequested.OnNext(Unit.Default);
+        }
+    }
+
+    private DateTime GetUpdatedAt()
+    {
+        if (_orchestrator?.Assessment?.UpdatedAt == null ||
+            _orchestrator.Assessment.UpdatedAt == default ||
+            _orchestrator.Assessment.UpdatedAt == DateTime.MinValue)
+        {
+            return DateTime.Now;
+        }
+
+        if (_orchestrator.Assessment.UpdatedAt.Value.Kind == DateTimeKind.Utc)
+        {
+            return _orchestrator.Assessment.UpdatedAt.Value.ToLocalTime();
+        }
+        if (_orchestrator.Assessment.UpdatedAt.Value.Kind != DateTimeKind.Local)
+        {
+            return _orchestrator.Assessment.UpdatedAt.Value.ToLocalTime();
+        }
+        return _orchestrator.Assessment.UpdatedAt.Value;
+    }
+
+    private void OnUpdatedAtChanged(DateTime? newDate)
+    {
+        if (newDate.HasValue)
+        {
+            _orchestrator.Assessment.UpdatedAt = newDate.Value;
+            _orchestrator.RefreshRequested.OnNext(Unit.Default);
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try { _disposables.Dispose(); } catch { }
+        try { _orchestrator?.Dispose(); } catch { }
+    }
+
+    private void OnTabChanged(int idx)
+    {
+        _mainTabActivated = false;
+        switch (idx)
+        {
+            case 0:
+                _mainTabActivated = true;
+                _orchestrator.RefreshRequested.OnNext(Unit.Default);
+                break;
+            case 1:
+                _rocpackageTabActivated = true;
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void OnFieldChanged<T>(Action<T> setter, T value)
+    {
+        setter(value);
+        _orchestrator.RefreshRequested.OnNext(Unit.Default);
+    }
+
+    private string? GetFieldError<T>(Expression<Func<T>> expression)
+    {
+        if (_formErrors == null || !_formErrors.Any())
+            return string.Empty;
+        var memberExpression = expression.Body as MemberExpression;
+        if (memberExpression == null)
+            return null;
+        var propertyName = memberExpression.Member.Name;
+        return _formErrors.FirstOrDefault(e => e.Contains(propertyName)) ?? string.Empty;
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        await OnSaveAssessment();
+    }
+
+    private async Task OnSaveAssessment()
+    {
+        try
+        {
+            if (!_formIsValid && _formErrors.Any())
+            {
+                foreach (var err in _formErrors)
+                {
+                    Snackbar.Add($"{Localizer["Error saving assessment"]}: {err}", Severity.Error);
+                }
+                return;
+            }
+            var result = await _orchestrator.SaveAssessmentAsync();
+            await result.Match<Task>(
+                Right: async _ =>
+                {
+                    Snackbar.Add(Localizer["Assessment saved successfully"], Severity.Success);
+                    NavigationManager.NavigateTo("/AssessmentList");
+                },
+                Left: async error =>
+                {
+                    Snackbar.Add($"{Localizer["Error saving assessment"]}: {error.Message}", Severity.Error);
+                    _logger.LogError("Save failed: {0}", error.Message);
+                }
+            );
+        }
+        catch (ValidationException vex)
+        {
+            foreach (var err in vex.Errors)
+                Snackbar.Add($"{Localizer["Error saving assessment"]}: {err.ErrorMessage}", Severity.Error);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"{Localizer["Error saving assessment"]}: {ex.Message}", Severity.Error);
+            _logger.LogError(ex, "Error saving assessment");
+        }
+    }
+
+    private void Cancel()
+    {
+        NavigationManager.NavigateTo("/AssessmentList");
+    }
+
+    private Task OnROCPackageChildTabAdded(ROCPackageDto cp) => _orchestrator.OnROCPackageChildTabAdded(cp);
+    private Task OnROCPackageChildTabUpdated(ROCPackageDto cp) => _orchestrator.OnROCPackageChildTabUpdated(cp);
+    private Task OnROCPackageChildTabDeleted(ROCPackageDto cp) => _orchestrator.OnROCPackageChildTabDeleted(cp);
+
+    private Task HandleChildError((Exception ex, ErrorHandlingService.ClientOperationContext ctx) data)
+    {
+        _logger.LogError(data.ex, "Child error in context {Ctx}", data.ctx);
+        Snackbar.Add(data.ex.Message, Severity.Error);
+        return Task.CompletedTask;
+    }
+
+    private void OnMerchantParentChanged(MerchantDto selected)
+    {
+        _orchestrator.UpdateMerchant(selected);
+    }
+
+    private async Task OnScanScheduleCascadeSelected(ScanScheduleDto selected)
+    {
+        _orchestrator.UpdateCascadeScanSchedule(selected);
+    }
+
+    private async Task OnVulnerabilityCascadeSelected(VulnerabilityDto selected)
+    {
+        _orchestrator.UpdateCascadeVulnerability(selected);
+    }
+
+    private async Task OnPaymentPageCascadeSelected(PaymentPageDto selected)
+    {
+        _orchestrator.UpdateCascadePaymentPage(selected);
+    }
+
+    private async Task OnScriptCascadeSelected(ScriptDto selected)
+    {
+        _orchestrator.UpdateCascadeScript(selected);
+    }
+
+}

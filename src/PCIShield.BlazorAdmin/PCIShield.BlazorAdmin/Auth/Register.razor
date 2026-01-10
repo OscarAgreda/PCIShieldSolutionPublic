@@ -1,0 +1,268 @@
+@page "/register"
+@using PCIShield.BlazorAdmin.Client.Auth
+@using PCIShield.BlazorMauiShared.Models.Auth
+@using LanguageExt
+@using System.Reactive.Linq
+@using System.Reactive
+@using System.Reactive.Disposables
+@using System.ComponentModel.DataAnnotations
+@using MudBlazor
+@inject NavigationManager NavigationManager
+@inject AuthOrchestrator _authOrchestrator
+@inject ISnackbar Snackbar
+@implements IDisposable
+
+<MudGrid Class="d-flex justify-center align-center" Style="height: 100vh;">
+    <MudItem xs="12" sm="8" md="6" lg="4">
+        <MudPaper Elevation="3" Class="pa-8">
+            <MudText Typo="Typo.h4" Class="mb-4">PCISHIELD ERP Registration</MudText>
+
+            <MudTabs @bind-ActivePanelIndex="_activeTabIndex">
+                <MudTabPanel Text="Merchant">
+                    <MudForm @ref="_merchantForm" Model="@_merchantRegisterModel">
+                        <MudTextField @bind-Value="_merchantRegisterModel.Username"
+                                      Label="Username"
+                                      Required="true"
+                                      RequiredError="Username is required"
+                                      Class="mt-3"
+                                      Disabled="@_authOrchestrator.IsLoading" />
+
+                        <MudTextField @bind-Value="_merchantRegisterModel.Email"
+                                      Label="Email"
+                                      Required="true"
+                                      RequiredError="Email is required"
+                                      Validation="@(new EmailAddressAttribute() {ErrorMessage = "The email address is invalid"})"
+                                      Class="mt-3"
+                                      Disabled="@_authOrchestrator.IsLoading" />
+
+                        <MudTextField @bind-Value="_merchantRegisterModel.Password"
+                                      Label="Password"
+                                      HelperText="Enter your password"
+                                      InputType="@_passwordInputType"
+                                      Adornment="Adornment.End"
+                                      AdornmentIcon="@_passwordInputIcon"
+                                      OnAdornmentClick="TogglePasswordVisibility"
+                                      AdornmentAriaLabel="Show Password"
+                                      Required="true"
+                                      RequiredError="Password is required"
+                                      Class="mt-3"
+                                      Disabled="@_authOrchestrator.IsLoading" />
+
+                        <MudTextField @bind-Value="_merchantRegisterModel.FirstName"
+                                      Label="First Name"
+                                      Required="true"
+                                      RequiredError="First name is required"
+                                      Class="mt-3"
+                                      Disabled="@_authOrchestrator.IsLoading" />
+
+                        <MudTextField @bind-Value="_merchantRegisterModel.LastName"
+                                      Label="Last Name"
+                                      Required="true"
+                                      RequiredError="Last name is required"
+                                      Class="mt-3"
+                                      Disabled="@_authOrchestrator.IsLoading" />
+
+                        <MudTextField @bind-Value="_merchantRegisterModel.Phone"
+                                      Label="Phone"
+                                      Required="true"
+                                      RequiredError="Phone is required"
+                                      Class="mt-3"
+                                      Disabled="@_authOrchestrator.IsLoading" />
+
+                        <MudButton OnClick="RegisterMerchantAsync"
+                                   Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   FullWidth="true"
+                                   Class="mt-6"
+                                   Disabled="@_authOrchestrator.IsLoading">
+                            @if (_authOrchestrator.IsLoading)
+                            {
+                                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                                <span>Processing...</span>
+                            }
+                            else
+                            {
+                                <span>Register as Merchant</span>
+                            }
+                        </MudButton>
+                    </MudForm>
+                </MudTabPanel>
+
+                <MudTabPanel Text="ComplianceOfficer">
+                    <MudForm @ref="_complianceOfficerForm" Model="@_complianceOfficerRegisterModel">
+                        <MudTextField @bind-Value="_complianceOfficerRegisterModel.Username"
+                                      Label="Username"
+                                      Required="true"
+                                      RequiredError="Username is required"
+                                      Class="mt-3"
+                                      Disabled="@_authOrchestrator.IsLoading" />
+
+                        <MudTextField @bind-Value="_complianceOfficerRegisterModel.Email"
+                                      Label="Email"
+                                      Required="true"
+                                      RequiredError="Email is required"
+                                      Validation="@(new EmailAddressAttribute() {ErrorMessage = "The email address is invalid"})"
+                                      Class="mt-3"
+                                      Disabled="@_authOrchestrator.IsLoading" />
+
+                        <MudTextField @bind-Value="_complianceOfficerRegisterModel.Password"
+                                      Label="Password"
+                                      HelperText="Enter your password"
+                                      InputType="@_passwordInputType"
+                                      Adornment="Adornment.End"
+                                      AdornmentIcon="@_passwordInputIcon"
+                                      OnAdornmentClick="TogglePasswordVisibility"
+                                      AdornmentAriaLabel="Show Password"
+                                      Required="true"
+                                      RequiredError="Password is required"
+                                      Class="mt-3"
+                                      Disabled="@_authOrchestrator.IsLoading" />
+
+                        <MudTextField @bind-Value="_complianceOfficerRegisterModel.FirstName"
+                                      Label="First Name"
+                                      Required="true"
+                                      RequiredError="First name is required"
+                                      Class="mt-3"
+                                      Disabled="@_authOrchestrator.IsLoading" />
+
+                        <MudTextField @bind-Value="_complianceOfficerRegisterModel.LastName"
+                                      Label="Last Name"
+                                      Required="true"
+                                      RequiredError="Last name is required"
+                                      Class="mt-3"
+                                      Disabled="@_authOrchestrator.IsLoading" />
+
+                        <MudTextField @bind-Value="_complianceOfficerRegisterModel.Phone"
+                                      Label="Phone"
+                                      Required="true"
+                                      RequiredError="Phone is required"
+                                      Class="mt-3"
+                                      Disabled="@_authOrchestrator.IsLoading" />
+
+                        <MudButton OnClick="RegisterComplianceOfficerAsync"
+                                   Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   FullWidth="true"
+                                   Class="mt-6"
+                                   Disabled="@_authOrchestrator.IsLoading">
+                            @if (_authOrchestrator.IsLoading)
+                            {
+                                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                                <span>Processing...</span>
+                            }
+                            else
+                            {
+                                <span>Register as ComplianceOfficer</span>
+                            }
+                        </MudButton>
+                    </MudForm>
+                </MudTabPanel>
+            </MudTabs>
+
+            <div class="d-flex justify-center mt-6">
+                <MudButton Variant="Variant.Text"
+                           Color="Color.Secondary"
+                           OnClick="NavigateToLogin"
+                           Disabled="@_authOrchestrator.IsLoading">
+                    Already have an account? Login
+                </MudButton>
+            </div>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private MudForm _merchantForm;
+    private MudForm _complianceOfficerForm;
+    private RegisterRequest _merchantRegisterModel = new RegisterRequest();
+    private RegisterRequest _complianceOfficerRegisterModel = new RegisterRequest();
+    private int _activeTabIndex = 0;
+    private bool _passwordVisible = false;
+    private InputType _passwordInputType = InputType.Password;
+    private string _passwordInputIcon = Icons.Material.Filled.VisibilityOff;
+    private readonly System.Reactive.Disposables.CompositeDisposable _disposables = new();
+
+    protected override void OnInitialized()
+    {
+        _authOrchestrator.RefreshRequested
+            .Throttle(TimeSpan.FromMilliseconds(150))
+            .Subscribe(_ => InvokeAsync(StateHasChanged))
+            .DisposeWith(_disposables);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // If already authenticated, navigate to home
+        await _authOrchestrator.InitializeAsync();
+
+        if (_authOrchestrator.IsAuthenticated)
+        {
+            NavigationManager.NavigateTo("/");
+        }
+    }
+
+    private void TogglePasswordVisibility()
+    {
+        _passwordVisible = !_passwordVisible;
+        _passwordInputType = _passwordVisible ? InputType.Text : InputType.Password;
+        _passwordInputIcon = _passwordVisible ? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff;
+    }
+
+    private async Task RegisterMerchantAsync()
+    {
+        await _merchantForm.Validate();
+
+        if (_merchantForm.IsValid)
+        {
+            var result = await _authOrchestrator.RegisterMerchantAsync(_merchantRegisterModel);
+
+            await result.Match(
+                Right: _ =>
+                {
+                    Snackbar.Add("Registration successful! Please check your email to confirm your account.", Severity.Success);
+                    NavigationManager.NavigateTo("/login");
+                    return Task.CompletedTask;
+                },
+                Left: error =>
+                {
+                    Snackbar.Add(error, Severity.Error);
+                    return Task.CompletedTask;
+                }
+            );
+        }
+    }
+
+    private async Task RegisterComplianceOfficerAsync()
+    {
+        await _complianceOfficerForm.Validate();
+
+        if (_complianceOfficerForm.IsValid)
+        {
+            var result = await _authOrchestrator.RegisterComplianceOfficerAsync(_complianceOfficerRegisterModel);
+
+            await result.Match(
+                Right: _ =>
+                {
+                    Snackbar.Add("Registration successful! Please check your email to confirm your account.", Severity.Success);
+                    NavigationManager.NavigateTo("/login");
+                    return Task.CompletedTask;
+                },
+                Left: error =>
+                {
+                    Snackbar.Add(error, Severity.Error);
+                    return Task.CompletedTask;
+                }
+            );
+        }
+    }
+
+    private void NavigateToLogin()
+    {
+        NavigationManager.NavigateTo("/login");
+    }
+
+    public void Dispose()
+    {
+        _disposables.Dispose();
+    }
+}

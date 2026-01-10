@@ -1,0 +1,44 @@
+﻿@* ConfirmDialog.razor *@
+<MudDialog DisableSidePadding="true">
+    <TitleContent>
+        <div class="d-flex justify-center flex-column align-center pa-4">
+            <MudAvatar Color="Color" Size="Size.Large" Class="mb-3">
+                <MudIcon Icon="@Icon" Size="Size.Medium" />
+            </MudAvatar>
+            <MudText Typo="Typo.h6" Align="Align.Center">@Title</MudText>
+        </div>
+    </TitleContent>
+    <DialogContent>
+        <MudText Align="Align.Center" Class="px-4 pb-2">@ContentText</MudText>
+    </DialogContent>
+    <DialogActions>
+        <div class="d-flex justify-center pa-4 w-100">
+            <MudButton Variant="Variant.Outlined" 
+                       Color="Color.Default" 
+                       OnClick="Cancel" 
+                       Class="mr-2">Cancel</MudButton>
+            <MudButton Variant="Variant.Filled"
+                       Color="@Color"
+                       OnClick="Submit">@ButtonText</MudButton>
+        </div>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialog MudDialog { get; set; }
+    [Parameter] public string Title { get; set; }
+    [Parameter] public string Icon { get; set; }
+    [Parameter] public string ContentText { get; set; }
+    [Parameter] public string ButtonText { get; set; }
+    [Parameter] public Color Color { get; set; }
+    
+    private void Submit()
+    {
+        MudDialog.CloseAsync(DialogResult.Ok(true));
+    }
+    
+    private void Cancel()
+    {
+        MudDialog.CloseAsync();
+    }
+}

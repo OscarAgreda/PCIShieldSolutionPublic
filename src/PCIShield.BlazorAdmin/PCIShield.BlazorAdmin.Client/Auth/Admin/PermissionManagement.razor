@@ -1,0 +1,309 @@
+﻿@page "/admin/permissions"
+@attribute [Authorize(Roles = "Administrator")]
+@using Microsoft.AspNetCore.Authorization
+@using PCIShield.BlazorMauiShared.Auth
+@using System.ComponentModel.DataAnnotations
+@inject NavigationManager NavManager
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>Permission Management</PageTitle>
+
+<MudBreadcrumbs Items="_breadCrumbs" Separator="|" Class="pciShield-breadcrumb mb-4"></MudBreadcrumbs>
+
+<MudPaper Class="pciShield-container pciShield-shadow mb-4" Elevation="0">
+    <MudGrid Class="pciShield-grid" Style="width: 100%;">
+        <MudItem xs="12" sm="6" Class="pciShield-grid-item">
+            <MudText Class="pciShield-title-page">Permission Management</MudText>
+            <MudText Class="pciShield-text-body mt-2">Granular access control and permission assignments</MudText>
+        </MudItem>
+        <MudItem xs="12" sm="6" Class="d-flex align-end justify-end">
+            <MudButtonGroup Variant="Variant.Outlined">
+                <MudButton Color="Color.Primary" 
+                           StartIcon="@Icons.Material.Filled.ViewList"
+                           OnClick="@(() => _viewMode = ViewMode.List)">
+                    List View
+                </MudButton>
+                <MudButton Color="Color.Info" 
+                           StartIcon="@Icons.Material.Filled.GridView"
+                           OnClick="@(() => _viewMode = ViewMode.Matrix)">
+                    Matrix View
+                </MudButton>
+            </MudButtonGroup>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+@if (_isLoading)
+{
+    <MudPaper Class="pa-8 text-center" Elevation="1">
+        <MudProgressCircular Indeterminate="true" />
+        <MudText Class="mt-2">Loading permissions...</MudText>
+    </MudPaper>
+}
+else if (_viewMode == ViewMode.List)
+{
+    <MudPaper Elevation="1" Class="pciShield-container pciShield-shadow">
+        @foreach (var category in _catalog)
+        {
+            <MudExpansionPanel Class="mb-2">
+                <TitleContent>
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                        <MudIcon Icon="@GetCategoryIcon(category.Category)" Color="Color.Primary" />
+                        <MudText Typo="Typo.h6">@category.Category</MudText>
+                        <MudChip T="bool" Size="Size.Small" Color="Color.Info">@category.Permissions.Count permissions</MudChip>
+                    </MudStack>
+                </TitleContent>
+                <ChildContent>
+                    <MudDataGrid T="PermissionListItemDto"
+                                 Items="@category.Permissions"
+                                 Dense="true"
+                                 Hover="true"
+                                 Striped="true">
+                        <Columns>
+                            <TemplateColumn Title="Permission" Sortable="true">
+                                <CellTemplate>
+                                    <MudStack Spacing="0">
+                                        <MudText Typo="Typo.body2"><strong>@context.Item.DisplayName</strong></MudText>
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">@context.Item.Key</MudText>
+                                        @if (!string.IsNullOrEmpty(context.Item.Description))
+                                        {
+                                            <MudText Typo="Typo.caption" Color="Color.Secondary">@context.Item.Description</MudText>
+                                        }
+                                    </MudStack>
+                                </CellTemplate>
+                            </TemplateColumn>
+                            <TemplateColumn Title="Type" CellClass="text-center">
+                                <CellTemplate>
+                                    @if (context.Item.IsSystemPermission)
+                                    {
+                                        <MudChip Icon="@Icons.Material.Filled.Shield" Color="Color.Warning" Size="Size.Small">System</MudChip>
+                                    }
+                                    else
+                                    {
+                                        <MudChip Icon="@Icons.Material.Filled.Extension" Color="Color.Info" Size="Size.Small">Custom</MudChip>
+                                    }
+                                </CellTemplate>
+                            </TemplateColumn>
+                            <TemplateColumn Title="Assigned To" CellClass="text-center">
+                                <CellTemplate>
+                                    <MudStack Row="true" Spacing="1" Justify="Justify.Center">
+                                        @if (context.Item.RoleCount > 0)
+                                        {
+                                            <MudChip Size="Size.Small" Color="Color.Primary">@context.Item.RoleCount roles</MudChip>
+                                        }
+                                        @if (context.Item.UserCount > 0)
+                                        {
+                                            <MudChip Size="Size.Small" Color="Color.Secondary">@context.Item.UserCount users</MudChip>
+                                        }
+                                        @if (context.Item.RoleCount == 0 && context.Item.UserCount == 0)
+                                        {
+                                            <MudText Typo="Typo.body2" Color="Color.Secondary">Not assigned</MudText>
+                                        }
+                                    </MudStack>
+                                </CellTemplate>
+                            </TemplateColumn>
+                        </Columns>
+                    </MudDataGrid>
+                </ChildContent>
+            </MudExpansionPanel>
+        }
+    </MudPaper>
+}
+else
+{
+    @* Matrix View *@
+    <MudPaper Elevation="1" Class="pciShield-container pciShield-shadow pa-4">
+        <MudText Typo="Typo.h6" Class="mb-4">Role Permission Matrix</MudText>
+        
+        <MudSelect T="string" 
+                   @bind-Value="_selectedRoleForMatrix" 
+                   Label="Select Role to View/Edit Permissions"
+                   Variant="Variant.Outlined"
+                   Class="mb-4">
+            @foreach (var role in _availableRoles)
+            {
+                <MudSelectItem T="string" Value="@role.Id">@role.Name</MudSelectItem>
+            }
+        </MudSelect>
+
+        @if (!string.IsNullOrEmpty(_selectedRoleForMatrix))
+        {
+            <MudButton Variant="Variant.Filled" 
+                       Color="Color.Success" 
+                       OnClick="SaveRolePermissions"
+                       Class="mb-4"
+                       Disabled="_isSaving"
+                       StartIcon="@Icons.Material.Filled.Save">
+                @if (_isSaving)
+                {
+                    <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                    <MudText Class="ms-2">Saving...</MudText>
+                }
+                else
+                {
+                    <MudText>Save Permission Changes</MudText>
+                }
+            </MudButton>
+
+            @foreach (var category in _catalog)
+            {
+                <MudPaper Class="pa-3 mb-3" Outlined="true">
+                    <MudText Typo="Typo.subtitle1" Class="mb-2">
+                        <MudIcon Icon="@GetCategoryIcon(category.Category)" Size="Size.Small" />
+                        @category.Category
+                    </MudText>
+                    <MudGrid Spacing="2">
+                        @foreach (var permission in category.Permissions)
+                        {
+                            <MudItem xs="12" sm="6" md="4">
+                                <MudCheckBox @bind-Value="@_selectedPermissions[permission.Id]"
+                                             Color="Color.Primary"
+                                             Dense="true"
+                                             Label="@permission.DisplayName">
+                                    @permission.DisplayName
+                                </MudCheckBox>
+                                @if (!string.IsNullOrEmpty(permission.Description))
+                                {
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-8">
+                                        @permission.Description
+                                    </MudText>
+                                }
+                            </MudItem>
+                        }
+                    </MudGrid>
+                </MudPaper>
+            }
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Info">Select a role to view and modify its permissions.</MudAlert>
+        }
+    </MudPaper>
+}
+
+@code {
+    private enum ViewMode { List, Matrix }
+    
+    private ViewMode _viewMode = ViewMode.List;
+    private List<PermissionCatalogDto> _catalog = new();
+    private List<RoleListItemDto> _availableRoles = new();
+    private bool _isLoading = true;
+    private bool _isSaving;
+    private string _selectedRoleForMatrix = string.Empty;
+    private Dictionary<Guid, bool> _selectedPermissions = new();
+
+    private List<BreadcrumbItem> _breadCrumbs = new()
+    {
+        new("Home", href: "/"),
+        new("Administration", href: "/admin/dashboard"),
+        new("Permissions", href: null, disabled: true)
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        _isLoading = true;
+        StateHasChanged();
+
+        // Load permission catalog
+        var catalogResult = await AdminService.GetPermissionCatalogAsync();
+        catalogResult.Match(
+            Right: catalog => _catalog = catalog,
+            Left: error => Snackbar.Add($"Error loading permissions: {error}", Severity.Error)
+        );
+
+        // Load available roles
+        var rolesResult = await AdminService.GetRolesAsync();
+        rolesResult.Match(
+            Right: roles => _availableRoles = roles,
+            Left: error => Snackbar.Add($"Error loading roles: {error}", Severity.Error)
+        );
+
+        _isLoading = false;
+        StateHasChanged();
+    }
+
+    private async Task LoadRolePermissions(string roleId)
+    {
+        var roleDetails = await AdminService.GetRoleByIdAsync(roleId);
+        roleDetails.Match(
+            Right: role =>
+            {
+                // Initialize selected permissions dictionary
+                _selectedPermissions.Clear();
+                foreach (var category in _catalog)
+                {
+                    foreach (var permission in category.Permissions)
+                    {
+                        _selectedPermissions[permission.Id] = false;
+                    }
+                }
+
+                // Mark permissions that are currently assigned
+                // We need to get role permissions from the backend
+                // For now, we'll do a simple check
+            },
+            Left: error => Snackbar.Add($"Error loading role: {error}", Severity.Error)
+        );
+    }
+
+    private async Task SaveRolePermissions()
+    {
+        if (string.IsNullOrEmpty(_selectedRoleForMatrix))
+        {
+            return;
+        }
+
+        _isSaving = true;
+
+        var selectedPermissionIds = _selectedPermissions
+            .Where(kvp => kvp.Value)
+            .Select(kvp => kvp.Key)
+            .ToList();
+
+        var request = new AssignRolePermissionsRequest
+        {
+            RoleId = _selectedRoleForMatrix,
+            PermissionIds = selectedPermissionIds,
+            GrantedBy = "Administrator"
+        };
+
+        var result = await AdminService.AssignPermissionsToRoleAsync(request);
+        
+        result.Match(
+            Right: _ =>
+            {
+                Snackbar.Add($"Successfully assigned {selectedPermissionIds.Count} permissions", Severity.Success);
+                _isSaving = false;
+            },
+            Left: error =>
+            {
+                Snackbar.Add($"Error assigning permissions: {error}", Severity.Error);
+                _isSaving = false;
+            }
+        );
+
+        StateHasChanged();
+    }
+
+    private string GetCategoryIcon(string category)
+    {
+        return category switch
+        {
+            "User Management" => Icons.Material.Filled.People,
+            "Role Management" => Icons.Material.Filled.Security,
+            "Permission Management" => Icons.Material.Filled.AdminPanelSettings,
+            "Security & Audit" => Icons.Material.Filled.Shield,
+            "Merchant Management" => Icons.Material.Filled.Store,
+            "Company Management" => Icons.Material.Filled.Business,
+            "Reports & Analytics" => Icons.Material.Filled.Assessment,
+            "System Administration" => Icons.Material.Filled.Settings,
+            _ => Icons.Material.Filled.Lock
+        };
+    }
+}

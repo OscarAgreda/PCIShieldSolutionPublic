@@ -1,0 +1,11 @@
+rule:
+  pattern: "$FUNC($$$)"
+  kind: invocation_expression
+  
+# This rule matches method invocation expressions like:
+# - GetCustomerAsync(id)
+# - _customerService.CreateNewCustomerAsync(customer)
+# - someObject.Method(param1, param2)
+#
+# The $FUNC placeholder will match the method name
+# The $$$ placeholder will match any parameters inside parentheses

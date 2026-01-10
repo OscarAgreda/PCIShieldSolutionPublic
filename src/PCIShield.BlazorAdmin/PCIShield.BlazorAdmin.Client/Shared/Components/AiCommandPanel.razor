@@ -1,0 +1,155 @@
+﻿@* AiCommandPanel.razor - PCIShield AI Copilot Chat Panel *@
+@* FIXED VERSION - Follows PCIShield patterns from MerchantMasterPage.razor *@
+
+@using System.Reactive.Disposables
+@using System.Reactive.Linq
+@using System.Reactive.Subjects
+@using LanguageExt
+@using LanguageExt.Common
+@using static LanguageExt.Prelude
+@using MudBlazor
+@using Severity = MudBlazor.Severity
+@using PCIShield.BlazorMauiShared.Models.Agui
+@using PCIShield.Client.Services.Agui
+@using Microsoft.Extensions.Localization
+
+@* ❌ REMOVED: All @inject directives (they're in .razor.cs now) *@
+
+<div class="pciShield-style-ai-panel">
+	@* Header *@
+	<MudPaper Class="pciShield-container-secondary pa-3" Elevation="0">
+		<MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+			<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+				<MudIcon Icon="@Icons.Material.Filled.SmartToy" Color="Color.Primary" />
+				<MudText Class="pciShield-title-section">@Localizer["AI Assistant"]</MudText>
+			</MudStack>
+			<MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="OnCloseClicked" />
+		</MudStack>
+	</MudPaper>
+
+	<MudDivider />
+
+	@* Chat Messages Area *@
+	<MudPaper Class="pciShield-container pa-2" Style="height: 320px; overflow-y: auto;" Elevation="0">
+		@if (!_messages.Any())
+		{
+			<MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Style="height: 100%;">
+				<MudIcon Icon="@Icons.Material.Outlined.ChatBubbleOutline" Size="Size.Large" Color="Color.Default" />
+				<MudText Class="pciShield-text-body" Color="Color.Secondary">
+					@Localizer["Ask me to help with merchant data..."]
+				</MudText>
+				<MudText Typo="Typo.caption" Color="Color.Tertiary">
+					@Localizer["\"Set compliance rank to 85\" or \"Search merchants\""]
+				</MudText>
+			</MudStack>
+		}
+		else
+		{
+			@foreach (var msg in _messages)
+			{
+				<MudStack Row="true" Justify="@(msg.IsUser? Justify.FlexEnd: Justify.FlexStart)" Class="mb-2">
+					@if (!msg.IsUser)
+					{
+						<MudAvatar Size="Size.Small" Color="Color.Primary">
+							<MudIcon Icon="@Icons.Material.Filled.SmartToy" Size="Size.Small" />
+						</MudAvatar>
+					}
+					<MudPaper Class="@($"pa-2 {(msg.IsUser ? "pciShield-ai-user-msg" : "pciShield-ai-assistant-msg")}")"
+							  Elevation="1" Style="max-width: 85%; border-radius: 12px;">
+						@if (msg.IsToolCall)
+						{
+							<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+								<MudIcon Icon="@Icons.Material.Filled.Build" Size="Size.Small" Color="Color.Info" />
+								<MudText Typo="Typo.caption" Color="Color.Info">@msg.ToolName</MudText>
+							</MudStack>
+						}
+						<MudText Typo="Typo.body2">@msg.Content</MudText>
+					</MudPaper>
+					@if (msg.IsUser)
+					{
+						<MudAvatar Size="Size.Small" Color="Color.Secondary">
+							<MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" />
+						</MudAvatar>
+					}
+				</MudStack>
+			}
+
+			@if (_isStreaming)
+			{
+				<MudStack Row="true" Justify="Justify.FlexStart" Class="mb-2">
+					<MudAvatar Size="Size.Small" Color="Color.Primary">
+						<MudIcon Icon="@Icons.Material.Filled.SmartToy" Size="Size.Small" />
+					</MudAvatar>
+					<MudPaper Class="pa-2 pciShield-ai-assistant-msg" Elevation="1" Style="border-radius: 12px;">
+						<MudStack Row="true" AlignItems="AlignItems.Center">
+							<MudProgressCircular Size="Size.Small" Indeterminate="true" />
+							<MudText Typo="Typo.caption" Class="ml-2">@Localizer["Thinking..."]</MudText>
+						</MudStack>
+					</MudPaper>
+				</MudStack>
+			}
+		}
+	</MudPaper>
+
+	<MudDivider />
+
+	@* Input Area *@
+	<MudPaper Class="pciShield-container-secondary pa-2" Elevation="0">
+		<MudStack Row="true" AlignItems="AlignItems.Center">
+			<MudTextField T="string" @bind-Value="_inputMessage"
+						  Placeholder="@Localizer["Type a message..."]"
+						  Variant="Variant.Outlined"
+						  Margin="Margin.Dense"
+						  Immediate="true"
+						  OnKeyDown="HandleKeyDown"
+						  Disabled="_isStreaming"
+						  Class="pciShield-input flex-grow-1" />
+			<MudIconButton Icon="@Icons.Material.Filled.Send"
+						   Color="Color.Primary"
+						   Disabled="@(string.IsNullOrWhiteSpace(_inputMessage) || _isStreaming)"
+						   OnClick="SendMessageAsync" />
+		</MudStack>
+	</MudPaper>
+
+	@* Approval Bar (for destructive operations) *@
+	@if (_pendingApproval != null)
+	{
+		<MudAlert Severity="Severity.Warning" Dense="true" Class="ma-2">
+			<MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+				<MudText Typo="Typo.body2">@_pendingApproval.Message</MudText>
+				<MudStack Row="true" Spacing="1">
+					<MudButton Size="Size.Small"
+							   Color="Color.Error"
+							   Variant="Variant.Filled"
+							   Class="pciShield-btn pciShield-btn-danger"
+							   OnClick="ApproveAction">
+						@Localizer["Approve"]
+					</MudButton>
+					<MudButton Size="Size.Small"
+							   Variant="Variant.Outlined"
+							   Class="pciShield-btn pciShield-btn-secondary"
+							   OnClick="RejectAction">
+						@Localizer["Cancel"]
+					</MudButton>
+				</MudStack>
+			</MudStack>
+		</MudAlert>
+	}
+</div>
+
+<style>
+	.pciShield-style-ai-panel {
+		display: flex;
+		flex-direction: column;
+		height: 100%;
+		background: var(--mud-palette-surface);
+	}
+
+	.pciShield-ai-user-msg {
+		background: var(--mud-palette-primary-lighten);
+	}
+
+	.pciShield-ai-assistant-msg {
+		background: var(--mud-palette-background-grey);
+	}
+</style>

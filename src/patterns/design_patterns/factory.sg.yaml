@@ -1,0 +1,18 @@
+rule:
+  pattern: |
+    class $NAME$Factory {
+      $$$
+      public $RETURN_TYPE Create$$$() {
+        $$$
+      }
+      $$$
+    }
+  kind: class_declaration
+  
+# This rule matches Factory pattern implementations like:
+# - CustomerFactory with Create methods
+# - InvoiceFactory with Create methods
+#
+# The $NAME placeholder will match the factory name
+# The $RETURN_TYPE placeholder will match the return type of the Create method
+# The $$$ placeholders will match any other code in the class

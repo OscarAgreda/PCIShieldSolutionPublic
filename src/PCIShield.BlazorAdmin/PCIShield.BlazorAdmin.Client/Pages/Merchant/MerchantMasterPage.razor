@@ -1,0 +1,885 @@
+﻿@* MerchantMasterPage.razor *@
+@page "/MerchantMasterPage/{merchantId:guid}"
+@using System.Reactive.Disposables
+@using System.Reactive.Linq
+@using System.Reactive.Subjects
+@using System.Linq.Expressions
+@using FluentValidation
+@using FluentValidation.Results
+@using LanguageExt
+@using LanguageExt.Common
+@using static LanguageExt.Prelude
+@using MudBlazor
+@using Severity = MudBlazor.Severity
+@using PCIShield.BlazorAdmin.Client.Services
+@using PCIShield.Client.Services.Common
+@using PCIShield.Client.Services.Merchant
+@using PCIShield.Domain.ModelsDto
+@using BlazorMauiShared.Models.Merchant
+@using PCIShield.BlazorMauiShared.Models.Merchant
+@using PCIShield.BlazorAdmin.Client.SignalR
+@using PCIShield.BlazorAdmin.Client.Shared.Components
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<MerchantMasterPage> Localizer
+@implements IAsyncDisposable
+@implements IHandleEvent
+@inject ILogger<MerchantMasterPage> _logger
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+@inject IDialogService DialogService
+@inject IHttpMerchantClientService MerchantHttpService
+@inject ISignalRNotificationStrategy SignalRStrategy
+@inject UpdateMerchantValidator MerchantValidator
+@namespace PCIShield.BlazorAdmin.Client.Pages.Merchant
+<div class="pciShield-style-master-detail">
+
+<MudBreadcrumbs Items="_breadCrumbs" Separator="|" Class="pciShield-style-breadcrumb mb-4"></MudBreadcrumbs>
+
+<MudPaper Class="pciShield-container pciShield-shadow mb-4" Elevation="0">
+    <MudText Class="pciShield-title-page mb-2">@Localizer["Merchant Details"]</MudText>
+    <MudText Class="pciShield-text-body">@Localizer["Configure merchant information and compliance settings"]</MudText>
+</MudPaper>
+
+<MudPaper Class="pciShield-container pciShield-shadow" Elevation="1">
+        <MudTabs Class="pciShield-style-tabs-primary mb-4"
+                 ActivePanelIndexChanged="OnTabChanged"
+             PanelClass="pa-0">
+
+        <MudTabPanel Text="@Localizer["General Information"]" Icon="@Icons.Material.Filled.Business">
+            <MudForm Model="@_orchestrator.Merchant"
+                     @bind-IsValid="@_formIsValid"
+                     @bind-Errors="@_formErrors"
+                     Validation="@(_orchestrator.ValidateValue)"
+                     ValidationDelay="0"
+                     OnValidSubmit="HandleValidSubmit"
+                     @ref="_editForm">
+
+                <!-- Basic Information Section -->
+                <MudPaper Class="pciShield-style-form-section" Elevation="0">
+                    <MudText Class="pciShield-style-form-section-title">@Localizer["Basic Information"]</MudText>
+                    <MudGrid Spacing="3">
+                        <MudItem xs="12" md="6">
+                            <div class="pciShield-style-field-group">
+                                <MudText Class="pciShield-style-field-label">@Localizer["Control"] *</MudText>
+                                <EnhancedMudSelect TEntity="ControlDto"
+                                                   TValue="Guid"
+                                                   Value="@_orchestrator.Merchant.ControlId"
+                                                   DataProvider="@_orchestrator.ControlDataProvider"
+                                                   OnItemSelected="OnControlDescendantChanged"
+                                                   Required="true"
+                                                   RequiredError="@Localizer["Control is required"]"
+                                                   Class="pciShield-input pciShield-select"
+                                                   Dense="true"
+                                                   Variant="Variant.Outlined"
+                                                   Placeholder="Select Control"
+                                                   ShowSearch="true"
+                                                   Clearable="true" />
+                            </div>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <div class="pciShield-style-field-group">
+                                <MudText Class="pciShield-style-field-label">@Localizer["Merchant Code"]</MudText>
+                                <MudTextField T="string"
+                                              Value="@_orchestrator.Merchant.MerchantCode"
+                                              ValueChanged="@(v => OnFieldChanged(s => _orchestrator.Merchant.MerchantCode = s, v))"
+                                              MaxLength="30"
+                                              Counter="30"
+                                              Dense="true"
+                                              Immediate="true"
+                                              Variant="Variant.Outlined"
+                                              Adornment="Adornment.Start"
+                                              AdornmentIcon="@Icons.Material.Filled.QrCode"
+                                              Error="@(!string.IsNullOrEmpty(GetFieldError(() => _orchestrator.Merchant.MerchantCode)))"
+                                              ErrorText="@(GetFieldError(() => _orchestrator.Merchant.MerchantCode))"
+                                              Class="pciShield-input" />
+                            </div>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <div class="pciShield-style-field-group">
+                                <MudText Class="pciShield-style-field-label">@Localizer["Merchant Name"]</MudText>
+                                <MudTextField T="string"
+                                              Value="@_orchestrator.Merchant.MerchantName"
+                                              ValueChanged="@(v => OnFieldChanged(s => _orchestrator.Merchant.MerchantName = s, v))"
+                                              MaxLength="200"
+                                              Counter="200"
+                                              Dense="true"
+                                              Immediate="true"
+                                              Variant="Variant.Outlined"
+                                              Adornment="Adornment.Start"
+                                              AdornmentIcon="@Icons.Material.Filled.Business"
+                                              Error="@(!string.IsNullOrEmpty(GetFieldError(() => _orchestrator.Merchant.MerchantName)))"
+                                              ErrorText="@(GetFieldError(() => _orchestrator.Merchant.MerchantName))"
+                                              Class="pciShield-input" />
+                            </div>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <div class="pciShield-style-field-group">
+                                <MudText Class="pciShield-style-field-label">@Localizer["Acquirer Name"]</MudText>
+                                <MudTextField T="string"
+                                              Value="@_orchestrator.Merchant.AcquirerName"
+                                              ValueChanged="@(v => OnFieldChanged(s => _orchestrator.Merchant.AcquirerName = s, v))"
+                                              MaxLength="200"
+                                              Counter="200"
+                                              Dense="true"
+                                              Immediate="true"
+                                              Variant="Variant.Outlined"
+                                              Adornment="Adornment.Start"
+                                              AdornmentIcon="@Icons.Material.Filled.AccountBalance"
+                                              Error="@(!string.IsNullOrEmpty(GetFieldError(() => _orchestrator.Merchant.AcquirerName)))"
+                                              ErrorText="@(GetFieldError(() => _orchestrator.Merchant.AcquirerName))"
+                                              Class="pciShield-input" />
+                            </div>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <div class="pciShield-style-field-group">
+                                <MudText Class="pciShield-style-field-label">@Localizer["Processor MID"]</MudText>
+                                <MudTextField T="string"
+                                              Value="@_orchestrator.Merchant.ProcessorMID"
+                                              ValueChanged="@(v => OnFieldChanged(s => _orchestrator.Merchant.ProcessorMID = s, v))"
+                                              MaxLength="50"
+                                              Counter="50"
+                                              Dense="true"
+                                              Immediate="true"
+                                              Variant="Variant.Outlined"
+                                              Adornment="Adornment.Start"
+                                              AdornmentIcon="@Icons.Material.Filled.QrCode"
+                                              Error="@(!string.IsNullOrEmpty(GetFieldError(() => _orchestrator.Merchant.ProcessorMID)))"
+                                              ErrorText="@(GetFieldError(() => _orchestrator.Merchant.ProcessorMID))"
+                                              Class="pciShield-input" />
+                            </div>
+                        </MudItem>
+                    </MudGrid>
+                </MudPaper>
+
+                <!-- Compliance Information Section -->
+                <MudPaper Class="pciShield-style-form-section" Elevation="0">
+                    <MudText Class="pciShield-style-form-section-title">@Localizer["Compliance Information"]</MudText>
+                    <MudGrid Spacing="3">
+                        <MudItem xs="12" md="4">
+                            <div class="pciShield-style-field-group">
+                                <MudText Class="pciShield-style-field-label">@Localizer["Merchant Level"]</MudText>
+                                <MudSelect T="int"
+                                           Value="@_orchestrator.Merchant.MerchantLevel"
+                                           ValueChanged="@(v => OnFieldChanged(s => _orchestrator.Merchant.MerchantLevel = s, v))"
+                                           Dense="true"
+                                           AnchorOrigin="Origin.BottomCenter"
+                                           TransformOrigin="Origin.TopCenter"
+                                           Variant="Variant.Outlined"
+                                           Adornment="Adornment.Start"
+                                           AdornmentIcon="@Icons.Material.Filled.Layers"
+                                           Class="pciShield-input pciShield-select">
+                                    @foreach (var lvl in AllowedMerchantLevels)
+                                    {
+                                        <MudSelectItem Value="@lvl">
+                                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                                <MudChip T="string" Size="Size.Small" Color="Color.Primary">MerchantLevel @lvl</MudChip>
+                                                <MudText Typo="Typo.body2">@(lvl)</MudText>
+                                            </MudStack>
+                                        </MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </div>
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <div class="pciShield-style-field-group">
+                                <MudText Class="pciShield-style-field-label">@Localizer["Annual Card Volume"]</MudText>
+                                <MudNumericField T="decimal"
+                                                 Value="@_orchestrator.Merchant.AnnualCardVolume"
+                                                 ValueChanged="@(v => OnFieldChanged(s => _orchestrator.Merchant.AnnualCardVolume = s, v))"
+                                                 Min="0"
+                                                 Max="999999999"
+                                                 Format="C"
+                                                 Culture="@CultureInfo.CurrentCulture"
+                                                 Dense="true"
+                                                 Immediate="true"
+                                                 Variant="Variant.Outlined"
+                                                 Adornment="Adornment.Start"
+                                                 AdornmentIcon="@Icons.Material.Filled.AttachMoney"
+                                                 Error="@(!string.IsNullOrEmpty(GetFieldError(() => _orchestrator.Merchant.AnnualCardVolume)))"
+                                                 ErrorText="@(GetFieldError(() => _orchestrator.Merchant.AnnualCardVolume))"
+                                                 Class="pciShield-input" />
+                            </div>
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <div class="pciShield-style-field-group">
+                                <MudText Class="pciShield-style-field-label">@Localizer["Compliance Rank"]</MudText>
+                                <MudNumericField T="int"
+                                                 Value="@_orchestrator.Merchant.ComplianceRank"
+                                                 ValueChanged="@(v => OnFieldChanged(s => _orchestrator.Merchant.ComplianceRank = s, v))"
+                                                 Min="0"
+                                                 Max="100"
+                                                 Dense="true"
+                                                 Immediate="true"
+                                                 Variant="Variant.Outlined"
+                                                 Adornment="Adornment.Start"
+                                                 AdornmentIcon="@Icons.Material.Filled.EmojiEvents"
+                                                 Error="@(!string.IsNullOrEmpty(GetFieldError(() => _orchestrator.Merchant.ComplianceRank)))"
+                                                 ErrorText="@(GetFieldError(() => _orchestrator.Merchant.ComplianceRank))"
+                                                 Class="pciShield-input" />
+                            </div>
+                        </MudItem>
+                    </MudGrid>
+                </MudPaper>
+
+                <!-- Assessment Schedule Section -->
+                <MudPaper Class="pciShield-style-form-section" Elevation="0">
+                    <MudText Class="pciShield-style-form-section-title">@Localizer["Assessment Schedule"]</MudText>
+                    <MudGrid Spacing="3">
+                        <MudItem xs="12" md="4">
+                            <div class="pciShield-style-field-group">
+                                <MudText Class="pciShield-style-field-label">@Localizer["Last Assessment Date"] *</MudText>
+                                <MudDatePicker T="DateTime?"
+                                               Date="@GetLastAssessmentDate()"
+                                               DateChanged="OnLastAssessmentDateChanged"
+                                               Culture="@CultureInfo.CurrentCulture"
+                                               DateFormat="dd/MM/yyyy"
+                                               Editable="true"
+                                               Placeholder="@Localizer["Select Date"]"
+                                               PickerVariant="PickerVariant.Dialog"
+                                               DisableToolbar="false"
+                                               Dense="true"
+                                               Variant="Variant.Outlined"
+                                               Required="true"
+                                               RequiredError="@Localizer["Last Assessment Date is required"]"
+                                               Adornment="Adornment.Start"
+                                               AdornmentIcon="@Icons.Material.Filled.CalendarToday"
+                                               Error="@(!string.IsNullOrEmpty(GetFieldError(() => _orchestrator.Merchant.LastAssessmentDate)))"
+                                               ErrorText="@(GetFieldError(() => _orchestrator.Merchant.LastAssessmentDate))"
+                                               Class="pciShield-input pciShield-datepicker" />
+                            </div>
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <div class="pciShield-style-field-group">
+                                <MudText Class="pciShield-style-field-label">@Localizer["Next Assessment Due"]</MudText>
+                                <MudDatePicker T="DateTime"
+                                               Date="@GetNextAssessmentDue()"
+                                               DateChanged="OnNextAssessmentDueChanged"
+                                               Culture="@CultureInfo.CurrentCulture"
+                                               DateFormat="dd/MM/yyyy"
+                                               Editable="true"
+                                               Placeholder="@Localizer["Select Date"]"
+                                               PickerVariant="PickerVariant.Dialog"
+                                               DisableToolbar="false"
+                                               Dense="true"
+                                               Variant="Variant.Outlined"
+                                               Adornment="Adornment.Start"
+                                               AdornmentIcon="@Icons.Material.Filled.Event"
+                                               Error="@(!string.IsNullOrEmpty(GetFieldError(() => _orchestrator.Merchant.NextAssessmentDue)))"
+                                               ErrorText="@(GetFieldError(() => _orchestrator.Merchant.NextAssessmentDue))"
+                                               Class="pciShield-input pciShield-datepicker" />
+                            </div>
+                        </MudItem>
+                    </MudGrid>
+                </MudPaper>
+
+                <!-- System Information Section -->
+                <MudPaper Class="pciShield-style-form-section" Elevation="0">
+                    <MudText Class="pciShield-style-form-section-title">@Localizer["System Information"]</MudText>
+                    <MudGrid Spacing="3">
+                        <MudItem xs="12" md="6">
+                            <div class="pciShield-style-field-group">
+                                <MudText Class="pciShield-style-field-label">@Localizer["Created At"]</MudText>
+                                <MudDatePicker T="DateTime"
+                                               Date="@GetCreatedAt()"
+                                               DateChanged="OnCreatedAtChanged"
+                                               Culture="@CultureInfo.CurrentCulture"
+                                               DateFormat="dd/MM/yyyy HH:mm"
+                                               Editable="false"
+                                               Dense="true"
+                                               Variant="Variant.Outlined"
+                                               Disabled="true"
+                                               Adornment="Adornment.Start"
+                                               AdornmentIcon="@Icons.Material.Filled.AccessTime"
+                                               Class="pciShield-input pciShield-datepicker" />
+                            </div>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <div class="pciShield-style-field-group">
+                                <MudText Class="pciShield-style-field-label">@Localizer["Updated At"]</MudText>
+                                <MudDatePicker T="DateTime?"
+                                               Date="@GetUpdatedAt()"
+                                               DateChanged="OnUpdatedAtChanged"
+                                               Culture="@CultureInfo.CurrentCulture"
+                                               DateFormat="dd/MM/yyyy HH:mm"
+                                               Editable="false"
+                                               Dense="true"
+                                               Variant="Variant.Outlined"
+                                               Disabled="true"
+                                               Adornment="Adornment.Start"
+                                               AdornmentIcon="@Icons.Material.Filled.Update"
+                                               Class="pciShield-input pciShield-datepicker" />
+                            </div>
+                        </MudItem>
+                    </MudGrid>
+                </MudPaper>
+
+                <!-- Action Buttons -->
+                <MudDivider Class="my-4" />
+                <MudPaper Class="pciShield-container-secondary pa-4" Elevation="0">
+                    <MudStack Row="true" Spacing="2" Justify="Justify.FlexEnd">
+                        <MudButton Variant="Variant.Outlined"
+                                   Color="Color.Default"
+                                   Class="pciShield-btn pciShield-btn-secondary"
+                                   OnClick="Cancel">
+                            @Localizer["Cancel"]
+                        </MudButton>
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   Class="pciShield-btn pciShield-btn-primary"
+                                   OnClick="OnSaveMerchant"
+                                   Disabled="@(!_formIsValid)">
+                            @Localizer["Save Merchant"]
+                        </MudButton>
+                    </MudStack>
+                </MudPaper>
+            </MudForm>
+        </MudTabPanel>
+    </MudTabs>
+
+
+    @if (_mainTabActivated)
+    {
+        <MudDivider Class="my-4" />
+
+        <MudTabs Class="pciShield-tabs-enhanced mt-4"
+                 Outlined="true"
+                 Rounded="true"
+                 ApplyEffectsToContainer="true"
+                 PanelClass="pciShield-container pa-4 mt-3">
+
+            <!-- Assessments Tab -->
+            <MudTabPanel Text="@Localizer["Assessments"]"
+                         Icon="@Icons.Material.Filled.Assessment"
+                         BadgeData="@(_orchestrator.Merchant.Assessments?.Count ?? 0)"
+                         BadgeColor="Color.Primary">
+                <MerchantAssessmentChildTab MerchantId="@_orchestrator.Merchant.MerchantId"
+                                             Assessments="@_orchestrator.Merchant.Assessments"
+                                             _assessmentEditingUserId="@_editingUserId"
+                                             IsLoading="@_orchestrator.IsLoading"
+                                             OnError="HandleChildError"
+                                             OnAssessmentAdded="@OnAssessmentChildTabAdded"
+                                             OnAssessmentUpdated="@OnAssessmentChildTabUpdated"
+                                             OnAssessmentDeleted="@OnAssessmentChildTabDeleted" />
+            </MudTabPanel>
+
+            <!-- Assets Tab -->
+            <MudTabPanel Text="@Localizer["Assets"]"
+                         Icon="@Icons.Material.Filled.Inventory"
+                         BadgeData="@(_orchestrator.Merchant.Assets?.Count ?? 0)"
+                         BadgeColor="Color.Primary">
+                <MerchantAssetChildTab MerchantId="@_orchestrator.Merchant.MerchantId"
+                                             Assets="@_orchestrator.Merchant.Assets"
+                                             _assetEditingUserId="@_editingUserId"
+                                             IsLoading="@_orchestrator.IsLoading"
+                                             OnError="HandleChildError"
+                                             OnAssetAdded="@OnAssetChildTabAdded"
+                                             OnAssetUpdated="@OnAssetChildTabUpdated"
+                                             OnAssetDeleted="@OnAssetChildTabDeleted" />
+            </MudTabPanel>
+
+            <!-- CompensatingControls Tab -->
+            <MudTabPanel Text="@Localizer["Compensating Controls"]"
+                         Icon="@Icons.Material.Filled.Security"
+                         BadgeData="@(_orchestrator.Merchant.CompensatingControls?.Count ?? 0)"
+                         BadgeColor="Color.Primary">
+                <MerchantCompensatingControlChildTab MerchantId="@_orchestrator.Merchant.MerchantId"
+                                             CompensatingControls="@_orchestrator.Merchant.CompensatingControls"
+                                             _compensatingControlEditingUserId="@_editingUserId"
+                                             IsLoading="@_orchestrator.IsLoading"
+                                             OnError="HandleChildError"
+                                             OnCompensatingControlAdded="@OnCompensatingControlChildTabAdded"
+                                             OnCompensatingControlUpdated="@OnCompensatingControlChildTabUpdated"
+                                             OnCompensatingControlDeleted="@OnCompensatingControlChildTabDeleted" />
+            </MudTabPanel>
+
+            <!-- ComplianceOfficers Tab -->
+            <MudTabPanel Text="@Localizer["Compliance Officers"]"
+                         Icon="@Icons.Material.Filled.People"
+                         BadgeData="@(_orchestrator.Merchant.ComplianceOfficers?.Count ?? 0)"
+                         BadgeColor="Color.Primary">
+                <MerchantComplianceOfficerChildTab MerchantId="@_orchestrator.Merchant.MerchantId"
+                                             ComplianceOfficers="@_orchestrator.Merchant.ComplianceOfficers"
+                                             _complianceOfficerEditingUserId="@_editingUserId"
+                                             IsLoading="@_orchestrator.IsLoading"
+                                             OnError="HandleChildError"
+                                             OnComplianceOfficerAdded="@OnComplianceOfficerChildTabAdded"
+                                             OnComplianceOfficerUpdated="@OnComplianceOfficerChildTabUpdated"
+                                             OnComplianceOfficerDeleted="@OnComplianceOfficerChildTabDeleted" />
+            </MudTabPanel>
+
+            <!-- CryptographicInventories Tab -->
+            <MudTabPanel Text="@Localizer["Cryptographic Inventories"]"
+                         Icon="@Icons.Material.Filled.Inventory"
+                         BadgeData="@(_orchestrator.Merchant.CryptographicInventories?.Count ?? 0)"
+                         BadgeColor="Color.Primary">
+                <MerchantCryptographicInventoryChildTab MerchantId="@_orchestrator.Merchant.MerchantId"
+                                             CryptographicInventories="@_orchestrator.Merchant.CryptographicInventories"
+                                             _cryptographicInventoryEditingUserId="@_editingUserId"
+                                             IsLoading="@_orchestrator.IsLoading"
+                                             OnError="HandleChildError"
+                                             OnCryptographicInventoryAdded="@OnCryptographicInventoryChildTabAdded"
+                                             OnCryptographicInventoryUpdated="@OnCryptographicInventoryChildTabUpdated"
+                                             OnCryptographicInventoryDeleted="@OnCryptographicInventoryChildTabDeleted" />
+            </MudTabPanel>
+
+            <!-- Evidences Tab -->
+            <MudTabPanel Text="@Localizer["Evidences"]"
+                         Icon="@Icons.Material.Filled.Description"
+                         BadgeData="@(_orchestrator.Merchant.Evidences?.Count ?? 0)"
+                         BadgeColor="Color.Primary">
+                <MerchantEvidenceChildTab MerchantId="@_orchestrator.Merchant.MerchantId"
+                                             Evidences="@_orchestrator.Merchant.Evidences"
+                                             _evidenceEditingUserId="@_editingUserId"
+                                             IsLoading="@_orchestrator.IsLoading"
+                                             OnError="HandleChildError"
+                                             OnEvidenceAdded="@OnEvidenceChildTabAdded"
+                                             OnEvidenceUpdated="@OnEvidenceChildTabUpdated"
+                                             OnEvidenceDeleted="@OnEvidenceChildTabDeleted" />
+            </MudTabPanel>
+
+            <!-- NetworkSegmentations Tab -->
+            <MudTabPanel Text="@Localizer["Network Segmentations"]"
+                         Icon="@Icons.Material.Filled.NetworkCheck"
+                         BadgeData="@(_orchestrator.Merchant.NetworkSegmentations?.Count ?? 0)"
+                         BadgeColor="Color.Primary">
+                <MerchantNetworkSegmentationChildTab MerchantId="@_orchestrator.Merchant.MerchantId"
+                                             NetworkSegmentations="@_orchestrator.Merchant.NetworkSegmentations"
+                                             _networkSegmentationEditingUserId="@_editingUserId"
+                                             IsLoading="@_orchestrator.IsLoading"
+                                             OnError="HandleChildError"
+                                             OnNetworkSegmentationAdded="@OnNetworkSegmentationChildTabAdded"
+                                             OnNetworkSegmentationUpdated="@OnNetworkSegmentationChildTabUpdated"
+                                             OnNetworkSegmentationDeleted="@OnNetworkSegmentationChildTabDeleted" />
+            </MudTabPanel>
+
+            <!-- PaymentChannels Tab -->
+            <MudTabPanel Text="@Localizer["Payment Channels"]"
+                         Icon="@Icons.Material.Filled.Payment"
+                         BadgeData="@(_orchestrator.Merchant.PaymentChannels?.Count ?? 0)"
+                         BadgeColor="Color.Primary">
+                <MerchantPaymentChannelChildTab MerchantId="@_orchestrator.Merchant.MerchantId"
+                                             PaymentChannels="@_orchestrator.Merchant.PaymentChannels"
+                                             _paymentChannelEditingUserId="@_editingUserId"
+                                             IsLoading="@_orchestrator.IsLoading"
+                                             OnError="HandleChildError"
+                                             OnPaymentChannelAdded="@OnPaymentChannelChildTabAdded"
+                                             OnPaymentChannelUpdated="@OnPaymentChannelChildTabUpdated"
+                                             OnPaymentChannelDeleted="@OnPaymentChannelChildTabDeleted" />
+            </MudTabPanel>
+
+            <!-- ServiceProviders Tab -->
+            <MudTabPanel Text="@Localizer["Service Providers"]"
+                         Icon="@Icons.Material.Filled.Business"
+                         BadgeData="@(_orchestrator.Merchant.ServiceProviders?.Count ?? 0)"
+                         BadgeColor="Color.Primary">
+                <MerchantServiceProviderChildTab MerchantId="@_orchestrator.Merchant.MerchantId"
+                                             ServiceProviders="@_orchestrator.Merchant.ServiceProviders"
+                                             _serviceProviderEditingUserId="@_editingUserId"
+                                             IsLoading="@_orchestrator.IsLoading"
+                                             OnError="HandleChildError"
+                                             OnServiceProviderAdded="@OnServiceProviderChildTabAdded"
+                                             OnServiceProviderUpdated="@OnServiceProviderChildTabUpdated"
+                                             OnServiceProviderDeleted="@OnServiceProviderChildTabDeleted" />
+            </MudTabPanel>
+        </MudTabs>
+    }
+</MudPaper>
+
+<!-- Loading Overlay -->
+<MudOverlay Visible="@_orchestrator.IsLoading"
+            DarkBackground="true"
+            ZIndex="9999"
+            AutoClose="false"
+            Class="pciShield-overlay">
+    <MudProgressCircular Indeterminate="true"
+                         Color="Color.Primary"
+                         Size="Size.Large" />
+</MudOverlay>
+
+<!-- AI Assistant Drawer -->
+<MudDrawer @bind-Open="_aiPanelOpen" 
+           Anchor="Anchor.End" 
+           Elevation="4" 
+           Variant="DrawerVariant.Temporary" 
+           Width="400px"
+           Class="pciShield-ai-drawer">
+    <AiCommandPanel CurrentMerchant="@_orchestrator.Merchant"
+                    OnClose="@(() => _aiPanelOpen = false)"
+                    OnFieldUpdateRequested="OnAiFieldUpdate" />
+</MudDrawer>
+
+<!-- AI Assistant FAB -->
+<MudTooltip Text="@Localizer["Open AI Assistant"]">
+    <MudFab Icon="@Icons.Material.Filled.SmartToy" 
+            Color="Color.Primary" 
+            OnClick="@(() => _aiPanelOpen = !_aiPanelOpen)"
+            Style="position: fixed; bottom: 20px; right: 20px; z-index: 1000;" />
+</MudTooltip>
+
+</div>
+
+@code {
+    private int _activeTabIndex;
+    private MudForm _editForm;
+    private bool _formIsValid;
+    private string[] _formErrors = System.Array.Empty<string>();
+    private bool _mainTabActivated = true;
+    private bool _assessmentTabActivated;
+    private bool _assetTabActivated;
+    private bool _compensatingControlTabActivated;
+    private bool _complianceOfficerTabActivated;
+    private bool _cryptographicInventoryTabActivated;
+    private bool _evidenceTabActivated;
+    private bool _networkSegmentationTabActivated;
+    private bool _paymentChannelTabActivated;
+    private bool _serviceProviderTabActivated;
+    private string _editingUserId = Guid.NewGuid().ToString();
+    private string _approvalComment;
+    private readonly CompositeDisposable _disposables = new();
+    private Subject<Unit> _refreshSubject = new();
+    private List<BreadcrumbItem> _breadCrumbs = new()
+    {
+        new("Home", href: "#"),
+        new("List", href: "/MerchantList"),
+        new("Merchant", href: null, disabled: true)
+    };
+
+    [Parameter]
+    public Guid MerchantId { get; set; }
+
+    private static readonly int[] AllowedMerchantLevels = { 1, 2, 3, 4 };
+
+    private MerchantMasterOrchestrator _orchestrator;
+
+    private bool _aiPanelOpen;
+
+    private async Task OnAiFieldUpdate(AiFieldUpdate update)
+    {
+        Console.WriteLine($"[MerchantMasterPage] OnAiFieldUpdate received: Field={update.FieldName}, Value={update.Value}");
+        // Use reflection or switch to map field updates to merchant properties
+        // This leverages the existing reactive orchestrator update flow
+        try 
+        {
+            var prop = typeof(MerchantDto).GetProperty(update.FieldName, System.Reflection.BindingFlags.IgnoreCase | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+            if (prop != null && prop.CanWrite)
+            {
+                Console.WriteLine($"[MerchantMasterPage] Found property {prop.Name} ({prop.PropertyType.Name})");
+                // Convert value to target type
+                var targetType = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
+                var safeValue = update.Value == null ? null : Convert.ChangeType(update.Value, targetType);
+                
+                prop.SetValue(_orchestrator.Merchant, safeValue);
+                _orchestrator.RefreshRequested.OnNext(Unit.Default);
+                Console.WriteLine($"[MerchantMasterPage] Property updated. Triggering refresh.");
+                Snackbar.Add($"{Localizer["AI updated"]} {update.FieldName}", Severity.Info);
+            }
+            else
+            {
+                Console.WriteLine($"[MerchantMasterPage] Property '{update.FieldName}' not found or readonly on MerchantDto");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[MerchantMasterPage] Error setting property: {ex.Message}");
+            _logger.LogError(ex, "Failed to apply AI update for field {Field}", update.FieldName);
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _logger.LogInformation("Initializing MerchantMasterPage for Id={Id}", MerchantId);
+        _breadCrumbs = new()
+        {
+            new BreadcrumbItem(Localizer["Home"], href: "#"),
+            new BreadcrumbItem(Localizer["List"], href: "/MerchantList"),
+            new BreadcrumbItem(Localizer["Merchant"], href: null, disabled: true)
+        };
+        _orchestrator = new MerchantMasterOrchestrator(
+            MerchantHttpService,
+            SignalRStrategy,
+            _logger,
+            MerchantValidator
+        );
+        _orchestrator.RefreshRequested
+            .Throttle(TimeSpan.FromMilliseconds(150))
+            .Subscribe(_ => InvokeAsync(StateHasChanged))
+            .DisposeWith(_disposables);
+        await _orchestrator.InitializeAsync(MerchantId, _editingUserId);
+        _editForm = new MudForm();
+        await base.OnInitializedAsync();
+    }
+
+    Task IHandleEvent.HandleEventAsync(EventCallbackWorkItem item, object? arg)
+        => item.InvokeAsync(arg);
+
+    protected override bool ShouldRender() => true;
+
+    private DateTime GetLastAssessmentDate()
+    {
+        if (_orchestrator?.Merchant?.LastAssessmentDate == null ||
+            _orchestrator.Merchant.LastAssessmentDate == default ||
+            _orchestrator.Merchant.LastAssessmentDate == DateTime.MinValue)
+        {
+            return DateTime.Now;
+        }
+
+        if (_orchestrator.Merchant.LastAssessmentDate.Value.Kind == DateTimeKind.Utc)
+        {
+            return _orchestrator.Merchant.LastAssessmentDate.Value.ToLocalTime();
+        }
+        if (_orchestrator.Merchant.LastAssessmentDate.Value.Kind != DateTimeKind.Local)
+        {
+            return _orchestrator.Merchant.LastAssessmentDate.Value.ToLocalTime();
+        }
+        return _orchestrator.Merchant.LastAssessmentDate.Value;
+    }
+
+    private void OnLastAssessmentDateChanged(DateTime? newDate)
+    {
+        if (newDate.HasValue)
+        {
+            _orchestrator.Merchant.LastAssessmentDate = newDate.Value;
+            _orchestrator.RefreshRequested.OnNext(Unit.Default);
+        }
+    }
+
+    private DateTime GetNextAssessmentDue()
+    {
+        if (_orchestrator?.Merchant?.NextAssessmentDue == null ||
+            _orchestrator.Merchant.NextAssessmentDue == default ||
+            _orchestrator.Merchant.NextAssessmentDue == DateTime.MinValue)
+        {
+            return DateTime.Now;
+        }
+
+        if (_orchestrator.Merchant.NextAssessmentDue.Kind == DateTimeKind.Utc)
+        {
+            return _orchestrator.Merchant.NextAssessmentDue.ToLocalTime();
+        }
+        if (_orchestrator.Merchant.NextAssessmentDue.Kind != DateTimeKind.Local)
+        {
+            return _orchestrator.Merchant.NextAssessmentDue.ToLocalTime();
+        }
+        return _orchestrator.Merchant.NextAssessmentDue;
+    }
+
+    private void OnNextAssessmentDueChanged(DateTime? newDate)
+    {
+        if (newDate.HasValue)
+        {
+            _orchestrator.Merchant.NextAssessmentDue = newDate.Value;
+            _orchestrator.RefreshRequested.OnNext(Unit.Default);
+        }
+    }
+
+    private DateTime GetCreatedAt()
+    {
+        if (_orchestrator?.Merchant?.CreatedAt == null ||
+            _orchestrator.Merchant.CreatedAt == default ||
+            _orchestrator.Merchant.CreatedAt == DateTime.MinValue)
+        {
+            return DateTime.Now;
+        }
+
+        if (_orchestrator.Merchant.CreatedAt.Kind == DateTimeKind.Utc)
+        {
+            return _orchestrator.Merchant.CreatedAt.ToLocalTime();
+        }
+        if (_orchestrator.Merchant.CreatedAt.Kind != DateTimeKind.Local)
+        {
+            return _orchestrator.Merchant.CreatedAt.ToLocalTime();
+        }
+        return _orchestrator.Merchant.CreatedAt;
+    }
+
+    private void OnCreatedAtChanged(DateTime? newDate)
+    {
+        if (newDate.HasValue)
+        {
+            _orchestrator.Merchant.CreatedAt = newDate.Value;
+            _orchestrator.RefreshRequested.OnNext(Unit.Default);
+        }
+    }
+
+    private DateTime GetUpdatedAt()
+    {
+        if (_orchestrator?.Merchant?.UpdatedAt == null ||
+            _orchestrator.Merchant.UpdatedAt == default ||
+            _orchestrator.Merchant.UpdatedAt == DateTime.MinValue)
+        {
+            return DateTime.Now;
+        }
+
+        if (_orchestrator.Merchant.UpdatedAt.Value.Kind == DateTimeKind.Utc)
+        {
+            return _orchestrator.Merchant.UpdatedAt.Value.ToLocalTime();
+        }
+        if (_orchestrator.Merchant.UpdatedAt.Value.Kind != DateTimeKind.Local)
+        {
+            return _orchestrator.Merchant.UpdatedAt.Value.ToLocalTime();
+        }
+        return _orchestrator.Merchant.UpdatedAt.Value;
+    }
+
+    private void OnUpdatedAtChanged(DateTime? newDate)
+    {
+        if (newDate.HasValue)
+        {
+            _orchestrator.Merchant.UpdatedAt = newDate.Value;
+            _orchestrator.RefreshRequested.OnNext(Unit.Default);
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try { _disposables.Dispose(); } catch { }
+        try { _orchestrator?.Dispose(); } catch { }
+    }
+
+    private void OnTabChanged(int idx)
+    {
+        _mainTabActivated = false;
+        switch (idx)
+        {
+            case 0:
+                _mainTabActivated = true;
+                _orchestrator.RefreshRequested.OnNext(Unit.Default);
+                break;
+            case 1:
+                _assessmentTabActivated = true;
+                break;
+            case 2:
+                _assetTabActivated = true;
+                break;
+            case 3:
+                _compensatingControlTabActivated = true;
+                break;
+            case 4:
+                _complianceOfficerTabActivated = true;
+                break;
+            case 5:
+                _cryptographicInventoryTabActivated = true;
+                break;
+            case 6:
+                _evidenceTabActivated = true;
+                break;
+            case 7:
+                _networkSegmentationTabActivated = true;
+                break;
+            case 8:
+                _paymentChannelTabActivated = true;
+                break;
+            case 9:
+                _serviceProviderTabActivated = true;
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void OnFieldChanged<T>(Action<T> setter, T value)
+    {
+        setter(value);
+        _orchestrator.RefreshRequested.OnNext(Unit.Default);
+    }
+
+    private string? GetFieldError<T>(Expression<Func<T>> expression)
+    {
+        if (_formErrors == null || !_formErrors.Any())
+            return string.Empty;
+        var memberExpression = expression.Body as MemberExpression;
+        if (memberExpression == null)
+            return null;
+        var propertyName = memberExpression.Member.Name;
+        return _formErrors.FirstOrDefault(e => e.Contains(propertyName)) ?? string.Empty;
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        await OnSaveMerchant();
+    }
+
+    private async Task OnSaveMerchant()
+    {
+        try
+        {
+            if (!_formIsValid && _formErrors.Any())
+            {
+                foreach (var err in _formErrors)
+                {
+                    Snackbar.Add($"{Localizer["Error saving merchant"]}: {err}", Severity.Error);
+                }
+                return;
+            }
+            var result = await _orchestrator.SaveMerchantAsync();
+            await result.Match<Task>(
+                Right: async _ =>
+                {
+                    Snackbar.Add(Localizer["Merchant saved successfully"], Severity.Success);
+                    NavigationManager.NavigateTo("/MerchantList");
+                },
+                Left: async error =>
+                {
+                    Snackbar.Add($"{Localizer["Error saving merchant"]}: {error.Message}", Severity.Error);
+                    _logger.LogError("Save failed: {0}", error.Message);
+                }
+            );
+        }
+        catch (ValidationException vex)
+        {
+            foreach (var err in vex.Errors)
+                Snackbar.Add($"{Localizer["Error saving merchant"]}: {err.ErrorMessage}", Severity.Error);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"{Localizer["Error saving merchant"]}: {ex.Message}", Severity.Error);
+            _logger.LogError(ex, "Error saving merchant");
+        }
+    }
+
+    private void Cancel()
+    {
+        NavigationManager.NavigateTo("/MerchantList");
+    }
+
+    private Task OnAssessmentChildTabAdded(AssessmentDto cp) => _orchestrator.OnAssessmentChildTabAdded(cp);
+    private Task OnAssessmentChildTabUpdated(AssessmentDto cp) => _orchestrator.OnAssessmentChildTabUpdated(cp);
+    private Task OnAssessmentChildTabDeleted(AssessmentDto cp) => _orchestrator.OnAssessmentChildTabDeleted(cp);
+    private Task OnAssetChildTabAdded(AssetDto cp) => _orchestrator.OnAssetChildTabAdded(cp);
+    private Task OnAssetChildTabUpdated(AssetDto cp) => _orchestrator.OnAssetChildTabUpdated(cp);
+    private Task OnAssetChildTabDeleted(AssetDto cp) => _orchestrator.OnAssetChildTabDeleted(cp);
+    private Task OnCompensatingControlChildTabAdded(CompensatingControlDto cp) => _orchestrator.OnCompensatingControlChildTabAdded(cp);
+    private Task OnCompensatingControlChildTabUpdated(CompensatingControlDto cp) => _orchestrator.OnCompensatingControlChildTabUpdated(cp);
+    private Task OnCompensatingControlChildTabDeleted(CompensatingControlDto cp) => _orchestrator.OnCompensatingControlChildTabDeleted(cp);
+    private Task OnComplianceOfficerChildTabAdded(ComplianceOfficerDto cp) => _orchestrator.OnComplianceOfficerChildTabAdded(cp);
+    private Task OnComplianceOfficerChildTabUpdated(ComplianceOfficerDto cp) => _orchestrator.OnComplianceOfficerChildTabUpdated(cp);
+    private Task OnComplianceOfficerChildTabDeleted(ComplianceOfficerDto cp) => _orchestrator.OnComplianceOfficerChildTabDeleted(cp);
+    private Task OnCryptographicInventoryChildTabAdded(CryptographicInventoryDto cp) => _orchestrator.OnCryptographicInventoryChildTabAdded(cp);
+    private Task OnCryptographicInventoryChildTabUpdated(CryptographicInventoryDto cp) => _orchestrator.OnCryptographicInventoryChildTabUpdated(cp);
+    private Task OnCryptographicInventoryChildTabDeleted(CryptographicInventoryDto cp) => _orchestrator.OnCryptographicInventoryChildTabDeleted(cp);
+    private Task OnEvidenceChildTabAdded(EvidenceDto cp) => _orchestrator.OnEvidenceChildTabAdded(cp);
+    private Task OnEvidenceChildTabUpdated(EvidenceDto cp) => _orchestrator.OnEvidenceChildTabUpdated(cp);
+    private Task OnEvidenceChildTabDeleted(EvidenceDto cp) => _orchestrator.OnEvidenceChildTabDeleted(cp);
+    private Task OnNetworkSegmentationChildTabAdded(NetworkSegmentationDto cp) => _orchestrator.OnNetworkSegmentationChildTabAdded(cp);
+    private Task OnNetworkSegmentationChildTabUpdated(NetworkSegmentationDto cp) => _orchestrator.OnNetworkSegmentationChildTabUpdated(cp);
+    private Task OnNetworkSegmentationChildTabDeleted(NetworkSegmentationDto cp) => _orchestrator.OnNetworkSegmentationChildTabDeleted(cp);
+    private Task OnPaymentChannelChildTabAdded(PaymentChannelDto cp) => _orchestrator.OnPaymentChannelChildTabAdded(cp);
+    private Task OnPaymentChannelChildTabUpdated(PaymentChannelDto cp) => _orchestrator.OnPaymentChannelChildTabUpdated(cp);
+    private Task OnPaymentChannelChildTabDeleted(PaymentChannelDto cp) => _orchestrator.OnPaymentChannelChildTabDeleted(cp);
+    private Task OnServiceProviderChildTabAdded(ServiceProviderDto cp) => _orchestrator.OnServiceProviderChildTabAdded(cp);
+    private Task OnServiceProviderChildTabUpdated(ServiceProviderDto cp) => _orchestrator.OnServiceProviderChildTabUpdated(cp);
+    private Task OnServiceProviderChildTabDeleted(ServiceProviderDto cp) => _orchestrator.OnServiceProviderChildTabDeleted(cp);
+
+    private Task HandleChildError((Exception ex, ErrorHandlingService.ClientOperationContext ctx) data)
+    {
+        _logger.LogError(data.ex, "Child error in context {Ctx}", data.ctx);
+        Snackbar.Add(data.ex.Message, Severity.Error);
+        return Task.CompletedTask;
+    }
+
+    private void OnControlDescendantChanged(ControlDto selected)
+    {
+        _orchestrator.UpdateControl(selected);
+    }
+
+}

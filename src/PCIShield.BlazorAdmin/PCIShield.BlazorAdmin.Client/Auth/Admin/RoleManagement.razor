@@ -1,0 +1,327 @@
+﻿@page "/admin/roles"
+@attribute [Authorize(Roles = "Administrator")]
+@using Microsoft.AspNetCore.Authorization
+@using PCIShield.BlazorMauiShared.Auth
+@using System.ComponentModel.DataAnnotations
+@inject NavigationManager NavManager
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>Role Management</PageTitle>
+
+<MudBreadcrumbs Items="_breadCrumbs" Separator="|" Class="pciShield-breadcrumb mb-4"></MudBreadcrumbs>
+
+<MudPaper Class="pciShield-container pciShield-shadow mb-4" Elevation="0">
+    <MudGrid Class="pciShield-grid" Style="width: 100%;">
+        <MudItem xs="12" sm="6" Class="pciShield-grid-item">
+            <MudText Class="pciShield-title-page">Role Management</MudText>
+            <MudText Class="pciShield-text-body mt-2">Manage system roles and permissions</MudText>
+        </MudItem>
+        <MudItem xs="12" sm="6" Class="d-flex align-end justify-end">
+            <MudButton Variant="Variant.Filled" 
+                       Color="Color.Primary" 
+                       StartIcon="@Icons.Material.Filled.Add"
+                       OnClick="CreateRole"
+                       Class="pciShield-btn pciShield-btn-primary">
+                Create Role
+            </MudButton>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+<MudPaper Elevation="1" Class="pciShield-container pciShield-shadow position-relative">
+    @if (_isLoading)
+    {
+        <div class="d-flex justify-center align-center pa-8">
+            <MudProgressCircular Indeterminate="true" />
+        </div>
+    }
+    else
+    {
+        <MudDataGrid T="RoleListItemDto"
+                     Items="@_roles"
+                     Hover="true"
+                     Striped="true"
+                     Dense="true"
+                     Class="pciShield-datagrid">
+            <ToolBarContent>
+                <MudText Typo="Typo.h6">System Roles</MudText>
+                <MudSpacer />
+                <MudIconButton Icon="@Icons.Material.Filled.Refresh" 
+                               OnClick="LoadRoles" 
+                               Color="Color.Primary" />
+            </ToolBarContent>
+            <Columns>
+                <TemplateColumn Title="Role Name" Sortable="true" SortBy="@(x => x.Name)">
+                    <CellTemplate>
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                            <MudIcon Icon="@GetRoleIcon(context.Item.Name)" Color="@GetRoleColor(context.Item.Name)" />
+                            <MudStack Spacing="0">
+                                <MudText Typo="Typo.body2"><strong>@context.Item.Name</strong></MudText>
+                                @if (context.Item.IsSystemRole)
+                                {
+                                    <MudChip Size="Size.Small" Color="Color.Warning" Label="true">System Role</MudChip>
+                                }
+                            </MudStack>
+                        </MudStack>
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="User Count" Sortable="true" SortBy="@(x => x.UserCount)" CellClass="text-center">
+                    <CellTemplate>
+                        <MudChip Color="Color.Primary" Size="Size.Small">
+                            @context.Item.UserCount @(context.Item.UserCount == 1 ? "user" : "users")
+                        </MudChip>
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Created" Sortable="true" SortBy="@(x => x.CreatedDate)">
+                    <CellTemplate>
+                        <MudText Typo="Typo.body2">@context.Item.CreatedDate.ToString("MMM dd, yyyy")</MudText>
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn StickyRight="true" CellClass="d-flex justify-end">
+                    <CellTemplate>
+                        <MudStack Row="true" Spacing="1">
+                            <MudIconButton Icon="@Icons.Material.Filled.Visibility" 
+                                           Size="Size.Small"
+                                           OnClick="@(() => ViewRoleDetails(context.Item.Id))" />
+                            @if (!context.Item.IsSystemRole)
+                            {
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit" 
+                                               Size="Size.Small"
+                                               OnClick="@(() => EditRole(context.Item.Id, context.Item.Name))" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" 
+                                               Size="Size.Small"
+                                               Color="Color.Error"
+                                               OnClick="@(() => DeleteRole(context.Item.Id, context.Item.Name, context.Item.UserCount))" />
+                            }
+                            else
+                            {
+                                <MudTooltip Text="System roles cannot be modified">
+                                    <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Small" Color="Color.Secondary" />
+                                </MudTooltip>
+                            }
+                        </MudStack>
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+            <PagerContent>
+                <MudDataGridPager T="RoleListItemDto" />
+            </PagerContent>
+        </MudDataGrid>
+    }
+</MudPaper>
+
+@* Role Details Dialog *@
+@if (_selectedRole != null)
+{
+    <MudDialog @bind-IsVisible="_showDetailsDialog" Options="_dialogOptions">
+        <TitleContent>
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@GetRoleIcon(_selectedRole.Name)" Class="mr-2" />
+                Role Details: @_selectedRole.Name
+            </MudText>
+        </TitleContent>
+        <DialogContent>
+            <MudStack Spacing="3">
+                <MudPaper Class="pa-3" Elevation="0" Outlined="true">
+                    <MudText Typo="Typo.subtitle2" Class="mb-2">Role Information</MudText>
+                    <MudStack Spacing="1">
+                        <MudStack Row="true" Justify="Justify.SpaceBetween">
+                            <MudText Typo="Typo.body2">Role Name:</MudText>
+                            <MudText Typo="Typo.body2"><strong>@_selectedRole.Name</strong></MudText>
+                        </MudStack>
+                        <MudStack Row="true" Justify="Justify.SpaceBetween">
+                            <MudText Typo="Typo.body2">Type:</MudText>
+                            @if (_selectedRole.IsSystemRole)
+                            {
+                                <MudChip T="bool" Size="Size.Small" Color="Color.Warning">System Role</MudChip>
+                            }
+                            else
+                            {
+                                <MudChip T="bool" Size="Size.Small" Color="Color.Info">Custom Role</MudChip>
+                            }
+                        </MudStack>
+                        <MudStack Row="true" Justify="Justify.SpaceBetween">
+                            <MudText Typo="Typo.body2">Assigned Users:</MudText>
+                            <MudText Typo="Typo.body2"><strong>@_selectedRole.Users.Count</strong></MudText>
+                        </MudStack>
+                    </MudStack>
+                </MudPaper>
+
+                @if (_selectedRole.Users.Any())
+                {
+                    <MudPaper Class="pa-3" Elevation="0" Outlined="true">
+                        <MudText Typo="Typo.subtitle2" Class="mb-2">Users in this Role</MudText>
+                        <MudList T="UserRoleAssignmentDto" Dense="true">
+                            @foreach (var user in _selectedRole.Users)
+                            {
+                                <MudListItem>
+                                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                                        <MudStack Spacing="0">
+                                            <MudText Typo="Typo.body2">@user.UserName</MudText>
+                                            <MudText Typo="Typo.caption" Color="Color.Secondary">@user.Email</MudText>
+                                        </MudStack>
+                                        <MudIconButton Icon="@Icons.Material.Filled.OpenInNew" 
+                                                       Size="Size.Small"
+                                                       OnClick="@(() => NavManager.NavigateTo($"/admin/users/edit/{user.UserId}"))" />
+                                    </MudStack>
+                                </MudListItem>
+                                <MudDivider />
+                            }
+                        </MudList>
+                    </MudPaper>
+                }
+                else
+                {
+                    <MudAlert Severity="Severity.Info">No users are currently assigned to this role.</MudAlert>
+                }
+            </MudStack>
+        </DialogContent>
+        <DialogActions>
+            <MudButton OnClick="@(() => _showDetailsDialog = false)" Color="Color.Primary">Close</MudButton>
+        </DialogActions>
+    </MudDialog>
+}
+
+@code {
+    private List<RoleListItemDto> _roles = new();
+    private RoleDetailsDto? _selectedRole;
+    private bool _isLoading = true;
+    private bool _showDetailsDialog;
+
+    private DialogOptions _dialogOptions = new() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+
+    private List<BreadcrumbItem> _breadCrumbs = new()
+    {
+        new("Home", href: "/"),
+        new("Administration", href: "/admin/dashboard"),
+        new("Roles", href: null, disabled: true)
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRoles();
+    }
+
+    private async Task LoadRoles()
+    {
+        _isLoading = true;
+        StateHasChanged();
+
+        var result = await AdminService.GetRolesAsync();
+        
+        result.Match(
+            Right: roles =>
+            {
+                _roles = roles;
+                _isLoading = false;
+            },
+            Left: error =>
+            {
+                Snackbar.Add($"Error loading roles: {error}", Severity.Error);
+                _isLoading = false;
+            }
+        );
+
+        StateHasChanged();
+    }
+
+    private async Task ViewRoleDetails(string roleId)
+    {
+        var result = await AdminService.GetRoleByIdAsync(roleId);
+        
+        result.Match(
+            Right: role =>
+            {
+                _selectedRole = role;
+                _showDetailsDialog = true;
+            },
+            Left: error => Snackbar.Add($"Error loading role details: {error}", Severity.Error)
+        );
+
+        StateHasChanged();
+    }
+
+    private async Task CreateRole()
+    {
+        var parameters = new DialogParameters<CreateRoleDialog>();
+        var dialog = await DialogService.ShowAsync<CreateRoleDialog>("Create New Role", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            await LoadRoles();
+        }
+    }
+
+    private async Task EditRole(string roleId, string roleName)
+    {
+        var parameters = new DialogParameters<EditRoleDialog>
+        {
+            { x => x.RoleId, roleId },
+            { x => x.CurrentRoleName, roleName }
+        };
+
+        var dialog = await DialogService.ShowAsync<EditRoleDialog>("Edit Role", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            await LoadRoles();
+        }
+    }
+
+    private async Task DeleteRole(string roleId, string roleName, int userCount)
+    {
+        if (userCount > 0)
+        {
+            Snackbar.Add($"Cannot delete role '{roleName}' - it has {userCount} assigned user(s)", Severity.Warning);
+            return;
+        }
+
+        var confirmed = await DialogService.ShowMessageBox(
+            "Delete Role",
+            $"Are you sure you want to delete the role '{roleName}'? This action cannot be undone.",
+            yesText: "Delete",
+            cancelText: "Cancel"
+        );
+
+        if (confirmed == true)
+        {
+            var request = new DeleteRoleRequest { RoleId = roleId };
+            var result = await AdminService.DeleteRoleAsync(request);
+            
+            result.Match(
+                Right: _ =>
+                {
+                    Snackbar.Add($"Role '{roleName}' deleted successfully", Severity.Success);
+                    LoadRoles();
+                },
+                Left: error => Snackbar.Add($"Error deleting role: {error}", Severity.Error)
+            );
+        }
+    }
+
+    private string GetRoleIcon(string role)
+    {
+        return role switch
+        {
+            "Administrator" => Icons.Material.Filled.AdminPanelSettings,
+            "User" => Icons.Material.Filled.Person,
+            "Customer" => Icons.Material.Filled.ShoppingCart,
+            "Employee" => Icons.Material.Filled.Work,
+            _ => Icons.Material.Filled.Security
+        };
+    }
+
+    private Color GetRoleColor(string role)
+    {
+        return role switch
+        {
+            "Administrator" => Color.Error,
+            "Employee" => Color.Primary,
+            "Customer" => Color.Info,
+            _ => Color.Default
+        };
+    }
+}

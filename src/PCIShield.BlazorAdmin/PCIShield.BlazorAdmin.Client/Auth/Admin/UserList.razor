@@ -1,0 +1,402 @@
+﻿@page "/admin/users"
+@using Microsoft.AspNetCore.Authorization
+@using PCIShield.BlazorMauiShared.Auth
+@attribute [Authorize(Roles = "Administrator")]
+
+@inject IHttpAuthClientService AdminService
+@inject NavigationManager NavManager
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>User Management</PageTitle>
+
+<MudBreadcrumbs Items="_breadCrumbs" Separator="|" Class="pciShield-breadcrumb mb-4"></MudBreadcrumbs>
+
+<MudPaper Class="pciShield-container pciShield-shadow mb-4" Elevation="0">
+    <MudGrid Class="pciShield-grid" Style="width: 100%;">
+        <MudItem xs="12" sm="6" Class="pciShield-grid-item">
+            <MudText Class="pciShield-title-page">User Management</MudText>
+            <MudText Class="pciShield-text-body mt-2">Manage system users, roles, and permissions</MudText>
+        </MudItem>
+        <MudItem xs="12" sm="6" Class="d-flex align-end justify-end">
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.PersonAdd"
+                       OnClick="CreateUser"
+                       Class="pciShield-btn pciShield-btn-primary">
+                Create User
+            </MudButton>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+<MudPaper Elevation="1" Class="pciShield-container pciShield-shadow position-relative">
+    <MudDataGrid T="UserListItemDto"
+                 Items="@_filteredUsers"
+                 @ref="_grid"
+                 Hover="true"
+                 Striped="true"
+                 Dense="true"
+                 Loading="@_isLoading"
+                 Filterable="true"
+                 SortMode="SortMode.Multiple"
+                 Class="pciShield-datagrid">
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">Registered Users</MudText>
+            <MudSpacer />
+            <MudTextField @bind-Value="_searchString"
+                          Placeholder="Search users..."
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          IconSize="Size.Small"
+                          Immediate="true"
+                          DebounceInterval="300"
+                          OnDebounceIntervalElapsed="OnSearchChanged"
+                          Clearable="true"
+                          OnClearButtonClick="ClearSearch"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Class="mr-2" />
+            <MudIconButton Icon="@Icons.Material.Filled.Refresh"
+                           OnClick="LoadUsers"
+                           Color="Color.Primary" />
+        </ToolBarContent>
+        <Columns>
+            <PropertyColumn Property="x => x.UserName" Title="Username" Sortable="true" Filterable="true" />
+            <PropertyColumn Property="x => x.Email" Title="Email" Sortable="true" Filterable="true" />
+            <TemplateColumn Title="Name" Sortable="false">
+                <CellTemplate>
+                    @if (!string.IsNullOrEmpty(context.Item.FullName))
+                    {
+                        <MudText Typo="Typo.body2">@context.Item.FullName</MudText>
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">-</MudText>
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="Status" Sortable="true" SortBy="@(x => x.EmailConfirmed)">
+                <CellTemplate>
+                    <MudStack Row="true" Spacing="1">
+                        @if (context.Item.IsLockedOut)
+                        {
+                            <MudChip Icon="@Icons.Material.Filled.Lock" Color="Color.Error" Size="Size.Small">Locked</MudChip>
+                        }
+                        else if (context.Item.EmailConfirmed)
+                        {
+                            <MudChip Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small">Active</MudChip>
+                        }
+                        else
+                        {
+                            <MudChip Icon="@Icons.Material.Filled.Warning" Color="Color.Warning" Size="Size.Small">Pending</MudChip>
+                        }
+                        @if (context.Item.TwoFactorEnabled)
+                        {
+                            <MudChip Icon="@Icons.Material.Filled.Security" Color="Color.Info" Size="Size.Small">2FA</MudChip>
+                        }
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="Roles" Sortable="false">
+                <CellTemplate>
+                    @if (context.Item.Roles.Any())
+                    {
+                        <MudStack Row="true" Spacing="1">
+                            @foreach (var role in context.Item.Roles.Take(2))
+                            {
+                                <MudChip Label="true" Color="Color.Primary" Size="Size.Small">@role</MudChip>
+                            }
+                            @if (context.Item.Roles.Count > 2)
+                            {
+                                <MudChip Label="true" Color="Color.Default" Size="Size.Small">+@(context.Item.Roles.Count - 2)</MudChip>
+                            }
+                        </MudStack>
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">No roles</MudText>
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="External Logins" Sortable="false" CellClass="text-center">
+                <CellTemplate>
+                    @if (context.Item.ExternalLoginsCount > 0)
+                    {
+                        <MudChip Icon="@Icons.Material.Filled.Link" Color="Color.Info" Size="Size.Small">
+                            @context.Item.ExternalLoginsCount
+                        </MudChip>
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">-</MudText>
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="Last Login" Sortable="true" SortBy="@(x => x.LastLoginDate)">
+                <CellTemplate>
+                    @if (context.Item.LastLoginDate.HasValue)
+                    {
+                        <MudText Typo="Typo.body2">@context.Item.LastLoginDate.Value.ToString("MMM dd, yyyy")</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">@context.Item.LastLoginDate.Value.ToString("HH:mm")</MudText>
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">Never</MudText>
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn StickyRight="true" CellClass="d-flex justify-end">
+                <CellTemplate>
+                    <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small">
+                        <MudMenuItem Icon="@Icons.Material.Filled.Edit" OnClick="@(() => EditUser(context.Item.Id))">
+                            Edit Details
+                        </MudMenuItem>
+                        <MudMenuItem Icon="@Icons.Material.Filled.Security" OnClick="@(() => ChangePassword(context.Item.Id))">
+                            Change Password
+                        </MudMenuItem>
+                        <MudDivider />
+                        @if (context.Item.IsLockedOut)
+                        {
+                            <MudMenuItem Icon="@Icons.Material.Filled.LockOpen"
+                                         IconColor="Color.Success"
+                                         OnClick="@(() => UnlockUser(context.Item.Id))">
+                                Unlock Account
+                            </MudMenuItem>
+                        }
+                        else
+                        {
+                            <MudMenuItem Icon="@Icons.Material.Filled.Lock"
+                                         IconColor="Color.Warning"
+                                         OnClick="@(() => LockUser(context.Item.Id))">
+                                Lock Account
+                            </MudMenuItem>
+                        }
+                        <MudMenuItem Icon="@Icons.Material.Filled.Logout"
+                                     IconColor="Color.Warning"
+                                     OnClick="@(() => ForceLogout(context.Item.Id))">
+                            Force Logout
+                        </MudMenuItem>
+                        <MudDivider />
+                        <MudMenuItem Icon="@Icons.Material.Filled.Delete"
+                                     IconColor="Color.Error"
+                                     OnClick="@(() => DeleteUser(context.Item.Id, context.Item.UserName))">
+                            Delete User
+                        </MudMenuItem>
+                    </MudMenu>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="UserListItemDto" />
+        </PagerContent>
+    </MudDataGrid>
+</MudPaper>
+
+@code {
+    private MudDataGrid<UserListItemDto>? _grid;
+    private List<UserListItemDto> _allUsers = new();
+    private List<UserListItemDto> _filteredUsers = new();
+    private bool _isLoading = true;
+    private string _searchString = string.Empty;
+
+    private List<BreadcrumbItem> _breadCrumbs = new()
+    {
+        new("Home", href: "/"),
+        new("Administration", href: "/admin/dashboard"),
+        new("Users", href: null, disabled: true)
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUsers();
+    }
+
+    private async Task LoadUsers()
+    {
+        _isLoading = true;
+        StateHasChanged();
+
+        var result = await AdminService.GetUsersAsync();
+
+        result.Match(
+            Right: response =>
+            {
+                _allUsers = response.Items;
+                ApplySearch();
+                _isLoading = false;
+            },
+            Left: error =>
+            {
+                Snackbar.Add($"Error loading users: {error}", Severity.Error);
+                _isLoading = false;
+            }
+        );
+
+        StateHasChanged();
+    }
+
+    private void OnSearchChanged()
+    {
+        ApplySearch();
+        StateHasChanged();
+    }
+
+    private void ClearSearch()
+    {
+        _searchString = string.Empty;
+        ApplySearch();
+        StateHasChanged();
+    }
+
+    private void ApplySearch()
+    {
+        if (string.IsNullOrWhiteSpace(_searchString))
+        {
+            _filteredUsers = _allUsers;
+        }
+        else
+        {
+            var search = _searchString.ToLowerInvariant();
+            _filteredUsers = _allUsers.Where(u =>
+                u.UserName.ToLowerInvariant().Contains(search) ||
+                u.Email.ToLowerInvariant().Contains(search) ||
+                (u.FullName?.ToLowerInvariant().Contains(search) ?? false) ||
+                u.Roles.Any(r => r.ToLowerInvariant().Contains(search))
+            ).ToList();
+        }
+    }
+
+    private void CreateUser()
+    {
+        NavManager.NavigateTo("/admin/users/create");
+    }
+
+    private void EditUser(string userId)
+    {
+        NavManager.NavigateTo($"/admin/users/edit/{userId}");
+    }
+
+    private async Task ChangePassword(string userId)
+    {
+        var parameters = new DialogParameters<ChangePasswordDialog>
+        {
+            { x => x.UserId, userId }
+        };
+
+        var dialog = await DialogService.ShowAsync<ChangePasswordDialog>("Change Password", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            Snackbar.Add("Password changed successfully", Severity.Success);
+            await LoadUsers();
+        }
+    }
+
+    private async Task LockUser(string userId)
+    {
+        var confirmed = await DialogService.ShowMessageBox(
+            "Lock User Account",
+            "Are you sure you want to lock this user account? The user will not be able to sign in until unlocked.",
+            yesText: "Lock Account",
+            cancelText: "Cancel"
+        );
+
+        if (confirmed == true)
+        {
+            var request = new LockUserRequest
+            {
+                UserId = userId,
+                Lock = true,
+                LockoutEnd = DateTimeOffset.UtcNow.AddYears(100), // Permanent lock
+                Reason = "Locked by administrator"
+            };
+
+            var result = await AdminService.LockUserAsync(request);
+            result.Match(
+                Right: _ =>
+                {
+                    Snackbar.Add("User account locked successfully", Severity.Success);
+                    LoadUsers();
+                },
+                Left: error => Snackbar.Add($"Error locking user: {error}", Severity.Error)
+            );
+        }
+    }
+
+    private async Task UnlockUser(string userId)
+    {
+        var request = new LockUserRequest
+        {
+            UserId = userId,
+            Lock = false,
+            Reason = "Unlocked by administrator"
+        };
+
+        var result = await AdminService.LockUserAsync(request);
+        result.Match(
+            Right: _ =>
+            {
+                Snackbar.Add("User account unlocked successfully", Severity.Success);
+                LoadUsers();
+            },
+            Left: error => Snackbar.Add($"Error unlocking user: {error}", Severity.Error)
+        );
+    }
+
+    private async Task ForceLogout(string userId)
+    {
+        var confirmed = await DialogService.ShowMessageBox(
+            "Force User Logout",
+            "This will invalidate all of the user's tokens and force them to sign in again on all devices. Continue?",
+            yesText: "Force Logout",
+            cancelText: "Cancel"
+        );
+
+        if (confirmed == true)
+        {
+            var request = new RefreshSecurityStampRequest
+            {
+                UserId = userId,
+                Reason = "Forced logout by administrator"
+            };
+
+            var result = await AdminService.RefreshSecurityStampAsync(request);
+            result.Match(
+                Right: _ => Snackbar.Add("User logged out successfully", Severity.Success),
+                Left: error => Snackbar.Add($"Error forcing logout: {error}", Severity.Error)
+            );
+        }
+    }
+
+    private async Task DeleteUser(string userId, string userName)
+    {
+        var confirmed = await DialogService.ShowMessageBox(
+            "Delete User",
+            $"Are you sure you want to permanently delete user '{userName}'? This action cannot be undone.",
+            yesText: "Delete",
+            cancelText: "Cancel"
+        );
+
+        if (confirmed == true)
+        {
+            var request = new DeleteUserRequest
+            {
+                UserId = userId,
+                DeleteApplicationUser = true,
+                Reason = "Deleted by administrator"
+            };
+
+            var result = await AdminService.DeleteUserAsync(request);
+            result.Match(
+                Right: _ =>
+                {
+                    Snackbar.Add("User deleted successfully", Severity.Success);
+                    LoadUsers();
+                },
+                Left: error => Snackbar.Add($"Error deleting user: {error}", Severity.Error)
+            );
+        }
+    }
+}

@@ -1,0 +1,30 @@
+
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+WORKDIR /app
+EXPOSE 80
+EXPOSE 443
+
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+COPY ["src/PCIShield.Api/PCIShield.Api.csproj", "src/PCIShield.Api/"]
+COPY ["src/PCIShield.BlazorMauiShared/PCIShield.BlazorMauiShared.csproj", "src/PCIShield.BlazorMauiShared/"]
+COPY ["src/PCIShieldL.SharedKernel/PCIShieldLib.SharedKernel.csproj", "src/PCIShieldL.SharedKernel/"]
+COPY ["src/PCIShield.Infrastructure/PCIShield.Infrastructure.csproj", "src/PCIShield.Infrastructure/"]
+COPY ["src/PCIShield.Domain/PCIShield.Domain.csproj", "src/PCIShield.Domain/"]
+RUN dotnet restore "src/PCIShield.Api/PCIShield.Api.csproj"
+COPY . .
+WORKDIR "/src/src/PCIShield.Api"
+RUN dotnet build "PCIShield.Api.csproj" -c Release -o /app/build
+
+FROM build AS publish
+RUN dotnet publish "PCIShield.Api.csproj" -c Release -o /app/publish /p:UseAppHost=false --verbosity detailed
+
+
+FROM base AS final
+WORKDIR /app
+COPY --from=publish /app/publish .
+
+
+
+ENTRYPOINT ["dotnet", "PCIShield.Api.dll"]
+

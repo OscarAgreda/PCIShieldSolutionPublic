@@ -1,0 +1,256 @@
+@* MerchantComplianceOfficerChildTab.razor *@
+@page "/MerchantComplianceOfficerChildTab"
+@using PCIShield.BlazorMauiShared.Models.Merchant
+@using LanguageExt
+@using LanguageExt.Common
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.SignalR.Client
+@using MudBlazor
+@using Severity = MudBlazor.Severity
+@using FluentValidation
+@using System.Reactive.Threading.Tasks
+@using PCIShield.BlazorAdmin.Client.Services
+@using System.Reactive.Disposables
+@inject ILogger<MerchantComplianceOfficerChildTab> _logger
+@inject IStringLocalizer<MerchantComplianceOfficerChildTab> Localizer
+@inject ISnackbar Snackbar
+@inject IHttpMerchantClientService _merchantHttpService
+@inject IDialogService DialogService
+@namespace PCIShield.BlazorAdmin.Client.Pages.Merchant
+
+
+
+<MudPaper Elevation="1" Class="pa-4">
+    <MudTable Items="@ComplianceOfficers" Hover="true" Striped="true" Virtualize="true" RowsPerPage="20">
+        <HeaderContent>
+            <MudTh>@Localizer["OfficerCode"]</MudTh>
+            <MudTh>@Localizer["FirstName"]</MudTh>
+            <MudTh>@Localizer["LastName"]</MudTh>
+            <MudTh>@Localizer["Email"]</MudTh>
+            <MudTh>@Localizer["Phone"]</MudTh>
+            <MudTh>@Localizer["CertificationLevel"]</MudTh>
+            <MudTh>@Localizer["CreatedAt"]</MudTh>
+            <MudTh>@Localizer["UpdatedAt"]</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>@context.OfficerCode</MudTd>
+            <MudTd>@context.FirstName</MudTd>
+            <MudTd>@context.LastName</MudTd>
+            <MudTd>@context.Email</MudTd>
+            <MudTd>@context.Phone</MudTd>
+            <MudTd>@context.CertificationLevel</MudTd>
+            <MudTd>@context.CreatedAt</MudTd>
+            <MudTd>@context.UpdatedAt</MudTd>
+       @*      <MudTd>
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Primary"
+                           OnClick="@(EventUtil.AsNonRenderingEventHandler(() => EditChildItemComplianceOfficer(context)))">@Localizer["Edit"]</MudButton>
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Error"
+                           OnClick="@(EventUtil.AsNonRenderingEventHandler(() => DeleteChildItemComplianceOfficer(context)))">@Localizer["Delete"]</MudButton>
+            </MudTd> *@
+        </RowTemplate>
+    </MudTable>
+@*     <MudButton Variant="Variant.Outlined" Color="Color.Primary" Class="mt-4"
+               OnClick="@AddChildItemComplianceOfficer">@Localizer["Add Compliance Officer"]</MudButton> *@
+</MudPaper>
+
+<MudOverlay Visible="@IsLoading"
+            DarkBackground="true"
+            ZIndex="9999"
+            AutoClose="false">
+    <MudProgressCircular Color="Color.Primary"
+                         Indeterminate="true"
+                         Size="Size.Large" />
+</MudOverlay>
+
+@code {
+
+    [Parameter]
+    public Guid MerchantId { get; set; }
+
+    [Parameter] public string _complianceOfficerEditingUserId { get; set; }
+
+    [Parameter]
+    public List<ComplianceOfficerDto> ComplianceOfficers { get; set; } = new();
+
+
+    [Parameter]
+    public bool IsLoading { get; set; }
+
+    [Parameter]
+    public EventCallback<(Exception ex, ErrorHandlingService.ClientOperationContext context)> OnError { get; set; }
+
+
+
+    [Parameter]
+    public EventCallback<ComplianceOfficerDto> OnComplianceOfficerAdded { get; set; }
+
+
+    [Parameter]
+    public EventCallback<ComplianceOfficerDto> OnComplianceOfficerUpdated { get; set; }
+
+
+    [Parameter]
+    public EventCallback<ComplianceOfficerDto> OnComplianceOfficerDeleted { get; set; }
+
+    private IValidator<ComplianceOfficerDto> _updateComplianceOfficerValidator;
+
+    private readonly CompositeDisposable _disposables = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _updateComplianceOfficerValidator = new InlineValidator<ComplianceOfficerDto>();
+        await base.OnInitializedAsync();
+    }
+
+
+    protected void RefreshUi()
+    {
+        //InvokeAsync(StateHasChanged);
+    }
+
+
+
+
+    private async Task AddChildItemComplianceOfficer()
+    {
+        await TryAsync(async () =>
+        {
+            var newComplianceOfficer = new ComplianceOfficerDto
+                {
+                    MerchantId = MerchantId,
+                CreatedAt = DateTime.UtcNow,
+                    CreatedBy = Guid.Parse(_complianceOfficerEditingUserId),
+                };
+            var validationResult = await _updateComplianceOfficerValidator.ValidateAsync(newComplianceOfficer);
+            if (!validationResult.IsValid)
+            {
+                var errors = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage));
+                var ex = new Exception(errors);
+                await OnError.InvokeAsync((ex, ErrorHandlingService.ClientOperationContext.ComplianceOfficerCreate));
+                return;
+            }
+            var response = await _merchantHttpService.CreateComplianceOfficerAsync(newComplianceOfficer).ToObservable().ToListObservable().ToTryOption().ToAsync().ToTry();
+            await response.Match(
+                Succ: result =>
+                    result.Match(
+                        Some: async backResult =>
+                        {
+                            ComplianceOfficers.Add(backResult.ComplianceOfficer);
+                        },
+                        None: () =>
+                        {
+                            Snackbar.Add(Localizer["Failed to create complianceOfficer"], Severity.Error);
+                            return Task.CompletedTask;
+                        }
+                    ),
+                Fail: ex =>
+                {
+                    _logger.LogError(ex, "Error creating complianceOfficer");
+                    Snackbar.Add(Localizer["Error creating complianceOfficer"], Severity.Error);
+                    return Task.CompletedTask;
+                }
+            );
+        });
+    }
+
+
+    private async Task EditChildItemComplianceOfficer(ComplianceOfficerDto item)
+    {
+        try
+        {
+            var validationResult = await _updateComplianceOfficerValidator.ValidateAsync(item);
+            if (!validationResult.IsValid)
+            {
+                var errors = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage));
+                var ex = new Exception(errors);
+                await OnError.InvokeAsync((ex, ErrorHandlingService.ClientOperationContext.ComplianceOfficerUpdate));
+                return;
+            }
+            ComplianceOfficerDto? response = await _merchantHttpService.UpdateComplianceOfficerAsync(item);
+            if (response != null)
+            {
+                var index = ComplianceOfficers.FindIndex(x => x.ComplianceOfficerId == item.ComplianceOfficerId);
+                if (index != -1)
+                {
+                    ComplianceOfficers[index] = response;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await OnError.InvokeAsync((ex, ErrorHandlingService.ClientOperationContext.ComplianceOfficerCreate));
+        }
+    }
+
+    private async Task<bool> ShowDeleteConfirmDialog()
+    {
+        bool? result = await DialogService.ShowMessageBox("Confirm Delete", "Are you sure you want to delete this item?", yesText: "Delete", cancelText: "Cancel");
+        if (result == true)
+        {
+            return await Task.FromResult(true);
+        }
+        else
+        {
+            return await Task.FromResult(false);
+        }
+    }
+
+    private async Task DeleteChildItemComplianceOfficer(ComplianceOfficerDto complianceOfficer)
+    {
+        try
+        {
+            var dialogResult = await ShowDeleteConfirmDialog();
+            if (dialogResult)
+            {
+                await TryAsync(async () =>
+                {
+                    var validationResult = await _updateComplianceOfficerValidator.ValidateAsync(complianceOfficer);
+                    if (!validationResult.IsValid)
+                    {
+                        var errors = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage));
+                        var ex = new Exception(errors);
+                        await OnError.InvokeAsync((ex, ErrorHandlingService.ClientOperationContext.ComplianceOfficerDelete));
+                        return;
+                    }
+                    await _merchantHttpService
+                        .DeleteComplianceOfficerAsync(complianceOfficer.ComplianceOfficerId)
+                        .ToObservable()
+                        .ToListObservable()
+                        .ToTryOption()
+                        .ToAsync()
+                        .ToTry()
+                        .Match(
+                            Succ: async _ =>
+                            {
+                                ComplianceOfficers.Remove(complianceOfficer);
+                            },
+                            Fail: ex =>
+                            {
+                                _logger.LogError(ex, "Failed to delete complianceOfficer");
+                                Snackbar.Add(Localizer["Failed to delete complianceOfficer"], Severity.Error);
+                                return Task.CompletedTask;
+                            }
+                        );
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+                        await OnError.InvokeAsync((ex, ErrorHandlingService.ClientOperationContext.ComplianceOfficerDelete));
+        }
+    }
+
+
+
+
+    public async ValueTask DisposeAsync()
+    {
+        _disposables.Dispose();
+    }
+
+
+}
+
+

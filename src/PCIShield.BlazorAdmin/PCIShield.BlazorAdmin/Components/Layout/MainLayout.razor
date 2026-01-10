@@ -1,0 +1,90 @@
+﻿@inherits LayoutComponentBase
+
+@inject IJSRuntime JSRuntime
+@inject ILogger<MainLayout> Logger
+<MudThemeProvider Theme="_themeManager.Theme" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+    <MudLayout >
+        <AppBar OnToggleMenu="HandleToggleMenu" />
+
+        <MudDrawerContainer Style="min-height: calc(100vh - 32px); height: 100%;">
+            <NavMenu OnToggleCollapse="HandleCollapse" IsMobileMenuOpen="isMobileMenuOpen" />
+
+            <MudMainContent Style="min-height: calc(100vh - 32px); display: flex; flex-direction: column;">
+                <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="pa-6" Style="flex: 1;">
+                    @Body
+                </MudContainer>
+            </MudMainContent>
+        </MudDrawerContainer>
+    </MudLayout>
+
+@code {
+
+
+
+
+    private ThemeManagerTheme _themeManager = new();
+    private bool _themeManagerOpen;
+    private bool isMenuCollapsed = false;
+    private bool isMobileMenuOpen = false;
+
+    protected override void OnInitialized()
+    {
+
+    }
+
+    private void HandleToggleMenu()
+    {
+        isMobileMenuOpen = !isMobileMenuOpen;
+    }
+
+
+
+    private void HandleCollapse(bool collapsed)
+    {
+        isMenuCollapsed = collapsed;
+    }
+
+    void OpenThemeManager(bool value) => _themeManagerOpen = value;
+
+    void UpdateTheme(string primaryColor)
+    {
+
+        _themeManager = new ThemeManagerTheme(primaryColor);
+        StateHasChanged();
+    }
+
+    private bool _jsInteropCalled = false;
+    private bool _fragmentProcessAttempted = false;
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // if (firstRender && !_fragmentProcessAttempted)
+        // {
+        //     _fragmentProcessAttempted = true; // Attempt only once per full page load
+        //     try
+        //     {
+        //         Logger.LogInformation("MainLayout (Host): Attempting to call JS to process token fragment.");
+        //         // This JS function will read hash, store in localStorage, clear hash, and dispatch an event.
+        //         bool processed = await JSRuntime.InvokeAsync<bool>("authInterop.processTokenFragmentAndDispatchEvent");
+        //         if (processed)
+        //         {
+        //             Logger.LogInformation("MainLayout (Host): JS indicated token fragment was processed.");
+        //             // The WASM side (AuthOrchestrator) will pick up the 'authTokensProcessedInLocalStorage' event.
+        //         }
+        //         else
+        //         {
+        //             Logger.LogInformation("MainLayout (Host): JS indicated no token fragment to process.");
+        //         }
+        //     }
+        //     catch (Exception ex)
+        //     {
+        //         Logger.LogError(ex, "MainLayout (Host): Error invoking JS 'processTokenFragmentAndDispatchEvent'.");
+        //     }
+        // }
+        await base.OnAfterRenderAsync(firstRender);
+    }
+
+}

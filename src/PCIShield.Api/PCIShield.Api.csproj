@@ -1,0 +1,526 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <UserSecretsId>0ed6dfb4-d2c2-47aa-b87f-e1a43e3bdc50</UserSecretsId>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <DockerfileContext>..\..</DockerfileContext>
+    <LangVersion>14.0</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <DockerComposeProjectPath>..\..\docker-compose.dcproj</DockerComposeProjectPath>
+    <Platforms>AnyCPU</Platforms>
+    <UseSharedCompilation>true</UseSharedCompilation>
+    <BuildInParallel>true</BuildInParallel>
+
+
+    <WarningLevel>0</WarningLevel>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+
+
+
+
+    <NoWarn>
+      $(NoWarn);
+      CS1591;  <!-- missing XML comments, example -->
+      CS0618;   <!-- obsolete member, example -->
+      NU1903;
+      NU1902;
+    </NoWarn>
+
+    
+
+  </PropertyGroup>
+
+
+
+
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+    <!-- Core Debug Settings -->
+    <DebugType>full</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+    <Optimize>false</Optimize>
+    <DefineConstants>TRACE;DEBUG;CONTRACTS_FULL</DefineConstants>
+
+    <DebuggerSupport>true</DebuggerSupport>
+    <FirstChanceExceptionSupport>true</FirstChanceExceptionSupport>
+    <EmbedAllSources>true</EmbedAllSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <GenerateRuntimeConfigDevMode>true</GenerateRuntimeConfigDevMode>
+
+
+
+
+    <!-- Development Configuration -->
+    <SelfContained>false</SelfContained>
+    <!-- Keeps your configuration for faster dev builds -->
+    <PublishTrimmed>false</PublishTrimmed>
+    <!-- Keeps your setting for better debugging -->
+    <PublishSingleFile>false</PublishSingleFile>
+    <!-- Keeps your setting for easier debugging -->
+    <PublishReadyToRun>false</PublishReadyToRun>
+    <!-- Keeps your setting for faster build times -->
+
+    <!-- Enhanced Development Features -->
+    <Features>
+      $(Features);
+      flow-analysis;                     <!-- From your config -->
+      strict-null-checks;                <!-- Added for better null safety -->
+      enforcenotsameasyield;            <!-- Added for better async debugging -->
+      intersectiontypes;                 <!-- Added for better type checking -->
+      enhanced-type-inference;           <!-- Added for better generic analysis -->
+      defaultinterfacemethods;          <!-- Better interface debugging -->
+      required;                         <!-- Stronger contract checking -->
+      warnings-as-errors                <!-- Catch issues early -->
+    </Features>
+
+    <!-- Advanced Analysis (Added from my version) -->
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>preview-all</AnalysisLevel>
+    <AnalysisMode>All</AnalysisMode>
+    <RunAnalyzersDuringBuild>true</RunAnalyzersDuringBuild>
+    <RunAnalyzersDuringLiveAnalysis>true</RunAnalyzersDuringLiveAnalysis>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+
+    <!-- Performance Settings (Keeping your choices) -->
+    <TieredCompilation>true</TieredCompilation>
+    <TieredCompilationQuickJit>true</TieredCompilationQuickJit>
+    <ServerGarbageCollection>true</ServerGarbageCollection>
+    <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
+
+    <!-- Development Tooling Support -->
+    <MetadataUpdaterSupport>true</MetadataUpdaterSupport>
+    <!-- Changed to true for better dev experience -->
+    <EnableRequestDelegateGenerator>true</EnableRequestDelegateGenerator>
+    <EnablePreviewFeatures>true</EnablePreviewFeatures>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+
+    <!-- Additional Debug Support -->
+    <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
+    <!-- Added for better numerical debugging -->
+    <Nullable>enable</Nullable>
+    <LangVersion>preview</LangVersion>
+
+    <!-- ReSharper Support -->
+    <ResolveAssemblyReferencesSilent>true</ResolveAssemblyReferencesSilent>
+    <_EnableReSharperInspectCodeSupport>true</_EnableReSharperInspectCodeSupport>
+    <ReSharperMultiTargeting>true</ReSharperMultiTargeting>
+
+    <!-- Event Tracing -->
+    <EventSourceSupport>true</EventSourceSupport>
+    <!-- Kept your setting for better debugging -->
+  </PropertyGroup>
+
+
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <!-- Core Release Settings -->
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <Optimize>true</Optimize>
+    <DebuggerSupport>false</DebuggerSupport>
+    <EnableHttp3>true</EnableHttp3>
+    <DefineConstants>TRACE;RELEASE;OPTIMIZED</DefineConstants>
+
+    <EmbedAllSources>false</EmbedAllSources>
+    <IncludeSymbols>false</IncludeSymbols>
+
+    <GenerateRuntimeConfigDevMode>false</GenerateRuntimeConfigDevMode>
+
+
+
+    <!-- Runtime Performance Optimizations -->
+    <TieredCompilation>true</TieredCompilation>
+    <TieredPGO>true</TieredPGO>
+    <!-- Enable Profile-Guided Optimization -->
+    <OptimizationPreference>Speed</OptimizationPreference>
+    <EnableRequestDelegateGenerator>true</EnableRequestDelegateGenerator>
+
+    <!-- Advanced JIT Optimizations -->
+    <Features>
+      $(Features);
+      flow-analysis;                 <!-- Keep for runtime safety -->
+      aggressive-inlining;           <!-- Maximum method inlining -->
+      ref-reassignment;              <!-- Efficient reference handling -->
+      module-initializers;           <!-- Optimized module loading -->
+      interpolatedstrings;           <!-- Efficient string handling -->
+      enhanced-type-inference;       <!-- Optimized generics -->
+      defaultinterfacemethods        <!-- Interface optimization -->
+    </Features>
+
+    <!-- Memory Optimizations -->
+    <ServerGarbageCollection>true</ServerGarbageCollection>
+    <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
+    <RetainVMGarbageCollection>true</RetainVMGarbageCollection>
+    <GCLOHThreshold>50000</GCLOHThreshold>
+    <!-- Optimize Large Object Heap -->
+    <GCHeapCount>16</GCHeapCount>
+    <!-- Optimize for modern CPUs -->
+
+    <!-- Threading Optimizations -->
+    <ThreadPoolMinThreads>32</ThreadPoolMinThreads>
+    <ThreadPoolMaxThreads>1024</ThreadPoolMaxThreads>
+
+    <!-- Deployment Settings (Avoiding Breaking Changes) -->
+    <PublishTrimmed>false</PublishTrimmed>
+    <!-- Disabled to prevent breaks -->
+    <PublishReadyToRun>false</PublishReadyToRun>
+    <!-- Disabled to prevent issues -->
+    <PublishSingleFile>false</PublishSingleFile>
+    <!-- Disabled for reliability -->
+    <SelfContained>false</SelfContained>
+    <!-- Use installed runtime -->
+
+    <!-- Runtime Features -->
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <EnableUnsafeBinaryFormatterSerialization>false</EnableUnsafeBinaryFormatterSerialization>
+    <EnableUnsafeUTF7Encoding>false</EnableUnsafeUTF7Encoding>
+    <UseSystemResourceKeys>true</UseSystemResourceKeys>
+  
+
+
+    <EnableHttp3>true</EnableHttp3>
+
+
+
+
+
+
+   
+
+
+
+
+    <!-- Performance-Focused Settings -->
+
+    <EventSourceSupport>false</EventSourceSupport>
+    <HttpActivityPropagationSupport>false</HttpActivityPropagationSupport>
+    <MetadataUpdaterSupport>false</MetadataUpdaterSupport>
+
+    <!-- Code Generation Optimizations -->
+    <IlcOptimizationPreference>Speed</IlcOptimizationPreference>
+    <IlcFoldIdenticalMethodBodies>true</IlcFoldIdenticalMethodBodies>
+    <TieredCompilationQuickJit>false</TieredCompilationQuickJit>
+    <!-- Disabled in favor of PGO -->
+
+    <!-- Additional Performance Settings -->
+    <EnablePreviewFeatures>false</EnablePreviewFeatures>
+    <!-- Disabled for stability -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!-- Keep for performance -->
+
+    <!-- ASP.NET Core Optimizations -->
+    <UsePooledObjects>true</UsePooledObjects>
+    <EnableRequestDelegateGenerator>true</EnableRequestDelegateGenerator>
+    <EnableSourceControlManagerQueries>false</EnableSourceControlManagerQueries>
+  </PropertyGroup>
+
+  <!-- Additional Runtime Configuration -->
+  <ItemGroup>
+    <RuntimeHostConfigurationOption Include="System.GC.HeapHardLimit" Value="80000000000" />
+    <RuntimeHostConfigurationOption Include="System.GC.HeapHardLimitPercent" Value="90" />
+    <RuntimeHostConfigurationOption Include="System.GC.LOHThreshold" Value="50000" />
+    <RuntimeHostConfigurationOption Include="System.Threading.ThreadPool.MinThreads" Value="32" />
+    <RuntimeHostConfigurationOption Include="System.Threading.ThreadPool.MaxThreads" Value="1024" />
+  </ItemGroup>
+
+
+
+  <ItemGroup>
+    <!-- CQRS without MediatR overhead -->
+    <PackageReference Include="FluentAssertions" Version="8.2.0" />
+    <PackageReference Include="FluentResults" Version="3.16.0" />
+
+    <!-- High-performance ORM -->
+    <PackageReference Include="Dapper" Version="2.1.66" />
+    <PackageReference Include="Microsoft.Agents.AI.Hosting.AGUI.AspNetCore" Version="1.0.0-preview.251219.1" />
+    <PackageReference Include="Microsoft.Extensions.AI.OpenAI" Version="10.1.1-preview.1.25612.2" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <EFOptimizeContext>true</EFOptimizeContext>
+    <EFScaffoldModelStage>build</EFScaffoldModelStage>
+  </PropertyGroup>
+  <!--Optimized HTTP/3 and gRPC Support-->
+
+
+
+
+
+  <ItemGroup>
+    <Compile Remove=".roo\**" />
+    <Compile Remove="Bogus\**" />
+    <Compile Remove="Endpoints\CustomerSupport\**" />
+    <Compile Remove="images\**" />
+    <Compile Remove="Logs\**" />
+    <Compile Remove="MappingProfiles\**" />
+    <Compile Remove="MediatR\**" />
+    <Compile Remove="videos\**" />
+    <Compile Remove="_CustomEndpoints\**" />
+    <Content Remove=".roo\**" />
+    <Content Remove="Bogus\**" />
+    <Content Remove="Endpoints\CustomerSupport\**" />
+    <Content Remove="images\**" />
+    <Content Remove="Logs\**" />
+    <Content Remove="MappingProfiles\**" />
+    <Content Remove="MediatR\**" />
+    <Content Remove="videos\**" />
+    <Content Remove="_CustomEndpoints\**" />
+    <EmbeddedResource Remove=".roo\**" />
+    <EmbeddedResource Remove="Bogus\**" />
+    <EmbeddedResource Remove="Endpoints\CustomerSupport\**" />
+    <EmbeddedResource Remove="images\**" />
+    <EmbeddedResource Remove="Logs\**" />
+    <EmbeddedResource Remove="MappingProfiles\**" />
+    <EmbeddedResource Remove="MediatR\**" />
+    <EmbeddedResource Remove="videos\**" />
+    <EmbeddedResource Remove="_CustomEndpoints\**" />
+    <None Remove=".roo\**" />
+    <None Remove="Bogus\**" />
+    <None Remove="Endpoints\CustomerSupport\**" />
+    <None Remove="images\**" />
+    <None Remove="Logs\**" />
+    <None Remove="MappingProfiles\**" />
+    <None Remove="MediatR\**" />
+    <None Remove="videos\**" />
+    <None Remove="_CustomEndpoints\**" />
+  </ItemGroup>
+
+
+  <PropertyGroup>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AnalysisLevel>latest</AnalysisLevel>
+  </PropertyGroup>
+
+  <ItemGroup>
+
+
+    <PackageReference Include="Elsa" Version="3.5.2" />
+    <PackageReference Include="Elsa.Email" Version="3.5.2" />
+    <PackageReference Include="Elsa.EntityFrameworkCore.Sqlite" Version="3.5.2" />
+    <PackageReference Include="Elsa.Scheduling" Version="3.5.2" />
+    <PackageReference Include="Elsa.Sql.Sqlite" Version="3.5.2" />
+
+
+
+
+    <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+
+
+
+
+
+
+
+    <PackageReference Include="Ben.Demystifier" Version="0.4.1" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="9.0.5" />
+
+
+
+
+
+
+
+    <PackageReference Include="Moq" Version="4.20.72" />
+
+
+
+
+    <!-- High-performance JSON -->
+    <PackageReference Include="Utf8Json" Version="1.3.7" />
+
+
+    <PackageReference Include="FastEndpoints" Version="6.1.0" />
+
+
+
+
+
+
+
+    <PackageReference Include="FastEndpoints.Swagger" Version="6.1.0" />
+
+    <!-- Fast dependency injection -->
+    <PackageReference Include="FastEndpoints.Attributes" Version="6.1.0" />
+    <PackageReference Include="FastEndpoints.Security" Version="6.1.0" />
+
+
+
+
+
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.10" />
+
+
+   
+
+
+
+
+
+
+    <!--<PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.0" />-->
+
+    <PackageReference Include="MongoDB.Driver.Core" Version="2.30.0" />
+    <!--<PackageReference Include="MongoDB.Driver.GridFS" Version="2.25.0" />-->
+
+
+ 
+    <PackageReference Include="OpenTelemetry" Version="1.11.2" />
+
+    <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.11.2" />
+
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.11.2" />
+
+    <PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.8.0-rc.1" />
+
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.11.2" />
+
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.11.1" />
+
+    <PackageReference Include="OpenTelemetry.Instrumentation.GrpcNetClient" Version="1.8.0-beta.1" />
+
+    <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.11.1" />
+
+    <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.11.1" />
+
+    <PackageReference Include="OpenTelemetry.Instrumentation.SqlClient" Version="1.8.0-beta.1" />
+
+    <PackageReference Include="Riok.Mapperly" Version="4.2.0" />
+
+    <PackageReference Include="Sentry" Version="5.5.1" />
+    <PackageReference Include="Sentry.AspNetCore" Version="5.5.1" />
+    <!--<PackageReference Include="Sentry.Extensions.Logging" Version="4.13.0" />
+    <PackageReference Include="Sentry.Profiling" Version="4.13.0" />
+    <PackageReference Include="Sentry.Serilog" Version="4.13.0" />
+    <PackageReference Include="Serilog.Sinks.SentrySDK" Version="1.0.6" />-->
+    <PackageReference Include="SonarAnalyzer.CSharp" Version="10.8.0.113526">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <!--<PackageReference Include="StyleCop.Analyzers.Unstable" Version="1.2.0.556">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>-->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Analyzers" Version="9.0.10" />
+
+
+
+
+
+
+    <PackageReference Include="Bogus" Version="35.6.3" />
+
+
+
+    <PackageReference Include="Hangfire.AspNetCore" Version="1.8.18" />
+    <PackageReference Include="Hangfire.SqlServer" Version="1.8.18" />
+ 
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Common" Version="9.0.10" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.Json" Version="9.0.10" />
+    <PackageReference Include="Microsoft.Extensions.Localization" Version="9.0.10" />
+
+
+    <PackageReference Include="Polly" Version="8.5.2" />
+
+
+    <PackageReference Include="AspNetCoreRateLimit" Version="5.0.0" />
+
+
+
+    <!--https://github.com/louthy/language-ext#nu-get-->
+
+    <!--https://paullouth.com/higher-kinds-in-c-with-language-ext/-->
+    <PackageReference Include="LanguageExt.Core" Version="4.4.9" />
+    <PackageReference Include="LanguageExt.Transformers" Version="4.4.8" />
+    <PackageReference Include="System.Text.Json" Version="9.0.10" />
+
+
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.10" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.10" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.10" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.10" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.10">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+
+    <PackageReference Include="MediatR" Version="12.5.0" />
+    <PackageReference Include="RabbitMQ.Client" Version="6.8.1" />
+    <PackageReference Include="Scrutor" Version="7.0.0" />
+
+
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="8.1.1" />
+    <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="8.1.1" />
+    <!--<PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="7.1.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.0" />-->
+
+
+    <!--<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />-->
+
+  </ItemGroup>
+
+
+  <ItemGroup>
+
+    <PackageReference Include="Plumberd.Client.GrpcProxy" Version="2.0.0.3" />
+
+    <PackageReference Include="Utf8Json.AspNetCoreMvcFormatter" Version="1.3.7" />
+  </ItemGroup>
+
+
+
+  <ItemGroup>
+    <ProjectReference Include="..\PCIShield.BlazorMauiShared\PCIShield.BlazorMauiShared.csproj" />
+
+    <ProjectReference Include="..\PCIShield.Domain\PCIShield.Domain.csproj" />
+    <ProjectReference Include="..\PCIShield.Infrastructure\PCIShield.Infrastructure.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="global.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Endpoints\DashBoard\" />
+  </ItemGroup>
+
+</Project>

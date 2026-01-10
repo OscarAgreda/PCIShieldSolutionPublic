@@ -1,0 +1,384 @@
+﻿@typeparam TEntity
+@typeparam TValue
+
+@using System.Reactive.Linq
+@using System.Reactive.Subjects
+@implements IAsyncDisposable
+
+<MudStack>
+
+    <MudSelect T="TValue"
+               @ref="_mudSelect"
+               Label="@Label"
+               Dense="@Dense"
+               Required="@Required"
+               RequiredError="@RequiredError"
+               Value="@Value"
+               ValueChanged="@OnValueChanged"
+               OnBlur="MudSelect_OnBlur"
+               OnChange="MudSelect_OnChange"
+               Immediate="@Immediate"
+               Variant="@Variant"
+               Placeholder="@Placeholder"
+               Clearable="@Clearable"
+               OnOpen="@OnOpenAsync"
+               OnClose="@OnClose"
+               AnchorOrigin="@AnchorOrigin"
+               TransformOrigin="@TransformOrigin"
+               Class="@Class"
+               Style="@Style"
+               Disabled="@Disabled"
+               Text="@GetDisplayText()"
+               PopoverClass="@PopoverClass"
+               >
+        <ChildContent>
+            @if (_isOpen)
+            {
+                @if (ShowSearch)
+                {
+                    <MudTextField Value="@_searchText"
+                                  ValueChanged="@((string value) => OnSearchValueChanged(value))"
+                    @onclick:stopPropagation
+                                  Variant="Variant.Outlined"
+                                  Dense="true"
+                                  Immediate="true"
+                                  Adornment="Adornment.Start"
+                                  AdornmentIcon="@Icons.Material.Filled.Search"
+                                  Placeholder="@SearchPlaceholder"
+                                  Class="mx-2 my-2"
+                                  AutoFocus="true" />
+                }
+
+                @if (_isLoading)
+                {
+                    <MudProgressLinear Color="Color.Primary"
+                                       Indeterminate="true"
+                                       Class="my-2" />
+                }
+                else if (!_items.Any())
+                {
+                    <MudText Class="pa-4" Typo="Typo.body2">@NoResultsText</MudText>
+                }
+                else
+                {
+                    @foreach (var item in _items)
+                    {
+                        <MudSelectItem T="TValue" Value="@DataProvider.GetValue(item)">
+                            @if (DataProvider.ItemTemplate != null)
+                            {
+                                @DataProvider.ItemTemplate(item)
+                            }
+                            else
+                            {
+                                <MudText>@DataProvider.GetDisplayText(item)</MudText>
+                            }
+                        </MudSelectItem>
+                    }
+
+                    @if (_hasMoreData)
+                    {
+                        <MudButton FullWidth="true"
+                                   OnClick="@LoadMoreAsync"
+                                   Disabled="@_isLoading"
+                                   Class="ma-2">
+                            @LoadMoreText
+                        </MudButton>
+                    }
+                }
+            }
+        </ChildContent>
+    </MudSelect>
+</MudStack>
+
+@code {
+    // Existing parameters...
+    [Parameter] public ISelectDataProvider<TEntity, TValue> DataProvider { get; set; }
+    [Parameter] public TValue Value { get; set; }
+    [Parameter] public EventCallback<TValue> ValueChanged { get; set; }
+    [Parameter] public bool ShowSearch { get; set; } = true;
+    [Parameter] public bool Dense { get; set; }
+    [Parameter] public bool Required { get; set; }
+    [Parameter] public string RequiredError { get; set; }
+    [Parameter] public string Label { get; set; }
+    [Parameter] public string Placeholder { get; set; }
+    [Parameter] public string SearchPlaceholder { get; set; } = "Type to search...";
+    [Parameter] public string NoResultsText { get; set; } = "No results found";
+    [Parameter] public string LoadMoreText { get; set; } = "Load more";
+    [Parameter] public bool Clearable { get; set; }
+    [Parameter] public bool Immediate { get; set; } = true;
+    [Parameter] public Variant Variant { get; set; } = Variant.Outlined;
+    [Parameter] public Origin AnchorOrigin { get; set; } = Origin.BottomCenter;
+    [Parameter] public Origin TransformOrigin { get; set; } = Origin.TopCenter;
+    [Parameter] public string Class { get; set; }
+    [Parameter] public string PopoverClass { get; set; }
+    [Parameter] public string Style { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public int PageSize { get; set; } = 10;
+    [Parameter] public int SearchDebounce { get; set; } = 900;
+
+    // Existing event for "which item was selected"
+    [Parameter] public EventCallback<TEntity> OnItemSelected { get; set; }
+
+    // **NEW** optional events so the user can handle changes or blur
+    [Parameter] public EventCallback<FocusEventArgs> OnBlur { get; set; }
+    [Parameter] public EventCallback<ChangeEventArgs> OnChange { get; set; }
+
+    private MudSelect<TValue> _mudSelect;
+    private readonly List<TEntity> _items = new();
+    private bool _isLoading;
+    private bool _hasMoreData;
+    private bool _isOpen;
+    private int _currentPage = 1;
+    private string _searchText = string.Empty;
+    private string _displayText = string.Empty;
+    private readonly Subject<string> _searchSubject = new();
+    private IDisposable _searchSubscription;
+    private readonly Dictionary<TValue, TEntity> _itemCache = new();
+    private bool _isInitialized;
+
+    private string GetDisplayText()
+    {
+        if (typeof(TValue) == typeof(Guid) &&
+            (Value == null || Value.Equals(Guid.Empty)))
+        {
+            return string.Empty;
+        }
+
+        return _displayText;
+    }
+    protected override void OnInitialized()
+    {
+        if (IsEmptyGuid())
+        {
+            _displayText = string.Empty;
+        }
+
+        _searchSubscription = _searchSubject
+            .Throttle(TimeSpan.FromMilliseconds(SearchDebounce))
+            .DistinctUntilChanged()
+            .Subscribe(async _ =>
+            {
+                _currentPage = 1;
+                await LoadItemsAsync(clearExisting: true);
+                await InvokeAsync(StateHasChanged); // <-- Fixed version
+            });
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsEmptyGuid())
+        {
+            _displayText = string.Empty;
+            return;
+        }
+
+        if (!EqualityComparer<TValue>.Default.Equals(Value, default) && DataProvider != null)
+        {
+            if (!_itemCache.ContainsKey(Value))
+            {
+                await LoadAndCacheSelectedValue();
+            }
+            else
+            {
+                UpdateDisplayText(_itemCache[Value]);
+            }
+        }
+    }
+
+    private bool IsEmptyGuid()
+    {
+        // If T isn't Guid, ignore
+        if (typeof(TValue) != typeof(Guid))
+            return false;
+
+        if (Value == null)
+            return true;
+
+        return Value.Equals(Guid.Empty);
+    }
+
+    private void UpdateDisplayText(TEntity item)
+    {
+        if (item == null || (typeof(TValue) == typeof(Guid) && Value != null && Value.Equals(Guid.Empty)))
+        {
+            _displayText = string.Empty;
+        }
+        else
+        {
+            _displayText = DataProvider.GetDisplayText(item);
+        }
+
+        Observable.StartAsync(async () =>
+        {
+            await InvokeAsync(StateHasChanged);
+        }).Subscribe();
+    }
+
+    private async Task LoadAndCacheSelectedValue()
+    {
+        try
+        {
+            // If the provider has a cached item for this value
+            if (DataProvider is EnhancedSelectDataProvider<TEntity, TValue> enhancedProvider &&
+                enhancedProvider.IsCached(Value))
+            {
+                var cachedItem = enhancedProvider.GetCachedItem(Value);
+                if (cachedItem != null)
+                {
+                    _itemCache[Value] = cachedItem;
+                    UpdateDisplayText(cachedItem);
+                    return;
+                }
+            }
+
+            // Or if there's an InitialItem matching our current Value
+            if (DataProvider.InitialItem != null &&
+                EqualityComparer<TValue>.Default.Equals(DataProvider.GetValue(DataProvider.InitialItem), Value))
+            {
+                _itemCache[Value] = DataProvider.InitialItem;
+                UpdateDisplayText(DataProvider.InitialItem);
+                return;
+            }
+
+            // Otherwise load from server (like a fallback)
+            var initialResult = await DataProvider.LoadItemsAsync(string.Empty, pageNumber: 1, pageSize: 1);
+            var selectedItem = initialResult.Items.FirstOrDefault(x =>
+                EqualityComparer<TValue>.Default.Equals(DataProvider.GetValue(x), Value));
+
+            if (selectedItem != null)
+            {
+                _itemCache[Value] = selectedItem;
+                UpdateDisplayText(selectedItem);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading initial value: {ex.Message}");
+        }
+    }
+
+    private async Task OnValueChanged(TValue value)
+    {
+        Console.WriteLine($"EnhancedMudSelect.OnValueChanged called with value: {value}");
+
+        if (value == null || (typeof(TValue) == typeof(Guid) && value.Equals(Guid.Empty)))
+        {
+            _displayText = string.Empty;
+            await OnItemSelected.InvokeAsync(default);
+        }
+
+        var selectedItem = _items.FirstOrDefault(x =>
+            EqualityComparer<TValue>.Default.Equals(DataProvider.GetValue(x), value));
+
+        if (selectedItem != null)
+        {
+            Console.WriteLine($"Found selected item: {DataProvider.GetDisplayText(selectedItem)}");
+            _itemCache[value] = selectedItem;
+            _displayText = DataProvider.GetDisplayText(selectedItem);
+
+            // Fire the existing "OnItemSelected" to let the consumer know
+            Console.WriteLine($"Calling OnItemSelected with found item");
+            await OnItemSelected.InvokeAsync(selectedItem);
+        }
+        else if (value == null || (typeof(TValue) == typeof(Guid) && value.Equals(Guid.Empty)))
+        {
+            Console.WriteLine($"Empty/null value selected");
+            _displayText = string.Empty;
+            await OnItemSelected.InvokeAsync(default);
+        }
+
+        // Fire the existing "ValueChanged"
+        await ValueChanged.InvokeAsync(value);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnSearchValueChanged(string value)
+    {
+ 
+        _searchText = value;
+        _searchSubject.OnNext(value);
+        await InvokeAsync(StateHasChanged);  
+    }
+
+    private async Task LoadItemsAsync(bool clearExisting = false)
+    {
+        if (DataProvider == null) return;
+        try
+        {
+            _isLoading = true;
+            await InvokeAsync(StateHasChanged);
+
+            var (items, hasMore) = await DataProvider.LoadItemsAsync(_searchText, _currentPage, PageSize);
+
+            if (clearExisting)
+                _items.Clear();
+
+            _items.AddRange(items);
+            _hasMoreData = hasMore;
+
+            // Cache all loaded items
+            foreach (var item in items)
+            {
+                var itemValue = DataProvider.GetValue(item);
+                _itemCache[itemValue] = item;
+
+                // If this item matches the selected value, update
+                if (!IsEmptyGuid() && EqualityComparer<TValue>.Default.Equals(itemValue, Value))
+                {
+                    _displayText = DataProvider.GetDisplayText(item);
+                    await OnItemSelected.InvokeAsync(item);
+                }
+            }
+        }
+        finally
+        {
+            _isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task LoadMoreAsync()
+    {
+        if (_hasMoreData && !_isLoading)
+        {
+            _currentPage++;
+            await LoadItemsAsync();
+        }
+    }
+
+    private async Task OnOpenAsync()
+    {
+        _isOpen = true;
+        _currentPage = 1;
+        await LoadItemsAsync(true);
+        await InvokeAsync(StateHasChanged);  
+    
+       
+        await Task.Delay(10);
+        await InvokeAsync(StateHasChanged);  // Update again after delay
+    }
+
+    private void OnClose()
+    {
+        _isOpen = false;
+        _searchText = string.Empty;
+    }
+
+    // Forward the underlying MudSelect's OnBlur to our OnBlur parameter.
+    private Task MudSelect_OnBlur(FocusEventArgs e)
+    {
+        return OnBlur.InvokeAsync(e);
+    }
+
+    // Forward the underlying MudSelect's OnChange to our OnChange parameter.
+    private Task MudSelect_OnChange(ChangeEventArgs e)
+    {
+        return OnChange.InvokeAsync(e);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _searchSubscription?.Dispose();
+        _searchSubject?.Dispose();
+    }
+}

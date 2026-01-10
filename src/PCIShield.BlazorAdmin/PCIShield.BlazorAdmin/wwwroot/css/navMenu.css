@@ -1,0 +1,229 @@
+﻿/* Variables CSS */
+:root {
+    --sidebar-width: 194px;
+    --sidebar-collapsed-width: 63px;
+    --navbar-height: 76.45px;
+    --slideBar-bg: #293E8C;
+    --textColor-item-menu: #ffffff;
+    --hover-item-menu: #E0E8F2;
+    --selected-item-subMenu: #3E529D;
+    --hover-textColor-item-menu: #293E8C;
+    --selected-item-menu: #E8F1FF;
+}
+
+/* Sidebar: Debajo del navbar y altura completa */
+.sidebar {
+    width: var(--sidebar-width) !important;
+    margin-top: var(--navbar-height);
+    height: calc(100vh - var(--navbar-height)) !important;
+    z-index: 1100;
+    background: var(--slideBar-bg) !important;
+    border-start-end-radius: 10px;
+    transition: all 0.8s ease;
+    overflow-x: hidden !important;
+    top: 0 !important; /* Fuerza a que el menú esté en la parte superior */
+    left: 0 !important;
+}
+
+/* Ancho del sidebar en estado colapsado */
+.sidebar--collapsed {
+    width: var(--sidebar-collapsed-width) !important;
+    margin-top: var(--navbar-height);
+    height: calc(100vh - var(--navbar-height)) !important;
+    z-index: 1100;
+    background: var(--slideBar-bg) !important;
+    border-start-end-radius: 10px;
+    transition: all 0.5s ease;
+    overflow-x: hidden !important;
+    top: 0 !important; /* Fuerza a que el menú esté en la parte superior */
+    left: 0 !important;
+}
+
+
+/*Asigna estilo a los items*/
+.itemMenu {
+    color: var(--textColor-item-menu) !important;
+    text-decoration: none;
+    width: var(--sidebar-width);
+    min-height: 40px;
+    white-space: normal;
+    word-wrap: break-word;
+    transition: all 0.8s ease;
+}
+
+.itemMenu--collapsed {
+    color: var(--textColor-item-menu);
+    text-decoration: none;
+    width: var(--sidebar-collapsed-width);
+    min-height: 40px;
+    white-space: normal;
+    word-wrap: break-word;
+    transition: all 0.5s ease;
+}
+
+/*Ajusta la posicion del texto dentro de cada item*/
+.itemMenu .mud-nav-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-left: 10px;
+    padding-right: 0px;
+    position: relative;
+}
+
+.mud-nav-link .mud-nav-link-text {
+    margin-left: 0px;
+}
+/*Asigna el estilo de los textos para los items*/
+.itemMenu .mud-nav-link .mud-nav-link-text {
+    font-size: 12px;
+    font-weight: 700;
+}
+
+/*Asina el grosor del texto para los sub menus*/
+.item-sub-hover .mud-nav-link .mud-nav-link-text {
+    font-weight: 400;
+}
+
+/*Alineamos los iconos al centro */
+.mud-nav-link-text {
+    display: flex;
+    align-items: center;
+}
+
+/*Indicamos el hover que tendra cuando se coloquen sobre cada uno de los items principales*/
+.item-header-hover .mud-nav-link:hover {
+    background: var(--hover-item-menu) !important;
+    color: var(--hover-textColor-item-menu) !important;
+    font-weight: 700;
+    border-top-right-radius: 10px;
+}
+
+/*Indicamos el estilo que tendra el item cuando alguna opcion principal fue desplegada*/
+.item-header-hover .mud-nav-link[aria-expanded="true"] {
+    background-color: var(--selected-item-menu) !important;
+    border-top-right-radius: 10px;
+    color: var(--hover-textColor-item-menu) !important;
+}
+
+.item-header-active {
+    background-color: #E8F1FF !important;
+    border-top-right-radius: 10px;
+    color: var(--hover-textColor-item-menu) !important;
+}
+
+/*Evitamos que se muestre un hover para todos los sub menus*/
+.item-sub-hover .mud-nav-link:hover {
+    background-color: #1B2C6A !important;
+    color: var(--textColor-item-menu) !important;
+}
+
+/*Indicamos el estilo del texto cuando un sub menu se encuentra activo*/
+/*.item-sub-hover .active .mud-nav-link-text {
+    font-weight: 700;
+    background-color: #3E529D !important;
+    color: var(--textColor-item-menu) !important;
+}*/
+
+.item-sub-active {
+    font-weight: 700;
+    background-color: #3E529D !important;
+    color: var(--textColor-item-menu) !important;
+}
+
+/*Fijamos el color de texto y transparencia de cada opcion del menu que no se encuentre deshabilitada*/
+.mud-nav-menu .mud-nav-link.active:not(.mud-nav-link-disabled) {
+    background-color: var(--selected-item-menu) !important;
+    color: var(--hover-textColor-item-menu) !important;
+}
+
+.mud-nav-group .mud-nav-link.active:not(.mud-nav-link-disabled) {
+    background-color: var(--selected-item-subMenu) !important;
+    color: var(--hover-textColor-item-menu) !important;
+    border-radius: 0px;
+}
+
+.item-sub-hover .active {
+    font-weight: 700;
+    color: var(--textColor-item-menu) !important;
+}
+
+/*Indicar color y tamaño de los iconos del menú*/
+.mud-nav-link:not(.mud-nav-link-disabled) .mud-nav-link-icon.mud-nav-link-icon-default {
+    color: inherit !important;
+    width: 16px;
+    height: 16px;
+}
+
+/* Agrega esto a tu archivo navMenu.css */
+.custom-nav-menu {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    justify-content: space-between;
+}
+
+.menu-bottom-container {
+    margin-top: auto; /* Empuja el contenedor hacia abajo */
+    padding: 16px;
+    display: flex;
+    justify-content: flex-end; /* Alinea a la derecha */
+}
+
+.menu-icon-button {
+    color: inherit;
+    transition: transform 0.2s ease-in-out;
+    width: 20px;
+    height: 20px;
+}
+
+    .menu-icon-button:hover {
+        transform: scale(1.1);
+        color: inherit;
+    }
+
+    /* Ajustes específicos para el icono desplegable del menu */
+    .menu-icon-button svg {
+        margin-left: 10px; /* Ajuste fino de posición */
+        margin-top: 10px; /* Ajuste fino de posición */
+        width: 20px;
+        height: 20px;
+    }
+
+.item-header-hover .mud-nav-link .mud-nav-link-expand-icon {
+    color: inherit !important;
+    transform: none !important;
+    width: 30px;
+    height: 30px;
+}
+
+@media (max-width: 820px) {
+    .sidebar {
+        width: 100% !important;
+        height: auto !important;
+        border-radius: 0px;
+        transform: translateY(-100%); /* Mueve el menú hacia arriba fuera de la pantalla */
+        transition: transform 0.5s ease; /* Agrega una transición suave */
+    }
+
+    .sidebar--collapsed {
+        width: 100% !important;
+        height: auto !important;
+        transform: translateY(-100%); /* Mueve el menú hacia arriba fuera de la pantalla */
+        transition: transform 0.5s ease; /* Agrega una transición suave */
+    }
+
+    .itemMenu--collapsed {
+        width: 100% !important;
+        height: auto !important;
+    }
+
+    .menu-bottom-container {
+        display: none;
+    }
+
+    .sidebar-mobile {
+        transform: translateY(0) !important; /* Mueve el menú a su posición original */
+        transition: transform 0.5s ease-in-out !important; /* Agrega una transición suave */
+    }
+}

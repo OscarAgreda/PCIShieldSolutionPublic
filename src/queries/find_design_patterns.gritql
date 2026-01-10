@@ -1,0 +1,33 @@
+-- Find Design Patterns Query
+-- This query identifies classes that implement common design patterns
+
+SELECT
+  class.name AS className,
+  class.file.path AS filePath,
+  CASE
+    WHEN class.name LIKE "%Builder" THEN "Builder"
+    WHEN class.name LIKE "%Factory" THEN "Factory"
+    WHEN class.name LIKE "%Strategy" THEN "Strategy"
+    WHEN class.name LIKE "%Repository" THEN "Repository"
+    WHEN class.name LIKE "%Adapter" THEN "Adapter"
+    WHEN class.name LIKE "%Decorator" THEN "Decorator"
+    WHEN class.name LIKE "%Mediator" THEN "Mediator"
+    WHEN class.name LIKE "%Visitor" THEN "Visitor"
+    WHEN class.name LIKE "%Observer" THEN "Observer"
+    WHEN class.name LIKE "%Command" THEN "Command"
+    ELSE "Unknown"
+  END AS patternType
+FROM Class AS class
+WHERE class.name LIKE "%{{ENTITY_NAME}}%"
+  AND (
+    class.name LIKE "%Builder" OR
+    class.name LIKE "%Factory" OR
+    class.name LIKE "%Strategy" OR
+    class.name LIKE "%Repository" OR
+    class.name LIKE "%Adapter" OR
+    class.name LIKE "%Decorator" OR
+    class.name LIKE "%Mediator" OR
+    class.name LIKE "%Visitor" OR
+    class.name LIKE "%Observer" OR
+    class.name LIKE "%Command"
+  )

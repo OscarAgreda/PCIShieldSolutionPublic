@@ -1,0 +1,430 @@
+.barContainer {
+    height: 52.45px;
+    width: 100% !important;
+    padding: 0px !important;
+    margin-top: 10px !important;
+}
+
+.containerBarMargin {
+    padding: 0px !important;
+    height: 52.45px;
+}
+
+.mud-grid-spacing-xs-6 {
+
+    margin-left: 0 !important;
+}
+
+.logoPCIShield {
+    width: 100px;
+    height: 52.45px;
+    margin-left: 45px;
+}
+
+.search .mud-input {
+    border-radius: 20px;
+    border: 1px solid #DDDDDD;
+    font-size: 12px;
+    padding: 10px 20px 10px 20px;
+    margin-left: 60px;
+    background-image: url('../img/Icon_Search.png');
+    background-repeat: no-repeat;
+    background-position: 25px center;
+    background-size: 12px 12px;
+}
+
+#containerAccessUser {
+    display: flex;
+    gap: 10px;
+    color: black;
+    align-items: center;
+    justify-content:center;
+    margin-right: 25px;
+}
+
+#containerOtherAction {
+    display: flex;
+    color: black;
+    align-items: center;
+    justify-content: center;
+    margin-right: 10px;
+}
+
+.NavBarSelectCompany {
+    width: 186px;
+    height: 44px;
+    border-radius: 5px;
+    border: 1px solid #DDDDDD;
+    background-color: #FFFFFF;
+    color: #707070;
+    font-size: 12px;
+    line-height: 14.63px;
+    margin-right: 12px !important;
+}
+
+.NavBarSelectCompany .mud-input {
+    height: 44px;
+}
+
+.NavBarSelectCompany .mud-input .mud-input-slot {
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 14.63px;
+    color: #707070;
+    display:flex !important;
+    justify-content:center;
+    align-items:center;
+}
+
+.NavBarSelectCompany .mud-input .mud-input-slot img {
+    width:35px;
+    height:20px;
+}
+
+#itemCompany {
+    display: flex;
+    align-items: center;
+}
+
+.iconBar-margin {
+    margin-right: 10px;
+}
+
+#containerAccessUser .mud-icon-root  {
+    width: 36px !important;
+    height: 36px !important;
+}
+
+.nameUser {
+    font-size: 12px !important;
+    color: #707070;
+    line-height: 14.63px !important;
+    font-weight: 400 !important;
+}
+
+.clicked-text {
+    font-size: 12px !important;
+    color: #1B2C6A;
+    line-height: 14.63px;
+    font-weight: 400;
+}
+
+.user-icon {
+    width: 36px !important;
+    height: 36px !important;
+    margin-right: 12px;
+    color: #1B2C6A;
+}
+
+.btnUser{
+    padding-top:0px !important;
+}
+
+#containerOtherAction .mud-button {
+    padding: 5px !important;
+    min-width: 24px !important;
+    height: 24px !important;
+}
+
+#containerOtherAction .mud-button:hover {
+    background-color: transparent;
+}
+
+.btnUser:hover {
+    background-color: transparent !important;
+}
+
+.icon-cursor:hover{
+    cursor:pointer;
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.user-name {
+    color: #1B2C6A;
+    font-weight: 700 !important;
+}
+
+.user-info .mud-typography-body1 {
+    font-size: 12px;
+    line-height: 14.63px;
+}
+
+.user-email {
+    color: #AEAEAE;
+    font-weight: 400 !important;
+}
+
+.sub-header-item{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:15px 25px 15px 25px !important;
+}
+
+.menu-popover-custom-profile {
+    min-width: 231px !important;
+    max-width: 234px !important;
+    top: 58px !important;
+    border-radius: 8px !important;
+    background-color: #FFFFFF;
+}
+
+.menu-popover-custom-notification {
+    min-width: 337px !important;
+    max-width: 352px !important;
+    top: 58px !important;
+    border-radius: 8px !important;
+    background-color: #FFFFFF;
+}
+
+/* Estilo cuando el popover está abierto */
+.icon-menu-open-activeProfile-profile {
+    color: #1B2C6A !important;
+}
+
+/* Estilo cuando el popover está cerrado */
+.icon-menu-closed-no-activeProfile {
+    color: #707070;
+}
+
+.icon-menu-open-activeNotification-notification {
+    color: #1B2C6A !important;
+}
+
+.icon-menu-open-no-activeNotification  {
+    color: #707070;
+}
+
+/* Estilo cuando el texto está en estado 'clicked' */
+.clicked-text {
+    color: #1B2C6A;
+}
+
+.item-option-profile {
+    padding: 5px 0px 5px 15px !important;
+}
+
+.item-option-profile .mud-list-item-text .mud-typography-body1 {
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 14.63px;
+    letter-spacing: 0px;
+    color: #707070;
+}
+
+.item-option-profile .mud-list-item-icon{
+    min-width: 25px;
+}
+
+.item-option-profile .mud-list-item-icon .mud-icon-root {
+    width: 16px !important;
+    height: 16px !important;
+}
+
+.color-notification .mud-badge-wrapper .mud-badge {
+    background-color: #6076C7 !important;
+    color: #ffffff !important;
+}
+
+.color-notification{
+    padding-top: 5px;
+}
+
+.color-notification .mud-badge-wrapper{
+    top:5px !important;
+}
+
+.btn-icon-padding{
+    padding:5px;
+}
+
+.grid-notification {
+    width: 337px !important;
+    display:flex;
+}
+
+.lbl-notification {
+    color: #293E8C;
+    font-weight: 600 !important;
+    font-size: 16px !important;
+    line-height: 19.5px !important;
+}
+
+.btn-marcar-leidas {
+    background-color: #E8F1FF !important;
+    color: #293E8C !important;
+    font-weight: 400 !important;
+    font-size: 10px !important;
+    line-height: 13.49px !important;
+    gap: 10px;
+    padding: 4px 8px 4px 8px !important;
+    border-radius: 20px !important;
+}
+
+.header-notification {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px 12px 16px 12px !important;
+    height:53px;
+}
+
+.icon-notification {
+    color: #707070;
+    width:16px !important;
+    height:16px !important;
+}
+
+.item-message-notification {
+    padding-left: 0px !important;
+    padding-top: 0px !important;
+}
+
+.item-notification-time {
+    font-weight: 400 !important;
+    font-size: 10px !important;
+    line-height: 10.79px !important;
+    text-align: right;
+    color: #707070;
+    padding-right:24px;
+}
+
+.grid-notification {
+    width: 337px !important;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.icon-container {
+    flex: 0 0 32px; /* Tamaño fijo del icono */
+    display: flex;
+    justify-content: center;
+}
+
+.message-container {
+    flex: 1; /* Ocupará todo el espacio disponible */
+    min-width: 0; /* Evita que los textos fuerzen el ancho */
+    display: flex;
+    flex-direction: column;
+}
+
+.time-container {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+.principial-text-notification {
+    font-weight: 700 !important;
+    font-size: 12px !important;
+    color: #707070;
+    white-space: normal;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.sub-information-notification {
+    font-size: 10px !important;
+    line-height: 14.49px !important;
+    color: #707070;
+    white-space: normal;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+/*
+//////////////////////////////////////////////////////////////////////////////
+    SECCION RESPONSIVE (MEDIA QUERIES)
+/////////////////////////////////////////////////////////////////////////////
+*/
+@media (max-width: 1080px) {
+    #containerAccessUser {
+        gap: 5px;
+        margin-left: 10px;
+        transition: all 0.5s ease;
+    }
+
+    .NavBarSelectCompany {
+        margin-right: 5px;
+        transition: all 0.5s ease;
+    }
+
+    .search .mud-input-control-input-container .mud-input {
+        margin-left: 40px;
+        transition: all 0.5s ease;
+    }
+
+    .logoPCIShield {
+        margin-left: 50px;
+        transition: all 0.5s ease;
+    }
+}
+
+@media (max-width: 1000px) {
+    .search .mud-input-control-input-container .mud-input {
+        width: 160px !important;
+        margin-left: 25px;
+        transition: all 0.6s ease;
+    }
+
+    .logoPCIShield {
+        margin-left: 40px;
+        transition: all 0.5s ease;
+    }
+}
+
+@media (max-width: 890px)  {
+    .logoPCIShield {
+        margin-left: 30px;
+        transition: all 0.5s ease;
+    }
+
+    .search .mud-input-control-input-container .mud-input {
+        width: 134.76px !important;
+        font-size: 12px;
+        background-position: 10px center;
+        padding-left: 30px !important;
+        margin-left: 15px;
+        transition: all 0.6s ease;
+    }
+
+    .NavBarSelectCompany {
+        width: 150px;
+        margin-right: 0px !important;
+        transition: all 0.5s ease;
+    }
+
+    #containerOtherAction {
+        margin-right: 0px;
+    }
+}
+
+@media (max-width: 750px){
+    #container-search {
+        display: none;
+    }
+
+    #itemCompany{
+        display:none;
+
+    }
+
+    #containerOtherAction{
+        display:none;
+
+    }
+
+    #containerAccessUser {
+        display: none;
+    }
+
+    #container-menu-mobile{
+        display:block !important;
+    }
+
+}
+

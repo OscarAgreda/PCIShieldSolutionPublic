@@ -1,0 +1,373 @@
+@* AddEvidenceDialog.razor *@
+@using System.ComponentModel.DataAnnotations
+@using global::BlazorMauiShared.Models.ControlEvidence
+@inject IStringLocalizer<AddEvidenceDialog> Localizer
+@inject ISnackbar Snackbar
+@using static LanguageExt.Prelude;
+@using Array = System.Array;
+@using Severity = MudBlazor.Severity
+@namespace PCIShield.BlazorAdmin.Client.Pages.Assessment
+
+
+<MudDialog DisableSidePadding="true">
+    <div class="pciShield-style-dialog">
+    <TitleContent>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+            <MudIcon Icon="@Icons.Material.Filled.TableView" Color="Color.Primary" />
+            <MudText Typo="Typo.h6">@Localizer["Add Evidence"]</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        <MudContainer Style="max-height: 700px; overflow-y: auto;" Class="pa-4">
+            <MudForm @ref="form" Model="@model" Validation="@ValidateForm" @bind-IsValid="@_formIsValid" @bind-Errors="@_formErrors">
+                <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6">
+                    <MudTabPanel Text="@Localizer["New Evidence"]">
+                        <MudGrid>
+                            <MudItem Class="mud-grid-item-pciShield-entity item-custom">
+                                <MudInputLabel Class="style-text" Style="margin-bottom:5px;">@Localizer["Evidence Code"]</MudInputLabel>
+                                <MudTextField T="string"
+                                              Value="@model.EvidenceCode"
+                                              ValueChanged="@(v => OnFieldChanged(s => model.EvidenceCode = s, v))"
+                                              MaxLength="100"
+                                              Counter="100"
+                                              Dense="true"
+                                              Immediate="true"
+                                              Variant="Variant.Outlined"
+                                              Required="true"
+                                              RequiredError="@Localizer["Evidence Code is required"]"
+                                              StartIcon="@Icons.Material.Filled.Edit"
+                                              Error="@(!string.IsNullOrEmpty(GetFieldError(() => model.EvidenceCode)))"
+                                              ErrorText="@(GetFieldError(() => model.EvidenceCode))"
+                                              Class="style-mud-input size-mud-input"
+                                              Style="width:380px; height:31px;" />
+                            </MudItem>
+                            <MudItem Class="mud-grid-item-pciShield-entity item-custom">
+                                <MudInputLabel Class="style-text" Style="margin-bottom:5px;">@Localizer["Evidence Title"]</MudInputLabel>
+                                <MudTextField T="string"
+                                              Value="@model.EvidenceTitle"
+                                              ValueChanged="@(v => OnFieldChanged(s => model.EvidenceTitle = s, v))"
+                                              MaxLength="100"
+                                              Counter="100"
+                                              Dense="true"
+                                              Immediate="true"
+                                              Variant="Variant.Outlined"
+                                              Required="true"
+                                              RequiredError="@Localizer["Evidence Title is required"]"
+                                              StartIcon="@Icons.Material.Filled.Edit"
+                                              Error="@(!string.IsNullOrEmpty(GetFieldError(() => model.EvidenceTitle)))"
+                                              ErrorText="@(GetFieldError(() => model.EvidenceTitle))"
+                                              Class="style-mud-input size-mud-input"
+                                              Style="width:380px; height:31px;" />
+                            </MudItem>
+                            <MudItem Class="mud-grid-item-pciShield-entity item-custom">
+                                <MudInputLabel Class="style-text" Style="margin-bottom:5px;">@Localizer["File Hash"]</MudInputLabel>
+                                <MudTextField T="string"
+                                              Value="@model.FileHash"
+                                              ValueChanged="@(v => OnFieldChanged(s => model.FileHash = s, v))"
+                                              MaxLength="100"
+                                              Counter="100"
+                                              Dense="true"
+                                              Immediate="true"
+                                              Variant="Variant.Outlined"
+                                              StartIcon="@Icons.Material.Filled.Edit"
+                                              Error="@(!string.IsNullOrEmpty(GetFieldError(() => model.FileHash)))"
+                                              ErrorText="@(GetFieldError(() => model.FileHash))"
+                                              Class="style-mud-input size-mud-input"
+                                              Style="width:380px; height:31px;" />
+                            </MudItem>
+                            <MudItem Class="mud-grid-item-pciShield-entity item-custom">
+                                <MudInputLabel Class="style-text" Style="margin-bottom:5px;">@Localizer["Evidence Type"]</MudInputLabel>
+                                <MudNumericField T="int"
+                                              Value="@model.EvidenceType"
+                                              ValueChanged="@(v => OnFieldChanged(s => model.EvidenceType = s, v))"
+                                              Min="0"
+                                              Max="1000"
+                                              Step="1"
+                                              Culture="@CultureInfo.CurrentCulture"
+                                              Dense="true"
+                                              Immediate="true"
+                                              Variant="Variant.Outlined"
+                                              Required="true"
+                                              RequiredError="@Localizer["Evidence Type is required"]"
+                                              StartIcon="@Icons.Material.Filled.Edit"
+                                              Error="@(!string.IsNullOrEmpty(GetFieldError(() => model.EvidenceType)))"
+                                              ErrorText="@(GetFieldError(() => model.EvidenceType))"
+                                              Class="style-mud-input size-mud-input"
+                                              Style="width:380px; height:31px;" />
+                            </MudItem>
+                            <MudItem Class="mud-grid-item-pciShield-entity item-custom">
+                                <MudInputLabel Class="style-text" Style="margin-bottom:5px;">@Localizer["Collected Date"]</MudInputLabel>
+                                <MudDatePicker
+                                               T="DateTime"
+                                              Value="@model.CollectedDate"
+                                              Culture="@CultureInfo.CurrentCulture"
+                                              DateFormat="MM/dd/yyyy"
+                                              Editable="true"
+                                              PickerVariant="PickerVariant.Dialog"
+                                              DisableToolbar="false"
+                                              Dense="true"
+                                              OpenTo="OpenTo.Date"
+                                              Variant="Variant.Outlined"
+                                              Required="true"
+                                              RequiredError="@Localizer["Collected Date is required"]"
+                                              AdornmentIcon="@Icons.Material.Filled.Event"
+                                              Adornment="Adornment.Start"
+                                              Error="@(!string.IsNullOrEmpty(GetFieldError(() => model.CollectedDate)))"
+                                              ErrorText="@(GetFieldError(() => model.CollectedDate))"
+                                              Class="style-mud-input size-mud-input"
+                                              Style="width:380px; height:31px;" />
+                            </MudItem>
+                            <MudItem Class="mud-grid-item-pciShield-entity item-custom">
+                                <MudInputLabel Class="style-text" Style="margin-bottom:5px;">@Localizer["Storage Uri"]</MudInputLabel>
+                                <MudTextField T="string"
+                                              Value="@model.StorageUri"
+                                              ValueChanged="@(v => OnFieldChanged(s => model.StorageUri = s, v))"
+                                              MaxLength="2000"
+                                              Counter="2000"
+                                              Lines="3"
+                                              Dense="true"
+                                              Immediate="true"
+                                              Variant="Variant.Outlined"
+                                              StartIcon="@Icons.Material.Filled.Edit"
+                                              Error="@(!string.IsNullOrEmpty(GetFieldError(() => model.StorageUri)))"
+                                              ErrorText="@(GetFieldError(() => model.StorageUri))"
+                                              Class="style-mud-input"
+                                              Style="width:380px;" />
+                            </MudItem>
+     // ToDo       newEvidence.TenantId = Guid.Parse("00000000-0000-0000-0000-000000000000");
+     // ToDo       newEvidence.MerchantId = Guid.Parse("00000000-0000-0000-0000-000000000000");
+     // ToDo       newEvidence.IsValid = Guid.Parse("00000000-0000-0000-0000-000000000000");
+                            <MudItem Class="mud-grid-item-pciShield-entity item-custom">
+                                <MudInputLabel Class="style-text" Style="margin-bottom:5px;">@Localizer["Set as Is Primary"]</MudInputLabel>
+                                <MudCheckBox T="bool"
+                                             Value="@model.IsPrimary"
+                                             ValueChanged="@(v => OnFieldChanged(s => model.IsPrimary = s, v))"
+                                             Color="Color.Primary"
+                                             Dense="true"
+                                             Class="style-check style-text" />
+                            </MudItem>
+                        </MudGrid>
+                    </MudTabPanel>
+                    <MudTabPanel Text="@Localizer["Link Existing"]">
+                        <MudGrid>
+                            @if (!AvailableEvidences.Any())
+                            {
+                                <MudItem xs="12">
+                                    <MudAlert Severity="Severity.Info" Variant="Variant.Filled">
+                                        @Localizer["No existing Evidences available to link"]
+                                    </MudAlert>
+                                </MudItem>
+                            }
+                            else
+                            {
+                                <MudItem Class="mud-grid-item-pciShield-entity style-search-mud-select margin-bottom-item">
+                                    <MudInputLabel Class="style-text">@Localizer["Select Evidence"]</MudInputLabel>
+                                    <MudAutocomplete T="ControlEvidenceDto"
+                                                     Value="selectedEvidence"
+                                                     ValueChanged="OnEvidenceChanged"
+                                                     Variant="Variant.Outlined"
+                                                     Dense="true"
+                                                     OpenOnFocus="true"
+                                                     Immediate="true"
+                                                     Strict="false"
+                                                     MaxItems="20"
+                                                     SearchFunc="SearchEvidences"
+                                                     ToStringFunc="ToDisplayString"
+                                                     CoerceText="true"
+                                                     Clearable="false"
+                                                     Required="true"
+                                                     RequiredError="@Localizer["Please select a Evidence"]"
+                                                     Class="style-mud-input size-mud-input"
+                                                     Style="width:380px; height:31px;" />
+                                </MudItem>
+                                <MudItem Class="mud-grid-item-pciShield-entity item-custom">
+                                    <MudInputLabel Class="style-text" Style="margin-bottom:5px;">@Localizer["Set as Is Primary"]</MudInputLabel>
+                                    <MudCheckBox T="bool"
+                                                 Value="@model.IsPrimary"
+                                                 ValueChanged="@(v => OnFieldChanged(s => model.IsPrimary = s, v))"
+                                                 Color="Color.Primary"
+                                                 Dense="true"
+                                                 Class="style-check style-text" />
+                                </MudItem>
+                            }
+                        </MudGrid>
+                    </MudTabPanel>
+                </MudTabs>
+            </MudForm>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Variant="Variant.Text" Class="btn-cancel">@Localizer["Cancel"]</MudButton>
+        <MudButton Color="Color.Primary"
+                   OnClick="Submit"
+                   Variant="Variant.Filled"
+                   Class="btn-save"
+                   Disabled="@(!_formIsValid)">@Localizer["Add"]</MudButton>
+    </DialogActions>
+    </div>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    MudDialog MudDialog
+    {
+        get; set;
+    }
+
+    [Parameter] public List<ControlEvidenceDto> AvailableEvidences { get; set; } = new();
+    [Parameter]
+    public Guid AssessmentId
+    {
+        get; set;
+    }
+
+    private ControlEvidenceDto selectedEvidence;
+    private MudForm form;
+    private AddEvidenceModel model = new();
+    private bool _formIsValid;
+    private string[] _formErrors = Array.Empty<string>();
+
+    protected override void OnParametersSet()
+    {
+        if (AvailableEvidences?.Any() == true && selectedEvidence == null)
+        {
+            selectedEvidence = AvailableEvidences.First();
+            OnEvidenceChanged(selectedEvidence);
+        }
+    }
+
+    private void OnFieldChanged<T>(Action<T> setter, T value)
+    {
+        setter(value);
+        StateHasChanged();
+    }
+
+    private string? GetFieldError<T>(System.Linq.Expressions.Expression<Func<T>> expression)
+    {
+        if (_formErrors == null || !_formErrors.Any())
+            return string.Empty;
+
+        var memberExpression = expression.Body as System.Linq.Expressions.MemberExpression;
+        if (memberExpression == null)
+            return null;
+
+        var propertyName = memberExpression.Member.Name;
+        return _formErrors.FirstOrDefault(e => e.Contains(propertyName)) ?? string.Empty;
+    }
+
+    private void OnEvidenceChanged(ControlEvidenceDto evidence)
+    {
+        selectedEvidence = evidence;
+    }
+
+    private string ToDisplayString(ControlEvidenceDto evidence)
+    {
+        if (evidence == null)
+            return string.Empty;
+        return $"{evidence?.Evidence?.EvidenceCode} - {evidence?.Evidence?.EvidenceTitle}";
+    }
+
+    private async Task<IEnumerable<ControlEvidenceDto>> SearchEvidences(string value, CancellationToken cancellationToken)
+    {
+        await Task.Delay(5, cancellationToken);
+        if (string.IsNullOrEmpty(value))
+            return AvailableEvidences;
+
+        return AvailableEvidences.Where(s =>
+            (s.Evidence.EvidenceCode?.Contains(value, StringComparison.InvariantCultureIgnoreCase) ?? false) ||
+            (s.Evidence.EvidenceTitle?.Contains(value, StringComparison.InvariantCultureIgnoreCase) ?? false) ||
+            (s.Evidence.FileHash?.Contains(value, StringComparison.InvariantCultureIgnoreCase) ?? false)
+        );
+    }
+
+    private Func<object, string> ValidateForm => obj =>
+    {
+        if (string.IsNullOrEmpty(model.EvidenceCode) || selectedEvidence == null)
+        {
+            return "Please either enter a new Evidence or select an existing one";
+        }
+
+        return null;
+    };
+
+    private async Task Submit()
+    {
+        await form.Validate();
+        if (!_formIsValid)
+            return;
+
+        var joinRequest = new CreateControlEvidenceJoinRequest
+            {
+                AssessmentId = AssessmentId
+            };
+
+        if (!string.IsNullOrEmpty(model.EvidenceCode))
+        {
+            // For new evidence
+            var newEvidence = EvidenceFactory.CreateNewEmpty();
+            newEvidence.EvidenceCode = model.EvidenceCode;
+            newEvidence.EvidenceTitle = model.EvidenceTitle;
+            newEvidence.FileHash = model.FileHash;
+            newEvidence.EvidenceType = model.EvidenceType;
+            newEvidence.CollectedDate = model.CollectedDate;
+            newEvidence.StorageUri = model.StorageUri;
+
+            newEvidence.IsDeleted = false;
+            newEvidence.UpdatedAt = DateTime.UtcNow;
+            newEvidence.UpdatedBy = Guid.Parse("06B247E1-EEA4-EF62-1111-A7838E4E0DBF");
+            newEvidence.CreatedAt = DateTime.UtcNow;
+            newEvidence.CreatedBy = Guid.Parse("2CD63ACA-28F4-52A5-D27D-0B2557B8ADF0");
+     // ToDo       newEvidence.TenantId = Guid.Parse("00000000-0000-0000-0000-000000000000");
+     // ToDo       newEvidence.MerchantId = Guid.Parse("00000000-0000-0000-0000-000000000000");
+     // ToDo       newEvidence.IsValid = Guid.Parse("00000000-0000-0000-0000-000000000000");
+
+            joinRequest.Evidence = newEvidence;
+            joinRequest.ControlEvidence = ControlEvidenceFactory.CreateNewEmpty();
+            joinRequest.ControlEvidence.IsPrimary = model.IsPrimary;
+        }
+        else if (selectedEvidence != null)
+        {
+            // For existing evidence
+            joinRequest.Evidence = selectedEvidence.Evidence;
+            joinRequest.ControlEvidence = selectedEvidence.CloneAsNew();
+            joinRequest.ControlEvidence.IsPrimary = model.IsPrimary;
+        }
+
+        await MudDialog.CloseAsync(DialogResult.Ok(joinRequest));
+    }
+
+    private void Cancel() => MudDialog.CloseAsync();
+
+    public class AddEvidenceModel
+    {
+        public string EvidenceCode
+        {
+            get; set;
+        }
+        public string EvidenceTitle
+        {
+            get; set;
+        }
+        public string FileHash
+        {
+            get; set;
+        }
+        public int EvidenceType
+        {
+            get; set;
+        }
+        public DateTime CollectedDate
+        {
+            get; set;
+        }
+        public string StorageUri
+        {
+            get; set;
+        }
+        public bool IsPrimary
+        {
+            get; set;
+        }
+        public bool IsNew => !string.IsNullOrEmpty(EvidenceCode);
+    }
+}
