@@ -238,19 +238,19 @@ src/
 └── PCIShield.Client.Services/     # HTTP client services
 ```
 
-#### Setup
+## Setup
 
-# 1) Configure secrets (example)
+### 1) Configure secrets (example)
 
-# - OpenAI: set OPENAI_API_KEY (optional)
+### - OpenAI: set OPENAI_API_KEY (optional)
 
-# - DB: set SQL connection string / SA password (dev only)
+### - DB: set SQL connection string / SA password (dev only)
 
-# 2) Run dependencies (recommended)
+### 2) Run dependencies (recommended)
 
 docker compose up -d
 
-# 3) Run API + Blazor
+### 3) Run API + Blazor
 
 dotnet run --project src/PCIShield.Api
 dotnet run --project src/PCIShield.BlazorAdmin
