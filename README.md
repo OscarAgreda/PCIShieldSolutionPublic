@@ -238,7 +238,7 @@ src/
 └── PCIShield.Client.Services/     # HTTP client services
 ```
 
-# Setup
+#### Setup
 
 # 1) Configure secrets (example)
 
