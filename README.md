@@ -1,291 +1,298 @@
-# 🛡️ PCIShield - Enterprise PCI Compliance Management
+# 🛡️ PCIShield - PCI Compliance Management System
 
-**An open-source, production-grade PCI compliance management platform demonstrating enterprise C#/.NET architecture patterns.**
+> **A comprehensive PCI-DSS compliance management platform built with Clean Architecture, Domain-Driven Design, and modern .NET technologies.**
 
-[![.NET 9](https://img.shields.io/badge/.NET-9.0-purple)](https://dotnet.microsoft.com/)
-[![Blazor](https://img.shields.io/badge/Blazor-WebAssembly-blue)](https://dotnet.microsoft.com/apps/aspnet/web-apps/blazor)
-[![MudBlazor](https://img.shields.io/badge/UI-MudBlazor-7B1FA2)](https://mudblazor.com/)
-[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE.txt)
-
----
-
-## 🎯 What Is This?
-
-PCIShield is a **full-stack enterprise application** for managing PCI DSS (Payment Card Industry Data Security Standard) compliance for merchants. It showcases real-world patterns used in Fortune 500 applications, including:
-
-- 🏗️ **8-Layer Clean Architecture** (UI → Orchestrator → HTTP → API → Service → Domain → Specification → Infrastructure)
-- 🤖 **AI-Powered Assistant** (AG-UI Protocol with OpenAI integration)
-- ⚡ **Reactive State Management** (Rx.NET with BehaviorSubject)
-- 🔄 **Real-time Collaboration** (SignalR multi-user editing)
-- 📊 **Advanced Query Patterns** ( Specifications !)
+[![.NET](https://img.shields.io/badge/.NET-9.0-512BD4?style=flat&logo=dotnet)](https://dotnet.microsoft.com/)
+[![Blazor](https://img.shields.io/badge/Blazor-WebAssembly-512BD4?style=flat&logo=blazor)](https://blazor.net/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![PCI-DSS](https://img.shields.io/badge/PCI--DSS-v4.0-blue.svg)](https://www.pcisecuritystandards.org/)
 
 ---
 
-## 🏛️ Architecture Highlights
+## 📸 Screenshots
+
+### System Overview
+![PCIShield Overview](pcishield-erp/pcishield-final-verified-2026-01-22.png)
+*PCIShield compliance management system - production verified*
+
+### Application Architecture (Visual Studio)
+![Architecture View](pcishield-erp/devenv_U2OfGpYPNe.png)
+*Clean Architecture project structure in Visual Studio*
+
+### Domain Model & Code Structure
+![Domain Model](pcishield-erp/devenv_4gHVnyc4F4.png)
+*Domain-Driven Design implementation with aggregates and entities*
+
+### UI Components (Blazor + MudBlazor)
+![Blazor UI](pcishield-erp/brave_33gYTzTQEb.png)
+*Modern Blazor WebAssembly interface with Material Design*
+
+### Database & Entity Framework
+![EF Core](pcishield-erp/devenv_NU9gf7Qt90.png)
+*Entity Framework Core configuration and migrations*
+
+### Additional Views
+![Code View 1](pcishield-erp/devenv_ksDJcOyU0D.png)
+*Specification Pattern implementation*
+
+![Code View 2](pcishield-erp/devenv_Tfsy93PiAe.png)
+*CQRS Command/Query handlers*
+
+---
+
+## 🎯 What This System Does
+
+PCIShield helps organizations achieve and maintain **PCI-DSS compliance** by providing:
+
+| Feature | Description |
+|---------|-------------|
+| 🏪 **Merchant Management** | Track multiple merchants, their payment channels, and compliance status |
+| 📋 **Assessment Tracking** | Manage SAQ (Self-Assessment Questionnaire) and ROC (Report on Compliance) assessments |
+| 🔐 **Control Management** | Map and track 300+ PCI-DSS controls across 12 requirements |
+| 📎 **Evidence Collection** | Upload and organize compliance evidence with audit trails |
+| 🔍 **Vulnerability Scanning** | Integrate scan results and track remediation |
+| 📊 **Compliance Scoring** | Real-time compliance percentage calculations |
+| 📈 **Reporting** | Generate compliance reports for auditors and stakeholders |
+
+---
+
+## 🏗️ Architecture Overview
+
+This project demonstrates **enterprise-grade architecture patterns**:
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│ Layer 1: MudBlazor UI (830+ line master pages)              │
-├─────────────────────────────────────────────────────────────┤
-│ Layer 2: Reactive Orchestrator (Rx.NET + FluentValidation)  │
-├─────────────────────────────────────────────────────────────┤
-│ Layer 3: HTTP Client Service (3,200+ lines, 80+ methods)    │
-├─────────────────────────────────────────────────────────────┤
-│ Layer 4: FastEndpoints API (Vertical Slice Architecture)    │
-├─────────────────────────────────────────────────────────────┤
-│ Layer 5: Domain Services (LanguageExt Either<> patterns)    │
-├─────────────────────────────────────────────────────────────┤
-│ Layer 6: Rich Domain Model (DDD with Aggregate Roots)       │
-├─────────────────────────────────────────────────────────────┤
-│ Layer 7: Specification Pattern (Graph topology analysis!)   │
-├─────────────────────────────────────────────────────────────┤
-│ Layer 8: Infrastructure (EF Core + Redis + Elasticsearch)   │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                        PRESENTATION LAYER                        │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐  │
+│  │  Blazor WASM    │  │   REST API      │  │   Background    │  │
+│  │  (MudBlazor)    │  │  (FastEndpoints)│  │   Jobs          │  │
+│  └────────┬────────┘  └────────┬────────┘  └────────┬────────┘  │
+└───────────┼────────────────────┼────────────────────┼───────────┘
+            │                    │                    │
+┌───────────▼────────────────────▼────────────────────▼───────────┐
+│                       APPLICATION LAYER                          │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐  │
+│  │   Commands      │  │    Queries      │  │  Specifications │  │
+│  │   (MediatR)     │  │   (MediatR)     │  │   (Ardalis)     │  │
+│  └────────┬────────┘  └────────┬────────┘  └────────┬────────┘  │
+└───────────┼────────────────────┼────────────────────┼───────────┘
+            │                    │                    │
+┌───────────▼────────────────────▼────────────────────▼───────────┐
+│                         DOMAIN LAYER                             │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐  │
+│  │   Aggregates    │  │  Domain Events  │  │  Value Objects  │  │
+│  │   (21 roots)    │  │                 │  │                 │  │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘  │
+└─────────────────────────────────────────────────────────────────┘
+            │
+┌───────────▼─────────────────────────────────────────────────────┐
+│                     INFRASTRUCTURE LAYER                         │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────┐ │
+│  │ SQL Server  │  │    Redis    │  │  RabbitMQ   │  │ Logging │ │
+│  │ (EF Core)   │  │  (Cache)    │  │ (Messages)  │  │(Serilog)│ │
+│  └─────────────┘  └─────────────┘  └─────────────┘  └─────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Domain Model (21 Aggregates)
+
+```
+MerchantAggregate (Root)
+├── AssessmentAggregate
+│   ├── AssessmentControlAggregate
+│   └── EvidenceAggregate
+├── AssetAggregate
+│   └── AssetControlAggregate
+├── CompensatingControlAggregate
+├── ComplianceOfficerAggregate
+├── ControlAggregate
+├── CryptographicInventoryAggregate
+├── NetworkSegmentationAggregate
+├── PaymentChannelAggregate
+│   └── PaymentPageAggregate
+├── ServiceProviderAggregate
+├── VulnerabilityAggregate
+│   └── VulnerabilityRankAggregate
+├── ROCPackageAggregate
+├── ScanScheduleAggregate
+├── AuditLogAggregate
+└── AuthAggregate
 ```
 
 ---
 
-## 🧰 Tech Stack
+## 🔧 Technology Stack
+
+### Backend (.NET 9)
 
 | Category | Technologies |
 |----------|--------------|
-| **Frontend** | Blazor WebAssembly, MudBlazor, Rx.NET |
-| **Backend** | ASP.NET Core 9, FastEndpoints, MediatR |
-| **Database** | SQL Server, EF Core 9, Redis, Elasticsearch |
-| **AI Integration** | OpenAI GPT-5, AG-UI Protocol, Microsoft.Extensions.AI |
-| **Patterns** | DDD, CQRS, Specification Pattern, Repository Factory |
-| **DevOps** | Docker, Hangfire, Quartz.NET |
-| **Auth** | JWT, ASP.NET Identity, Role-based policies |
+| **Framework** | ASP.NET Core 9.0, C# 12 |
+| **API** | FastEndpoints, Swagger/OpenAPI, MediatR (CQRS) |
+| **Data Access** | Entity Framework Core 9.0, Dapper |
+| **Database** | SQL Server (primary), Redis (caching) |
+| **Messaging** | RabbitMQ for event-driven architecture |
+| **Security** | ASP.NET Core Identity, JWT, BCrypt, FluentValidation |
+| **Observability** | Serilog, OpenTelemetry |
+
+### Frontend (Blazor)
+
+| Category | Technologies |
+|----------|--------------|
+| **Framework** | Blazor WebAssembly / Server |
+| **UI Library** | MudBlazor (Material Design) |
+| **State** | Reactive Extensions (Rx.NET) |
+| **Real-time** | SignalR (WebSocket) |
+
+### Infrastructure
+
+| Category | Technologies |
+|----------|--------------|
+| **Containers** | Docker, Docker Compose |
+| **Proxy** | HAProxy, Nginx |
+| **CI/CD** | GitHub Actions |
 
 ---
 
-## ✨ Key Features
-
-### 🎛️ Merchant Management
-
-- Full CRUD with complex nested aggregates (9 child entities)
-- Master-detail UI with tabbed navigation
-- Real-time multi-user editing detection via SignalR
-
-### 🤖 AI Copilot - Talk to Your ERP
-
-Users can **converse naturally** with the ERP system using the AI Copilot:
-
-- 💬 Natural language commands: *"Set compliance rank to 85"*, *"Show me all Level 1 merchants"*
-- 🛡️ Tool-calling architecture with **human approval** for destructive operations
-- ⚡ Server-Sent Events (SSE) streaming for real-time responses
-- 🎯 **GAT (Graph-Aware Topology)** spec selection - AI chooses optimal query strategy
-
-#### AI Copilot Components
+## 📁 Project Structure
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│  MerchantAiCopilotTab.razor     │ Chat UI with streaming   │
-├─────────────────────────────────────────────────────────────┤
-│  CascadeSpecSelector.razor      │ Visual spec picker       │
-├─────────────────────────────────────────────────────────────┤
-│  SpecSelectorMudSelect.razor    │ Dropdown with GAT metrics│
-├─────────────────────────────────────────────────────────────┤
-│  HttpSpecExecutionService.cs    │ Dynamic spec execution   │
-├─────────────────────────────────────────────────────────────┤
-│  SpecCatalogService.cs          │ 157 specs with metadata  │
-└─────────────────────────────────────────────────────────────┘
+PCIShieldSolution/
+├── src/
+│   ├── PCIShield.Domain/           # Domain entities, aggregates, events
+│   ├── PCIShield.Application/      # Commands, queries, specifications
+│   ├── PCIShield.Infrastructure/   # EF Core, repositories, external services
+│   ├── PCIShield.API/              # FastEndpoints REST API
+│   └── PCIShield.Blazor/           # Blazor WebAssembly UI
+├── tests/
+│   ├── PCIShield.UnitTests/
+│   ├── PCIShield.IntegrationTests/
+│   └── PCIShield.ArchTests/        # Architecture enforcement tests
+└── docker/
+    ├── docker-compose.yml
+    └── Dockerfile.*
 ```
-
-The AI understands the **entity graph topology** and automatically selects the best specification based on:
-
-- Query complexity and depth requirements
-- PageRank and centrality scores
-- Caching strategies and eager loading priorities
-
-### 📈 Compliance Analytics & Graph Theory Specifications
-
-- Risk scoring algorithms
-- Compliance forecasting (Phase 2 roadmap)
-- **Graph Topology Analysis** with 157 specification classes in a single 9,744-line file!
-
-#### 🧠 Graph Theory-Powered Specifications
-
-The `MerchantGetListSpec.cs` is a **masterpiece of query optimization** using graph theory concepts:
-
-```csharp
-// GRAPH PHYSICS: Identified as Reference Data (High In-Degree)
-// Graph Pagination Analysis: Volume=1000, Complexity=0.900
-// PageRank=1.9400, OptimalPageSize=25
-// Graph GetById Analysis: FanOut=9, Depth=4, HubScore=0.0000
-```
-
-**157 Specification Classes** including:
-
-| Spec Family | Examples | Purpose |
-|-------------|----------|---------|
-| **Core** | `MerchantByIdSpec`, `MerchantSearchSpec` | Basic CRUD operations |
-| **Graph Analysis** | `MerchantAdvancedGraphSpecV7`, `MerchantTopologicalSpecV8` | Entity relationship traversal |
-| **Deep Intelligence** | `MerchantDeepLinkGraphSpecV9`, `MerchantHolographicSpecV10` | Multi-level eager loading |
-| **Security** | `MerchantSecurityReachabilitySpecV14`, `MerchantClusterFortressSpecV16` | Access path analysis |
-| **Analytics** | `MerchantProcessMiningSpecV16`, `MerchantCriticalPathSpecV21` | Business intelligence |
-| **360° Views** | `MerchantHolistic360SpecV24`, `MerchantIntegritySpecV25` | Complete entity graphs |
-
-Each spec is annotated with **graph metrics**: `PageRank`, `FanIn/FanOut`, `HubScore`, `CacheStrategy`, `EagerLoadPriority`
-
-#### ⚡ Performance Optimization Chain
-
-All 157 specifications implement the **triple optimization chain**:
-
-```csharp
-// Specs WITH merchantId parameter (147 specs):
-Query.AsNoTracking()
-    .AsSplitQuery()
-    .EnableCache($"MerchantTopologicalSpecV8-{merchantId}");
-
-// Specs WITHOUT merchantId parameter (7 specs - search, list, etc.):
-Query.AsNoTracking()
-    .AsSplitQuery()
-    .EnableCache("MerchantSearchSpec");
-```
-
-### 🔒 Enterprise-Grade Security
-
-- JWT authentication with security stamp validation
-- Role-based authorization (Admin, Merchant, QSA)
-- Audit logging via Serilog
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Getting Started
 
 ### Prerequisites
 
-- .NET 10 SDK
-- SQL Server (or LocalDB)
-- Node.js (for Blazor tooling)
-- OpenAI API Key
+- .NET 9.0 SDK
+- SQL Server 2019+ (or LocalDB)
+- Docker (optional, for containerized deployment)
+- Node.js 18+ (for tooling)
 
-# Start both API and Blazor
-
-dotnet run --project src/PCIShield.Api
-dotnet run --project src/PCIShield.BlazorAdmin
-
-```
-
-### Access
-
-- **Blazor Admin**: <https://localhost:7234>
-- **API Swagger**: <https://localhost:5001/swagger>
-
----
-
-## 🗄️ Database Setup
-
-PCIShield uses **two databases**:
-
-| Database | Purpose | Tables |
-|----------|---------|--------|
-| `GraphErpAuthDb` | ASP.NET Identity (users, roles, JWT) | 7 |
-| `GraphErpDb` | Operational data (merchants, assessments, etc.) | 367 |
-
-### Database Scripts (SuperSeed)
-
-Located in `src/PCIShield.Infrastructure/Data/SuperSeed/`:
+### Quick Start
 
 ```bash
-# 1. Create schema (drops & recreates GraphErpDb)
-sqlcmd -S YOUR_SERVER -d master -U sa -P YOUR_PASSWORD -C -i "MASTER_MERGED_V47.sql"
+# Clone the repository
+git clone https://github.com/OscarAgreda/PCIShieldSolutionPublic.git
+cd PCIShieldSolutionPublic
 
-# 2. Seed base operational data (131 tables with realistic data)
-sqlcmd -S YOUR_SERVER -d GraphErpDb -U sa -P YOUR_PASSWORD -C -i "AGGREGATE_DATA_EXPANDED.sql"
+# Restore dependencies
+dotnet restore
 
-# 3. Seed PCI compliance core tables (8 tables)
-sqlcmd -S YOUR_SERVER -d GraphErpDb -U sa -P YOUR_PASSWORD -C -i "PCI_CORE_SEED.sql"
+# Update database
+dotnet ef database update --project src/PCIShield.Infrastructure
 
-# 4. Enrich "hero" merchants with full entity graphs (for UI showcase)
-sqlcmd -S YOUR_SERVER -d GraphErpDb -U sa -P YOUR_PASSWORD -C -i "MERCHANT_FULL_GRAPH_SEED.sql"
+# Run the API
+dotnet run --project src/PCIShield.API
+
+# Run the Blazor UI (separate terminal)
+dotnet run --project src/PCIShield.Blazor
 ```
 
-### Hero Merchants for Testing
+### Docker Deployment
 
-After running the seeds, these merchants have **rich entity graphs** perfect for UI testing:
+```bash
+# Build and run all services
+docker-compose up --build
 
-| Merchant Name | Level | Assets | Payment Channels | Compensating Controls | Total Items |
-|---------------|-------|--------|------------------|----------------------|-------------|
-| **Emerentor Direct Company** | 2 | 9 | 6 | 4 | 25 |
-| **Cippebar Inc** | 1 | 5 | 4 | 1 | 15 |
-| **Lomtinentor International** | 3 | 1 | 3 | 0 | 9 |
-
-### Diagnostic Queries
-
-Located in `src/PCIShield.Api/Documentation/_oscar/`:
-
-- `Find-Aggregates.sql` - Analyze table row counts and FK relationships
-- `Find-MerchantGraph.sql` - Analyze merchant entity graph completeness
-
----
-
-## 📂 Project Structure
-
-```
-src/
-├── PCIShield.Api/                 # ASP.NET Core API (FastEndpoints)
-│   ├── Agents/                    # AI Copilot (AG-UI)
-│   ├── Endpoints/                 # Vertical slice endpoints
-│   └── Auth/                      # JWT + Identity
-├── PCIShield.BlazorAdmin/         # Blazor WebAssembly frontend
-│   └── Client/
-│       ├── Pages/Merchant/        # MudBlazor master pages
-│       └── Shared/Components/     # AI Command Panel
-├── PCIShield.Infrastructure/      # EF Core, Redis, Elasticsearch
-├── PCIShield.Domain/              # Entities, DTOs, Specifications
-└── PCIShield.Client.Services/     # HTTP client services
+# Services available at:
+# - API: http://localhost:5000
+# - Blazor UI: http://localhost:5001
+# - SQL Server: localhost:1433
 ```
 
-## Setup
+---
 
-### 1) Configure secrets (example)
+## 📊 Key Metrics
 
-### - OpenAI: set OPENAI_API_KEY (optional)
-
-### - DB: set SQL connection string / SA password (dev only)
-
-### 2) Run dependencies (recommended)
-
-docker compose up -d
-
-### 3) Run API + Blazor
-
-dotnet run --project src/PCIShield.Api
-dotnet run --project src/PCIShield.BlazorAdmin
+| Metric | Value |
+|--------|-------|
+| **Domain Aggregates** | 21 |
+| **Database Tables** | 50+ |
+| **Specification Queries** | 80+ reusable query specifications |
+| **API Endpoints** | 60+ REST endpoints |
+| **Code Coverage** | Target: 80%+ |
 
 ---
 
-## 🤝 About the Author
+## 🎓 Learning Outcomes
 
-I'm a **Senior .NET Software Engineer** with 15+ years of experience building enterprise applications. This project demonstrates my ability to:
+This project demonstrates:
 
-- ✅ Design and implement **clean, maintainable architecture**
-- ✅ Apply **advanced patterns** (DDD, CQRS, Specifications, Reactive)
-- ✅ Integrate **modern AI capabilities** into existing codebases
-- ✅ Write **production-ready code** (not tutorials or toy projects)
-
-**Available for contract work** with U.S. companies (remote). I specialize in:
-
-- Blazor / MudBlazor UI development
-- ASP.NET Core API design
-- Database architecture (SQL Server, PostgreSQL)
-- AI/LLM integration
-
-📧 [Contact me on LinkedIn](https://www.linkedin.com/in/oscaragreda/)
+✅ **Clean Architecture** - Separation of concerns with dependency inversion  
+✅ **Domain-Driven Design** - Aggregates, entities, value objects, domain events  
+✅ **CQRS Pattern** - Command/Query separation with MediatR  
+✅ **Specification Pattern** - Reusable, composable query logic  
+✅ **Event-Driven Architecture** - RabbitMQ message-based communication  
+✅ **Modern .NET** - Latest C# features, nullable reference types, records  
+✅ **Blazor SPA** - Component-based UI with WebAssembly  
+✅ **Enterprise Patterns** - Repository, Unit of Work, Factory, Strategy  
 
 ---
 
-## 📜 License
+## 🔒 PCI-DSS Coverage
 
-MIT License - See [LICENSE.txt](LICENSE.txt)
+This system helps track compliance across all **12 PCI-DSS Requirements**:
+
+| Req # | Requirement | Features |
+|-------|-------------|----------|
+| 1 | Network Security Controls | Network segmentation tracking |
+| 2 | Secure Configurations | Asset configuration management |
+| 3 | Protect Account Data | Cryptographic inventory |
+| 4 | Encrypt Transmission | Payment channel security |
+| 5 | Malware Protection | Vulnerability scanning integration |
+| 6 | Secure Development | Change control tracking |
+| 7 | Access Control | Role-based access management |
+| 8 | User Identification | Authentication & audit logs |
+| 9 | Physical Security | Asset location tracking |
+| 10 | Logging & Monitoring | Comprehensive audit trails |
+| 11 | Security Testing | Scan schedule management |
+| 12 | Security Policies | Policy document management |
 
 ---
 
-## 🙏 Acknowledgments
+## 🤝 About This Project
 
-- [MudBlazor](https://mudblazor.com/) - Beautiful Blazor component library
-- [FastEndpoints](https://fast-endpoints.com/) - Elegant API framework
-- [Ardalis Specifications](https://github.com/ardalis/Specification) - Query pattern
-- [LanguageExt](https://github.com/louthy/language-ext) - Functional C#
+This is the **open-source training version** of PCIShield. It demonstrates enterprise architecture patterns and PCI compliance domain knowledge.
+
+**Note:** A more feature-rich version with AI capabilities exists privately. This public version focuses on:
+- Clean Architecture fundamentals
+- Domain-Driven Design patterns
+- PCI-DSS domain modeling
+- Modern .NET development practices
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 👨‍💻 Author
+
+**Oscar Agreda**  
+Enterprise Software Consultant | PCI Compliance & ERP Systems Developer
+
+- 🔗 [LinkedIn](https://www.linkedin.com/in/intloagr/)
+- 💻 [GitHub](https://github.com/OscarAgreda)
+- 📧 Available for consulting engagements
+
+---
+
+> 💡 **Interested in the full-featured version?** Contact me to discuss enterprise licensing and AI-powered compliance features.
